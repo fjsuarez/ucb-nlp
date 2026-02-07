@@ -1,5 +1,8 @@
 project:
-  type: default
+  type: website
+
+website:
+  title: "UCB NLP"
 
 format:
   html:
