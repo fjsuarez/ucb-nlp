@@ -1,0 +1,16 @@
+---
+title: "NLP y Análisis Semántico"
+author: "Prof. Francisco Suárez"
+format: html
+---
+
+## Diapositivas
+
+### Semana 1
+- [Introducción a NLP](slides/semana01/s1_intro_nlp.qmd)
+- [Expresiones Regulares](slides/semana01/s2_regex.qmd)
+- [Preprocesamiento de Texto](slides/semana01/s3_preprocesamiento.qmd)
+
+## Material
+- [Programa del Curso](programa_nlp_20_semanas.md)
+- [Información General](general.md)
