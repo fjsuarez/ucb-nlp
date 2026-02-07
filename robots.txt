@@ -1,1 +1,1 @@
-Sitemap: https://fjsuarez.github.io/ucb-nlp/sitemap.xml
+Sitemap: https://fjsuarez.me/sitemap.xml
