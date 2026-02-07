@@ -1,0 +1,646 @@
+[
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#agenda-de-hoy",
+    "href": "slides/semana01/s3_preprocesamiento.html#agenda-de-hoy",
+    "title": "Preprocesamiento de Texto",
+    "section": "Agenda de Hoy",
+    "text": "Agenda de Hoy\n\n\nPrimera Parte\n\n🔤 ¿Qué es la tokenización?\n🛠️ Herramientas: NLTK y spaCy\n📝 Normalización de texto\n\n\nSegunda Parte\n\n🌱 Stemming\n📖 Lematización\n🔧 Pipeline completo de preprocesamiento"
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#el-texto-crudo-es-ruidoso",
+    "href": "slides/semana01/s3_preprocesamiento.html#el-texto-crudo-es-ruidoso",
+    "title": "Preprocesamiento de Texto",
+    "section": "El Texto Crudo es Ruidoso",
+    "text": "El Texto Crudo es Ruidoso\n\n\nTexto real del mundo:\n¡¡¡INCREÍBLE oferta!!!  \nVisita https://tienda.com 😍😍\nEnvía un msg al +591-71234567\n#Descuento @tienda_bo\n    precio: $99.99 USD\n\nProblemas para una máquina:\n\nMayúsculas / minúsculas\nPuntuación repetida\nURLs, emails, emojis\nHashtags, menciones\nEspacios irregulares\nNúmeros en distintos formatos\n\n\n\n\n\n\n\n\n\nRegla de Oro del NLP\n\n\nBasura entra, basura sale (Garbage in, garbage out). La calidad de cualquier modelo depende directamente de la calidad del preprocesamiento."
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#el-pipeline-de-preprocesamiento",
+    "href": "slides/semana01/s3_preprocesamiento.html#el-pipeline-de-preprocesamiento",
+    "title": "Preprocesamiento de Texto",
+    "section": "El Pipeline de Preprocesamiento",
+    "text": "El Pipeline de Preprocesamiento\n\n\nCode\nflowchart LR\n    A[📄 Texto&lt;br&gt;crudo] --&gt; B[🔤 Tokenización]\n    B --&gt; C[🔡 Normalización]\n    C --&gt; D[🚫 Stopwords]\n    D --&gt; E[🌱 Stemming /&lt;br&gt;📖 Lematización]\n    E --&gt; F[✅ Texto&lt;br&gt;limpio]\n\n    style A fill:#fff3cd,color:#000\n    style B fill:#cfe2ff,color:#000\n    style C fill:#d1e7dd,color:#000\n    style D fill:#f8d7da,color:#000\n    style E fill:#e2d9f3,color:#000\n    style F fill:#d4edda,color:#000\n\n\n\n\n\nflowchart LR\n    A[📄 Texto&lt;br&gt;crudo] --&gt; B[🔤 Tokenización]\n    B --&gt; C[🔡 Normalización]\n    C --&gt; D[🚫 Stopwords]\n    D --&gt; E[🌱 Stemming /&lt;br&gt;📖 Lematización]\n    E --&gt; F[✅ Texto&lt;br&gt;limpio]\n\n    style A fill:#fff3cd,color:#000\n    style B fill:#cfe2ff,color:#000\n    style C fill:#d1e7dd,color:#000\n    style D fill:#f8d7da,color:#000\n    style E fill:#e2d9f3,color:#000\n    style F fill:#d4edda,color:#000\n\n\n\n\n\n\nCada paso transforma el texto para que sea más útil para nuestros modelos."
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#qué-es-tokenizar",
+    "href": "slides/semana01/s3_preprocesamiento.html#qué-es-tokenizar",
+    "title": "Preprocesamiento de Texto",
+    "section": "¿Qué es Tokenizar?",
+    "text": "¿Qué es Tokenizar?\n\nDividir un texto en unidades mínimas significativas llamadas tokens.\n\n\n\nTipos de tokenización:\n\n\n\nNivel\nEjemplo\n\n\n\n\nOración\n“Hola. ¿Qué tal?” → 2 oraciones\n\n\nPalabra\n“el gato negro” → 3 tokens\n\n\nSubpalabra\n“jugando” → “jug” + “##ando”\n\n\nCarácter\n“gato” → g, a, t, o\n\n\n\n\n¿Por qué importa?\n\nDefine la unidad básica de análisis\nAfecta el vocabulario del modelo\nDiferente en cada idioma\nNo es trivial: “New York” → ¿1 o 2 tokens?"
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#método-1-split-naïve",
+    "href": "slides/semana01/s3_preprocesamiento.html#método-1-split-naïve",
+    "title": "Preprocesamiento de Texto",
+    "section": "Método 1: split() (Naïve)",
+    "text": "Método 1: split() (Naïve)\n\ntexto = \"El gato, que estaba en el jardín, cazó un ratón.\"\n\n# split() divide por espacios\ntokens = texto.split()\nprint(f\"Tokens: {tokens}\")\nprint(f\"Cantidad: {len(tokens)}\")\n\nTokens: ['El', 'gato,', 'que', 'estaba', 'en', 'el', 'jardín,', 'cazó', 'un', 'ratón.']\nCantidad: 10\n\n\n\n\n\n\n\n\n\nProblemas de split()\n\n\n\n“gato,” se considera un solo token (incluye la coma)\nNo separa puntuación\nNo maneja contracciones (“del” = “de” + “el”)\nNo detecta límites de oración"
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#método-2-regex-mejor",
+    "href": "slides/semana01/s3_preprocesamiento.html#método-2-regex-mejor",
+    "title": "Preprocesamiento de Texto",
+    "section": "Método 2: Regex (Mejor)",
+    "text": "Método 2: Regex (Mejor)\n\nimport re\n\ntexto = \"El gato, que estaba en el jardín, cazó un ratón.\"\n\n# Tokenización con regex\ntokens = re.findall(r\"\\w+|[^\\w\\s]\", texto)\nprint(f\"Tokens: {tokens}\")\nprint(f\"Cantidad: {len(tokens)}\")\n\nTokens: ['El', 'gato', ',', 'que', 'estaba', 'en', 'el', 'jardín', ',', 'cazó', 'un', 'ratón', '.']\nCantidad: 13\n\n\n\nMejor, pero aún tiene limitaciones con:\n\nAbreviaturas: “EE.UU.” → ¿“EE”, “.”, “UU”, “.”?\nNúmeros decimales: “3.14” → ¿“3”, “.”, “14”?\nContracciones del español: “al” = “a” + “el”"
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#método-3-nltk",
+    "href": "slides/semana01/s3_preprocesamiento.html#método-3-nltk",
+    "title": "Preprocesamiento de Texto",
+    "section": "Método 3: NLTK",
+    "text": "Método 3: NLTK\n\nimport nltk\nnltk.download('punkt_tab', quiet=True)\n\nfrom nltk.tokenize import word_tokenize, sent_tokenize\n\ntexto = \"El Dr. García vive en La Paz. Trabaja en la U.C.B. desde 2019.\"\n\n# Tokenización por oraciones\noraciones = sent_tokenize(texto, language='spanish')\nprint(\"Oraciones:\")\nfor i, sent in enumerate(oraciones):\n    print(f\"  {i+1}. {sent}\")\n\n# Tokenización por palabras\ntokens = word_tokenize(texto, language='spanish')\nprint(f\"\\nTokens: {tokens}\")\n\nOraciones:\n  1. El Dr. García vive en La Paz.\n  2. Trabaja en la U.C.B.\n  3. desde 2019.\n\nTokens: ['El', 'Dr.', 'García', 'vive', 'en', 'La', 'Paz', '.', 'Trabaja', 'en', 'la', 'U.C.B', '.', 'desde', '2019', '.']"
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#método-4-spacy",
+    "href": "slides/semana01/s3_preprocesamiento.html#método-4-spacy",
+    "title": "Preprocesamiento de Texto",
+    "section": "Método 4: spaCy",
+    "text": "Método 4: spaCy\n\nimport spacy\n\nnlp = spacy.load(\"es_core_news_sm\")\n\ntexto = \"El Dr. García vive en La Paz. Trabaja en la U.C.B. desde 2019.\"\ndoc = nlp(texto)\n\n# Tokenización por oraciones\nprint(\"Oraciones:\")\nfor i, sent in enumerate(doc.sents):\n    print(f\"  {i+1}. {sent.text}\")\n\n# Tokenización por palabras con información adicional\nprint(\"\\nTokens con POS tags:\")\nfor token in doc:\n    print(f\"  '{token.text:12s}' → POS: {token.pos_:6s} | Lema: {token.lemma_}\")\n\nOraciones:\n  1. El Dr. García vive en La Paz.\n  2. Trabaja en la U.C.B. desde 2019.\n\nTokens con POS tags:\n  'El          ' → POS: DET    | Lema: el\n  'Dr.         ' → POS: PROPN  | Lema: Dr.\n  'García      ' → POS: PROPN  | Lema: García\n  'vive        ' → POS: VERB   | Lema: vivir\n  'en          ' → POS: ADP    | Lema: en\n  'La          ' → POS: DET    | Lema: el\n  'Paz         ' → POS: PROPN  | Lema: Paz\n  '.           ' → POS: PUNCT  | Lema: .\n  'Trabaja     ' → POS: VERB   | Lema: trabajar\n  'en          ' → POS: ADP    | Lema: en\n  'la          ' → POS: DET    | Lema: el\n  'U.C.B.      ' → POS: PROPN  | Lema: U.C.B.\n  'desde       ' → POS: ADP    | Lema: desde\n  '2019        ' → POS: NOUN   | Lema: 2019\n  '.           ' → POS: PUNCT  | Lema: ."
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#comparación-de-tokenizadores",
+    "href": "slides/semana01/s3_preprocesamiento.html#comparación-de-tokenizadores",
+    "title": "Preprocesamiento de Texto",
+    "section": "Comparación de Tokenizadores",
+    "text": "Comparación de Tokenizadores\n\nimport re\nimport nltk\nimport spacy\nfrom nltk.tokenize import word_tokenize\n\nnlp = spacy.load(\"es_core_news_sm\")\n\ntexto = \"No puedo creer que cueste $99.99 en EE.UU.\"\n\n# Comparar los 4 métodos\nmetodos = {\n    \"split()\": texto.split(),\n    \"regex\": re.findall(r\"\\w+|[^\\w\\s]\", texto),\n    \"NLTK\": word_tokenize(texto, language='spanish'),\n    \"spaCy\": [t.text for t in nlp(texto)]\n}\n\nfor nombre, tokens in metodos.items():\n    print(f\"{nombre:8s} ({len(tokens):2d} tokens): {tokens}\")\n\nsplit()  ( 8 tokens): ['No', 'puedo', 'creer', 'que', 'cueste', '$99.99', 'en', 'EE.UU.']\nregex    (14 tokens): ['No', 'puedo', 'creer', 'que', 'cueste', '$', '99', '.', '99', 'en', 'EE', '.', 'UU', '.']\nNLTK     (10 tokens): ['No', 'puedo', 'creer', 'que', 'cueste', '$', '99.99', 'en', 'EE.UU', '.']\nspaCy    ( 9 tokens): ['No', 'puedo', 'creer', 'que', 'cueste', '$', '99.99', 'en', 'EE.UU.']\n\n\n\n\n\n\n\n\nRecomendación\n\n\nPara proyectos reales, usa spaCy o NLTK. Reserva split() y regex para prototipos rápidos."
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#técnicas-de-normalización",
+    "href": "slides/semana01/s3_preprocesamiento.html#técnicas-de-normalización",
+    "title": "Preprocesamiento de Texto",
+    "section": "Técnicas de Normalización",
+    "text": "Técnicas de Normalización\n\n\nTécnicas Básicas\n\nLowercase - Convertir a minúsculas\nEliminar puntuación\nEliminar números (o normalizarlos)\nEliminar espacios extra\n\n\nTécnicas Avanzadas\n\nEliminar stopwords\nEliminar acentos (depende del caso)\nExpandir contracciones\nNormalizar Unicode"
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#ejemplo-normalización-paso-a-paso",
+    "href": "slides/semana01/s3_preprocesamiento.html#ejemplo-normalización-paso-a-paso",
+    "title": "Preprocesamiento de Texto",
+    "section": "Ejemplo: Normalización Paso a Paso",
+    "text": "Ejemplo: Normalización Paso a Paso\n\nimport re\nimport unicodedata\n\ntexto = \"  ¡¡HOLA Mundo!!  ¿Cómo ESTÁS?   😊  \"\n\n# Paso 1: Lowercase\npaso1 = texto.lower()\nprint(f\"1. Lowercase:    '{paso1}'\")\n\n# Paso 2: Normalizar espacios\npaso2 = re.sub(r\"\\s+\", \" \", paso1).strip()\nprint(f\"2. Espacios:     '{paso2}'\")\n\n# Paso 3: Eliminar puntuación repetida\npaso3 = re.sub(r\"([¿?¡!.])\\1+\", r\"\\1\", paso2)\nprint(f\"3. Puntuación:   '{paso3}'\")\n\n# Paso 4: Eliminar emojis\npaso4 = re.sub(r\"[^\\w\\s¿?¡!.,áéíóúñü]\", \"\", paso3)\nprint(f\"4. Sin emojis:   '{paso4}'\")\n\n1. Lowercase:    '  ¡¡hola mundo!!  ¿cómo estás?   😊  '\n2. Espacios:     '¡¡hola mundo!! ¿cómo estás? 😊'\n3. Puntuación:   '¡hola mundo! ¿cómo estás? 😊'\n4. Sin emojis:   '¡hola mundo! ¿cómo estás? '"
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#stopwords-palabras-vacías",
+    "href": "slides/semana01/s3_preprocesamiento.html#stopwords-palabras-vacías",
+    "title": "Preprocesamiento de Texto",
+    "section": "Stopwords: Palabras Vacías",
+    "text": "Stopwords: Palabras Vacías\nStopwords = palabras muy frecuentes que aportan poco significado.\n\nimport nltk\nnltk.download('stopwords', quiet=True)\nfrom nltk.corpus import stopwords\n\n# Stopwords en español\nstops_es = set(stopwords.words('spanish'))\nprint(f\"Total stopwords en español: {len(stops_es)}\")\nprint(f\"Ejemplos: {sorted(list(stops_es))[:20]}\")\n\nTotal stopwords en español: 313\nEjemplos: ['a', 'al', 'algo', 'algunas', 'algunos', 'ante', 'antes', 'como', 'con', 'contra', 'cual', 'cuando', 'de', 'del', 'desde', 'donde', 'durante', 'e', 'el', 'ella']"
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#eliminación-de-stopwords",
+    "href": "slides/semana01/s3_preprocesamiento.html#eliminación-de-stopwords",
+    "title": "Preprocesamiento de Texto",
+    "section": "Eliminación de Stopwords",
+    "text": "Eliminación de Stopwords\n\nfrom nltk.corpus import stopwords\nfrom nltk.tokenize import word_tokenize\n\nstops = set(stopwords.words('spanish'))\n\ntexto = \"El procesamiento de lenguaje natural es una rama de la inteligencia artificial\"\ntokens = word_tokenize(texto.lower(), language='spanish')\n\n# Filtrar stopwords\ntokens_limpios = [t for t in tokens if t not in stops and t.isalpha()]\n\nprint(f\"Original ({len(tokens)} tokens):\")\nprint(f\"  {tokens}\")\nprint(f\"\\nSin stopwords ({len(tokens_limpios)} tokens):\")\nprint(f\"  {tokens_limpios}\")\n\nOriginal (12 tokens):\n  ['el', 'procesamiento', 'de', 'lenguaje', 'natural', 'es', 'una', 'rama', 'de', 'la', 'inteligencia', 'artificial']\n\nSin stopwords (6 tokens):\n  ['procesamiento', 'lenguaje', 'natural', 'rama', 'inteligencia', 'artificial']\n\n\n\n\n\n\n\n\n⚠️ Cuidado con las stopwords\n\n\nNo siempre hay que eliminarlas. Para análisis de sentimiento, “no” es crucial. Para modelos de lenguaje, las necesitamos todas."
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#qué-es-stemming",
+    "href": "slides/semana01/s3_preprocesamiento.html#qué-es-stemming",
+    "title": "Preprocesamiento de Texto",
+    "section": "¿Qué es Stemming?",
+    "text": "¿Qué es Stemming?\n\nReducir una palabra a su raíz (stem) eliminando sufijos morfológicos mediante reglas heurísticas.\n\n\n\nEjemplo:\n\n\n\nPalabra\nStem\n\n\n\n\njugando\njug\n\n\njugador\njug\n\n\njuegos\njueg\n\n\njugar\njug\n\n\njugable\njug\n\n\n\n\nCaracterísticas:\n\n✅ Rápido y simple\n✅ No necesita diccionario\n❌ La raíz puede no ser una palabra real\n❌ Errores frecuentes\n❌ Basado en reglas fijas"
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#snowball-stemmer-para-español",
+    "href": "slides/semana01/s3_preprocesamiento.html#snowball-stemmer-para-español",
+    "title": "Preprocesamiento de Texto",
+    "section": "Snowball Stemmer para Español",
+    "text": "Snowball Stemmer para Español\n\nfrom nltk.stem import SnowballStemmer\n\nstemmer = SnowballStemmer(\"spanish\")\n\npalabras = [\n    \"corriendo\", \"correr\", \"corrió\", \"corredor\", \"corrida\",\n    \"computadora\", \"computadoras\", \"computación\", \"computar\",\n    \"universidad\", \"universitario\", \"universitaria\", \"universidades\"\n]\n\nprint(f\"{'Palabra':&lt;18} {'Stem':&lt;12}\")\nprint(\"-\" * 30)\nfor palabra in palabras:\n    stem = stemmer.stem(palabra)\n    print(f\"{palabra:&lt;18} {stem:&lt;12}\")\n\nPalabra            Stem        \n------------------------------\ncorriendo          corr        \ncorrer             corr        \ncorrió             corr        \ncorredor           corredor    \ncorrida            corr        \ncomputadora        comput      \ncomputadoras       comput      \ncomputación        comput      \ncomputar           comput      \nuniversidad        univers     \nuniversitario      universitari\nuniversitaria      universitari\nuniversidades      univers"
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#errores-comunes-del-stemming",
+    "href": "slides/semana01/s3_preprocesamiento.html#errores-comunes-del-stemming",
+    "title": "Preprocesamiento de Texto",
+    "section": "Errores Comunes del Stemming",
+    "text": "Errores Comunes del Stemming\n\nfrom nltk.stem import SnowballStemmer\n\nstemmer = SnowballStemmer(\"spanish\")\n\n# Over-stemming: palabras diferentes → mismo stem\nprint(\"Over-stemming (falsos positivos):\")\npares_over = [(\"universo\", \"universidad\"), (\"general\", \"generoso\")]\nfor p1, p2 in pares_over:\n    s1, s2 = stemmer.stem(p1), stemmer.stem(p2)\n    print(f\"  '{p1}' → '{s1}' | '{p2}' → '{s2}' | ¿Iguales? {s1 == s2}\")\n\n# Under-stemming: palabras relacionadas → stems diferentes\nprint(\"\\nUnder-stemming (falsos negativos):\")\npares_under = [(\"absorber\", \"absorción\"), (\"producir\", \"producto\")]\nfor p1, p2 in pares_under:\n    s1, s2 = stemmer.stem(p1), stemmer.stem(p2)\n    print(f\"  '{p1}' → '{s1}' | '{p2}' → '{s2}' | ¿Iguales? {s1 == s2}\")\n\nOver-stemming (falsos positivos):\n  'universo' → 'univers' | 'universidad' → 'univers' | ¿Iguales? True\n  'general' → 'general' | 'generoso' → 'gener' | ¿Iguales? False\n\nUnder-stemming (falsos negativos):\n  'absorber' → 'absorb' | 'absorción' → 'absorcion' | ¿Iguales? False\n  'producir' → 'produc' | 'producto' → 'product' | ¿Iguales? False"
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#qué-es-la-lematización",
+    "href": "slides/semana01/s3_preprocesamiento.html#qué-es-la-lematización",
+    "title": "Preprocesamiento de Texto",
+    "section": "¿Qué es la Lematización?",
+    "text": "¿Qué es la Lematización?\n\nReducir una palabra a su lema: la forma canónica que aparecería en un diccionario, considerando el contexto gramatical.\n\n\n\nEjemplo:\n\n\n\nPalabra\nLema\n\n\n\n\njugando\njugar\n\n\njugador\njugador\n\n\njuegos\njuego\n\n\nmejores\nmejor\n\n\nfue\nir / ser\n\n\n\n\nCaracterísticas:\n\n✅ El resultado es una palabra real\n✅ Considera el contexto (POS)\n✅ Más preciso que stemming\n❌ Más lento\n❌ Necesita diccionario / modelo"
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#lematización-con-spacy",
+    "href": "slides/semana01/s3_preprocesamiento.html#lematización-con-spacy",
+    "title": "Preprocesamiento de Texto",
+    "section": "Lematización con spaCy",
+    "text": "Lematización con spaCy\n\nimport spacy\n\nnlp = spacy.load(\"es_core_news_sm\")\n\ntexto = \"Los estudiantes corrieron rápidamente hacia las mejores universidades del país\"\ndoc = nlp(texto)\n\nprint(f\"{'Token':&lt;18} {'Lema':&lt;16} {'POS':&lt;8} {'¿Cambió?'}\")\nprint(\"-\" * 52)\nfor token in doc:\n    cambio = \"✅\" if token.text.lower() != token.lemma_ else \"\"\n    print(f\"{token.text:&lt;18} {token.lemma_:&lt;16} {token.pos_:&lt;8} {cambio}\")\n\nToken              Lema             POS      ¿Cambió?\n----------------------------------------------------\nLos                el               DET      ✅\nestudiantes        estudiante       NOUN     ✅\ncorrieron          correr           VERB     ✅\nrápidamente        rápidamente      ADV      \nhacia              hacia            ADP      \nlas                el               DET      ✅\nmejores            mejor            ADJ      ✅\nuniversidades      universidad      NOUN     ✅\ndel                del              ADP      \npaís               país             NOUN"
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#stemming-vs.-lematización",
+    "href": "slides/semana01/s3_preprocesamiento.html#stemming-vs.-lematización",
+    "title": "Preprocesamiento de Texto",
+    "section": "Stemming vs. Lematización",
+    "text": "Stemming vs. Lematización\n\nfrom nltk.stem import SnowballStemmer\nimport spacy\n\nstemmer = SnowballStemmer(\"spanish\")\nnlp = spacy.load(\"es_core_news_sm\")\n\npalabras = [\"corriendo\", \"mejores\", \"ciudades\", \"producción\", \"dificultades\", \"haciendo\"]\n\nprint(f\"{'Palabra':&lt;16} {'Stem':&lt;14} {'Lema (spaCy)':&lt;16}\")\nprint(\"-\" * 46)\nfor palabra in palabras:\n    stem = stemmer.stem(palabra)\n    doc = nlp(palabra)\n    lema = doc[0].lemma_\n    print(f\"{palabra:&lt;16} {stem:&lt;14} {lema:&lt;16}\")\n\nPalabra          Stem           Lema (spaCy)    \n----------------------------------------------\ncorriendo        corr           correr          \nmejores          mejor          mejor           \nciudades         ciudad         ciudad          \nproducción       produccion     producción      \ndificultades     dificultad     dificultad      \nhaciendo         hac            hacer           \n\n\n\n\n\n\n\n\n\n¿Cuándo usar cuál?\n\n\n\nStemming: Búsqueda de información, indexación, cuando la velocidad importa\nLematización: Análisis de sentimiento, chatbots, cuando la precisión importa"
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#función-de-preprocesamiento",
+    "href": "slides/semana01/s3_preprocesamiento.html#función-de-preprocesamiento",
+    "title": "Preprocesamiento de Texto",
+    "section": "Función de Preprocesamiento",
+    "text": "Función de Preprocesamiento\n\nimport re\nimport spacy\nfrom nltk.corpus import stopwords\n\nnlp = spacy.load(\"es_core_news_sm\")\nstops = set(stopwords.words('spanish'))\n\ndef preprocesar(texto, usar_lemas=True, quitar_stops=True):\n    \"\"\"Pipeline completo de preprocesamiento para NLP en español.\"\"\"\n    # 1. Lowercase\n    texto = texto.lower()\n    # 2. Eliminar URLs y emails\n    texto = re.sub(r\"https?://\\S+|www\\.\\S+\", \"\", texto)\n    texto = re.sub(r\"\\S+@\\S+\", \"\", texto)\n    # 3. Eliminar caracteres especiales (mantener letras y espacios)\n    texto = re.sub(r\"[^\\w\\sáéíóúñü]\", \" \", texto)\n    # 4. Normalizar espacios\n    texto = re.sub(r\"\\s+\", \" \", texto).strip()\n    # 5. Tokenizar y lematizar con spaCy\n    doc = nlp(texto)\n    tokens = []\n    for token in doc:\n        palabra = token.lemma_ if usar_lemas else token.text\n        if quitar_stops and palabra in stops:\n            continue\n        if not palabra.isalpha():\n            continue\n        tokens.append(palabra)\n    return tokens"
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#demo-del-pipeline",
+    "href": "slides/semana01/s3_preprocesamiento.html#demo-del-pipeline",
+    "title": "Preprocesamiento de Texto",
+    "section": "Demo del Pipeline",
+    "text": "Demo del Pipeline\n\ntexto_crudo = \"\"\"\n¡¡Los MEJORES estudiantes de la Universidad Católica están \ndesarrollando proyectos increíbles!! 🎓🚀\nVisita https://ucb.edu.bo para más información.\nContacto: info@ucb.edu.bo\n\"\"\"\n\nprint(f\"TEXTO ORIGINAL:\\n{texto_crudo}\")\n\n# Con lemas y sin stopwords\nresultado1 = preprocesar(texto_crudo, usar_lemas=True, quitar_stops=True)\nprint(f\"Con lemas, sin stops:\\n  {resultado1}\\n\")\n\n# Sin lemas, sin stopwords\nresultado2 = preprocesar(texto_crudo, usar_lemas=False, quitar_stops=True)\nprint(f\"Sin lemas, sin stops:\\n  {resultado2}\\n\")\n\n# Con lemas, con stopwords\nresultado3 = preprocesar(texto_crudo, usar_lemas=True, quitar_stops=False)\nprint(f\"Con lemas, con stops:\\n  {resultado3}\")\n\nTEXTO ORIGINAL:\n\n¡¡Los MEJORES estudiantes de la Universidad Católica están \ndesarrollando proyectos increíbles!! 🎓🚀\nVisita https://ucb.edu.bo para más información.\nContacto: info@ucb.edu.bo\n\nCon lemas, sin stops:\n  ['mejor', 'estudiante', 'universidad', 'católico', 'desarrollar', 'proyecto', 'increíble', 'visitar', 'información', 'contacto']\n\nSin lemas, sin stops:\n  ['mejores', 'estudiantes', 'universidad', 'católica', 'desarrollando', 'proyectos', 'increíbles', 'visita', 'información', 'contacto']\n\nCon lemas, con stops:\n  ['el', 'mejor', 'estudiante', 'de', 'el', 'universidad', 'católico', 'estar', 'desarrollar', 'proyecto', 'increíble', 'visitar', 'para', 'más', 'información', 'contacto']"
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#procesando-múltiples-documentos",
+    "href": "slides/semana01/s3_preprocesamiento.html#procesando-múltiples-documentos",
+    "title": "Preprocesamiento de Texto",
+    "section": "Procesando Múltiples Documentos",
+    "text": "Procesando Múltiples Documentos\n\ndocumentos = [\n    \"El procesamiento de lenguaje natural permite analizar textos automáticamente.\",\n    \"Las redes neuronales han revolucionado la inteligencia artificial moderna.\",\n    \"Bolivia tiene una gran diversidad lingüística con más de 30 idiomas nativos.\",\n]\n\nprint(\"DOCUMENTOS PREPROCESADOS:\\n\")\nfor i, doc in enumerate(documentos):\n    tokens = preprocesar(doc)\n    print(f\"Doc {i+1}: {tokens}\")\n\nDOCUMENTOS PREPROCESADOS:\n\nDoc 1: ['procesamiento', 'lenguaje', 'natural', 'permitir', 'analizar', 'texto', 'automáticamente']\nDoc 2: ['red', 'neuronal', 'haber', 'revolucionar', 'inteligencia', 'artificial', 'moderno']\nDoc 3: ['bolivia', 'tener', 'gran', 'diversidad', 'lingüístico', 'idioma', 'nativo']\n\n\n\n\n\n\n\n\nSiguiente paso\n\n\nCon el texto preprocesado, estamos listos para representarlo numéricamente (Semana 2: Bag of Words, TF-IDF…)."
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#desafío-preprocesador-de-tweets",
+    "href": "slides/semana01/s3_preprocesamiento.html#desafío-preprocesador-de-tweets",
+    "title": "Preprocesamiento de Texto",
+    "section": "Desafío: Preprocesador de Tweets",
+    "text": "Desafío: Preprocesador de Tweets\nCrea una función que preprocese tweets en español:\n\nEliminar menciones (@usuario)\nExtraer y eliminar hashtags\nEliminar URLs\nLematizar el texto restante\n\n\n\nCode\ndef preprocesar_tweet(tweet):\n    \"\"\"Preprocesa un tweet en español.\"\"\"\n    # Extraer hashtags antes de limpiar\n    hashtags = re.findall(r\"#\\w+\", tweet)\n    # Eliminar menciones, hashtags, URLs\n    limpio = re.sub(r\"@\\w+\", \"\", tweet)\n    limpio = re.sub(r\"#\\w+\", \"\", limpio)\n    limpio = re.sub(r\"https?://\\S+\", \"\", limpio)\n    # Preprocesar\n    tokens = preprocesar(limpio)\n    return {\"tokens\": tokens, \"hashtags\": hashtags}\n\n# Prueba\ntweet = \"Gran clase de @fsuarez sobre #NLP y #MachineLearning 🔥 https://t.co/abc123\"\nresultado = preprocesar_tweet(tweet)\nprint(f\"Tweet: {tweet}\")\nprint(f\"Tokens: {resultado['tokens']}\")\nprint(f\"Hashtags: {resultado['hashtags']}\")\n\n\nTweet: Gran clase de @fsuarez sobre #NLP y #MachineLearning 🔥 https://t.co/abc123\nTokens: ['gran', 'clase']\nHashtags: ['#NLP', '#MachineLearning']"
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#lo-que-aprendimos-hoy",
+    "href": "slides/semana01/s3_preprocesamiento.html#lo-que-aprendimos-hoy",
+    "title": "Preprocesamiento de Texto",
+    "section": "Lo que Aprendimos Hoy ✅",
+    "text": "Lo que Aprendimos Hoy ✅\n\n\nTokenización:\n\nsplit() — simple pero limitado\nRegex — más control\nNLTK — soporte multi-idioma\nspaCy — info lingüística completa\n\nNormalización:\n\nLowercase, puntuación\nStopwords\nLimpieza de URLs, emails, emojis\n\n\nStemming:\n\nReducción heurística a raíz\nSnowball Stemmer para español\nRápido pero impreciso\n\nLematización:\n\nReducción a forma de diccionario\nspaCy para español\nMás lento pero más preciso"
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#para-la-próxima-clase",
+    "href": "slides/semana01/s3_preprocesamiento.html#para-la-próxima-clase",
+    "title": "Preprocesamiento de Texto",
+    "section": "Para la Próxima Clase 📚",
+    "text": "Para la Próxima Clase 📚\n\n\n\n\n\n\nSemana 2, S1: Bag of Words y One-hot Encoding\n\n\nAprenderemos a representar texto como vectores numéricos para que los modelos de machine learning puedan trabajar con ellos.\n\n\n\nLectura:\n\nCapítulo 2: Speech and Language Processing (Jurafsky & Martin)\nDocumentación de spaCy"
+  },
+  {
+    "objectID": "slides/semana01/s2_regex.html#agenda-de-hoy",
+    "href": "slides/semana01/s2_regex.html#agenda-de-hoy",
+    "title": "Expresiones Regulares",
+    "section": "Agenda de Hoy",
+    "text": "Agenda de Hoy\n\n\nPrimera Parte\n\n🎯 ¿Qué son las expresiones regulares?\n📝 Sintaxis básica\n🔧 Metacaracteres y cuantificadores\n\n\nSegunda Parte\n\n🧩 Grupos y capturas\n🐍 Regex en Python\n💡 Aplicaciones en NLP"
+  },
+  {
+    "objectID": "slides/semana01/s2_regex.html#definición",
+    "href": "slides/semana01/s2_regex.html#definición",
+    "title": "Expresiones Regulares",
+    "section": "Definición",
+    "text": "Definición\n\n“Algunas personas, cuando se enfrentan a un problema, piensan: ‘Ya sé, usaré expresiones regulares.’ Ahora tienen dos problemas.”\n— Jamie Zawinski\n\n\n\n\n\n\n\n\nExpresión Regular (Regex)\n\n\nUna expresión regular es una secuencia de caracteres que define un patrón de búsqueda. Se utiliza para encontrar, extraer o reemplazar texto que coincida con dicho patrón."
+  },
+  {
+    "objectID": "slides/semana01/s2_regex.html#por-qué-aprender-regex",
+    "href": "slides/semana01/s2_regex.html#por-qué-aprender-regex",
+    "title": "Expresiones Regulares",
+    "section": "¿Por qué aprender Regex?",
+    "text": "¿Por qué aprender Regex?\n\n\nCasos de uso comunes:\n\n🔍 Buscar patrones en texto\n✅ Validar formatos (email, teléfono)\n🧹 Limpiar y normalizar datos\n📊 Extraer información estructurada\n🔄 Reemplazar texto masivamente\n\n\nEn NLP específicamente:\n\nTokenización personalizada\nExtracción de entidades simples\nPreprocesamiento de corpus\nNormalización de texto\nFiltrado de ruido"
+  },
+  {
+    "objectID": "slides/semana01/s2_regex.html#historia-breve",
+    "href": "slides/semana01/s2_regex.html#historia-breve",
+    "title": "Expresiones Regulares",
+    "section": "Historia Breve",
+    "text": "Historia Breve\n\n\nCode\ntimeline\n    title Historia de las Expresiones Regulares\n    1951 : Stephen Kleene\n         : Álgebra de conjuntos regulares\n    1968 : Ken Thompson\n         : Implementación en editor de texto\n    1970s : grep, sed, awk\n          : Herramientas Unix\n    1980s : Perl\n          : \"Practical Extraction and Report Language\"\n    1990s : PCRE\n          : Perl Compatible Regular Expressions\n    2000s : Integración universal\n          : Python, Java, JavaScript, etc.\n\n\n\n\n\ntimeline\n    title Historia de las Expresiones Regulares\n    1951 : Stephen Kleene\n         : Álgebra de conjuntos regulares\n    1968 : Ken Thompson\n         : Implementación en editor de texto\n    1970s : grep, sed, awk\n          : Herramientas Unix\n    1980s : Perl\n          : \"Practical Extraction and Report Language\"\n    1990s : PCRE\n          : Perl Compatible Regular Expressions\n    2000s : Integración universal\n          : Python, Java, JavaScript, etc."
+  },
+  {
+    "objectID": "slides/semana01/s2_regex.html#caracteres-literales",
+    "href": "slides/semana01/s2_regex.html#caracteres-literales",
+    "title": "Expresiones Regulares",
+    "section": "Caracteres Literales",
+    "text": "Caracteres Literales\nEl caso más simple: buscar texto exacto.\n\nimport re\n\ntexto = \"El gato y el perro juegan en el jardín\"\n\n# Buscar la palabra \"gato\"\nresultado = re.search(r\"gato\", texto)\nprint(f\"Texto: '{texto}'\")\nprint(f\"Patrón: 'gato'\")\nprint(f\"Encontrado: '{resultado.group()}' en posición {resultado.start()}\")\n\nTexto: 'El gato y el perro juegan en el jardín'\nPatrón: 'gato'\nEncontrado: 'gato' en posición 3\n\n\n\n\n\n\n\n\n\nEl prefijo r\n\n\nEn Python, usamos r\"patrón\" (raw string) para evitar problemas con caracteres de escape como \\n o \\t."
+  },
+  {
+    "objectID": "slides/semana01/s2_regex.html#metacaracteres-especiales",
+    "href": "slides/semana01/s2_regex.html#metacaracteres-especiales",
+    "title": "Expresiones Regulares",
+    "section": "Metacaracteres Especiales",
+    "text": "Metacaracteres Especiales\n\n\n\nMetacaracter\nSignificado\nEjemplo\nCoincide con\n\n\n\n\n.\nCualquier carácter (excepto \\n)\nc.t\ncat, cut, c9t\n\n\n^\nInicio de línea/cadena\n^Hola\n“Hola mundo”\n\n\n$\nFin de línea/cadena\nmundo$\n“Hola mundo”\n\n\n\\d\nDígito [0-9]\n\\d\\d\n42, 99\n\n\n\\w\nPalabra [a-zA-Z0-9_]\n\\w+\npalabra_123\n\n\n\\s\nEspacio en blanco\n\\s+\n” “,”, “”\n\n\n\\b\nLímite de palabra\n\\bcat\\b\n“cat” pero no “category”"
+  },
+  {
+    "objectID": "slides/semana01/s2_regex.html#ejemplo-metacaracteres",
+    "href": "slides/semana01/s2_regex.html#ejemplo-metacaracteres",
+    "title": "Expresiones Regulares",
+    "section": "Ejemplo: Metacaracteres",
+    "text": "Ejemplo: Metacaracteres\n\nimport re\n\ntexto = \"Mi teléfono es 591-78945612 y mi código es A123\"\n\n# \\d+ encuentra secuencias de dígitos\ndigitos = re.findall(r\"\\d+\", texto)\nprint(f\"Dígitos encontrados: {digitos}\")\n\n# \\w+ encuentra secuencias de caracteres de palabra\npalabras = re.findall(r\"\\w+\", texto)\nprint(f\"Palabras encontradas: {palabras}\")\n\n# Buscar patrón específico: código alfanumérico\ncodigo = re.search(r\"[A-Z]\\d{3}\", texto)\nprint(f\"Código encontrado: {codigo.group()}\")\n\nDígitos encontrados: ['591', '78945612', '123']\nPalabras encontradas: ['Mi', 'teléfono', 'es', '591', '78945612', 'y', 'mi', 'código', 'es', 'A123']\nCódigo encontrado: A123"
+  },
+  {
+    "objectID": "slides/semana01/s2_regex.html#clases-de-caracteres",
+    "href": "slides/semana01/s2_regex.html#clases-de-caracteres",
+    "title": "Expresiones Regulares",
+    "section": "Clases de Caracteres [ ]",
+    "text": "Clases de Caracteres [ ]\nDefinen un conjunto de caracteres válidos para una posición.\n\nimport re\n\ntexto = \"bag, big, bog, bug, beg, b9g\"\n\n# [aeiou] = cualquier vocal\npatron_vocal = re.findall(r\"b[aeiou]g\", texto)\nprint(f\"b[aeiou]g → {patron_vocal}\")\n\n# [a-z] = cualquier letra minúscula\npatron_letra = re.findall(r\"b[a-z]g\", texto)\nprint(f\"b[a-z]g → {patron_letra}\")\n\n# [^aeiou] = cualquier cosa EXCEPTO vocales (negación)\npatron_no_vocal = re.findall(r\"b[^aeiou]g\", texto)\nprint(f\"b[^aeiou]g → {patron_no_vocal}\")\n\nb[aeiou]g → ['bag', 'big', 'bog', 'bug', 'beg']\nb[a-z]g → ['bag', 'big', 'bog', 'bug', 'beg']\nb[^aeiou]g → ['b9g']"
+  },
+  {
+    "objectID": "slides/semana01/s2_regex.html#resumen-clases-de-caracteres",
+    "href": "slides/semana01/s2_regex.html#resumen-clases-de-caracteres",
+    "title": "Expresiones Regulares",
+    "section": "Resumen: Clases de Caracteres",
+    "text": "Resumen: Clases de Caracteres\n\n\n\nClase\nEquivalente\nDescripción\n\n\n\n\n[abc]\n-\na, b, o c\n\n\n[^abc]\n-\nCualquiera excepto a, b, c\n\n\n[a-z]\n-\nCualquier minúscula\n\n\n[A-Z]\n-\nCualquier mayúscula\n\n\n[0-9]\n\\d\nCualquier dígito\n\n\n[a-zA-Z0-9_]\n\\w\nCarácter de “palabra”\n\n\n[ \\t\\n\\r]\n\\s\nEspacio en blanco"
+  },
+  {
+    "objectID": "slides/semana01/s2_regex.html#cuántas-veces",
+    "href": "slides/semana01/s2_regex.html#cuántas-veces",
+    "title": "Expresiones Regulares",
+    "section": "¿Cuántas veces?",
+    "text": "¿Cuántas veces?\nLos cuantificadores especifican cuántas veces debe aparecer el elemento anterior.\n\n\n\nCuantificador\nSignificado\nEjemplo\n\n\n\n\n*\n0 o más veces\nab*c → ac, abc, abbc\n\n\n+\n1 o más veces\nab+c → abc, abbc (no ac)\n\n\n?\n0 o 1 vez\ncolou?r → color, colour\n\n\n{n}\nExactamente n veces\n\\d{3} → 123, 456\n\n\n{n,}\nn o más veces\n\\d{2,} → 12, 123, 1234\n\n\n{n,m}\nEntre n y m veces\n\\d{2,4} → 12, 123, 1234"
+  },
+  {
+    "objectID": "slides/semana01/s2_regex.html#ejemplo-cuantificadores",
+    "href": "slides/semana01/s2_regex.html#ejemplo-cuantificadores",
+    "title": "Expresiones Regulares",
+    "section": "Ejemplo: Cuantificadores",
+    "text": "Ejemplo: Cuantificadores\n\nimport re\n\ntexto = \"Los números son: 1, 12, 123, 1234, 12345\"\n\n# Exactamente 3 dígitos\ntres_digitos = re.findall(r\"\\b\\d{3}\\b\", texto)\nprint(f\"Exactamente 3 dígitos: {tres_digitos}\")\n\n# 2 a 4 dígitos\nrango = re.findall(r\"\\b\\d{2,4}\\b\", texto)\nprint(f\"Entre 2 y 4 dígitos: {rango}\")\n\n# 1 o más dígitos (greedy por defecto)\ntodos = re.findall(r\"\\d+\", texto)\nprint(f\"Uno o más dígitos: {todos}\")\n\nExactamente 3 dígitos: ['123']\nEntre 2 y 4 dígitos: ['12', '123', '1234']\nUno o más dígitos: ['1', '12', '123', '1234', '12345']"
+  },
+  {
+    "objectID": "slides/semana01/s2_regex.html#greedy-vs.-lazy",
+    "href": "slides/semana01/s2_regex.html#greedy-vs.-lazy",
+    "title": "Expresiones Regulares",
+    "section": "Greedy vs. Lazy",
+    "text": "Greedy vs. Lazy\n\n\nGreedy (Codicioso) 🐷\nPor defecto, los cuantificadores son greedy: intentan capturar el máximo posible.\n\nimport re\n\nhtml = \"&lt;p&gt;Hola&lt;/p&gt;&lt;p&gt;Mundo&lt;/p&gt;\"\n\n# Greedy: captura todo\ngreedy = re.findall(r\"&lt;p&gt;.*&lt;/p&gt;\", html)\nprint(f\"Greedy: {greedy}\")\n\nGreedy: ['&lt;p&gt;Hola&lt;/p&gt;&lt;p&gt;Mundo&lt;/p&gt;']\n\n\n\nLazy (Perezoso) 🦥\nAgregando ? después del cuantificador, se vuelve lazy: captura el mínimo.\n\nimport re\n\nhtml = \"&lt;p&gt;Hola&lt;/p&gt;&lt;p&gt;Mundo&lt;/p&gt;\"\n\n# Lazy: captura lo mínimo\nlazy = re.findall(r\"&lt;p&gt;.*?&lt;/p&gt;\", html)\nprint(f\"Lazy: {lazy}\")\n\nLazy: ['&lt;p&gt;Hola&lt;/p&gt;', '&lt;p&gt;Mundo&lt;/p&gt;']"
+  },
+  {
+    "objectID": "slides/semana01/s2_regex.html#grupos-con-paréntesis",
+    "href": "slides/semana01/s2_regex.html#grupos-con-paréntesis",
+    "title": "Expresiones Regulares",
+    "section": "Grupos con Paréntesis ( )",
+    "text": "Grupos con Paréntesis ( )\nLos paréntesis crean grupos de captura que permiten:\n\nAgrupar elementos para aplicar cuantificadores\nExtraer partes específicas del match\nReutilizar el contenido capturado\n\n\nimport re\n\ntexto = \"Mi email es juan.perez@ucb.edu.bo y también tengo maria@gmail.com\"\n\n# Capturar partes del email\npatron = r\"(\\w+[\\w.]*\\w+)@(\\w+\\.\\w+(?:\\.\\w+)?)\"\nemails = re.findall(patron, texto)\n\nfor usuario, dominio in emails:\n    print(f\"Usuario: {usuario}, Dominio: {dominio}\")\n\nUsuario: juan.perez, Dominio: ucb.edu.bo\nUsuario: maria, Dominio: gmail.com"
+  },
+  {
+    "objectID": "slides/semana01/s2_regex.html#grupos-con-nombre",
+    "href": "slides/semana01/s2_regex.html#grupos-con-nombre",
+    "title": "Expresiones Regulares",
+    "section": "Grupos con Nombre",
+    "text": "Grupos con Nombre\nPodemos nombrar los grupos para mayor claridad con (?P&lt;nombre&gt;...):\n\nimport re\n\nfecha = \"Hoy es 04/02/2026 y mañana será 05/02/2026\"\n\n# Grupos nombrados\npatron = r\"(?P&lt;dia&gt;\\d{2})/(?P&lt;mes&gt;\\d{2})/(?P&lt;año&gt;\\d{4})\"\nmatches = re.finditer(patron, fecha)\n\nfor match in matches:\n    print(f\"Fecha: {match.group()}\")\n    print(f\"  Día: {match.group('dia')}\")\n    print(f\"  Mes: {match.group('mes')}\")\n    print(f\"  Año: {match.group('año')}\")\n    print()\n\nFecha: 04/02/2026\n  Día: 04\n  Mes: 02\n  Año: 2026\n\nFecha: 05/02/2026\n  Día: 05\n  Mes: 02\n  Año: 2026"
+  },
+  {
+    "objectID": "slides/semana01/s2_regex.html#grupos-no-capturadores",
+    "href": "slides/semana01/s2_regex.html#grupos-no-capturadores",
+    "title": "Expresiones Regulares",
+    "section": "Grupos No Capturadores",
+    "text": "Grupos No Capturadores\nA veces necesitamos agrupar sin capturar. Usamos (?:...):\n\nimport re\n\ntexto = \"http://ucb.edu.bo y https://google.com\"\n\n# (?:...) agrupa pero NO captura\npatron = r\"(?:https?://)(\\w+\\.\\w+(?:\\.\\w+)?)\"\ndominios = re.findall(patron, texto)\n\nprint(f\"Solo dominios (sin protocolo): {dominios}\")\n\nSolo dominios (sin protocolo): ['ucb.edu.bo', 'google.com']\n\n\n\n\n\n\n\n\n¿Cuándo usar (?:...)?\n\n\nCuando necesitas agrupar para aplicar un cuantificador o alternancia, pero no te interesa capturar ese grupo."
+  },
+  {
+    "objectID": "slides/semana01/s2_regex.html#el-módulo-re",
+    "href": "slides/semana01/s2_regex.html#el-módulo-re",
+    "title": "Expresiones Regulares",
+    "section": "El módulo re",
+    "text": "El módulo re\nPython incluye el módulo re para trabajar con expresiones regulares:\n\n\n\nFunción\nDescripción\n\n\n\n\nre.search(p, s)\nBusca la primera coincidencia\n\n\nre.match(p, s)\nBusca solo al inicio de la cadena\n\n\nre.findall(p, s)\nDevuelve lista de todas las coincidencias\n\n\nre.finditer(p, s)\nDevuelve iterador de objetos Match\n\n\nre.sub(p, r, s)\nReemplaza coincidencias\n\n\nre.split(p, s)\nDivide la cadena por el patrón\n\n\nre.compile(p)\nCompila el patrón para reutilizar"
+  },
+  {
+    "objectID": "slides/semana01/s2_regex.html#re.search-vs-re.match",
+    "href": "slides/semana01/s2_regex.html#re.search-vs-re.match",
+    "title": "Expresiones Regulares",
+    "section": "re.search() vs re.match()",
+    "text": "re.search() vs re.match()\n\nimport re\n\ntexto = \"Python es genial\"\n\n# search() busca en cualquier parte\nresultado_search = re.search(r\"es\", texto)\nprint(f\"search('es'): {resultado_search.group() if resultado_search else 'No encontrado'}\")\n\n# match() solo busca al INICIO\nresultado_match = re.match(r\"es\", texto)\nprint(f\"match('es'): {resultado_match.group() if resultado_match else 'No encontrado'}\")\n\n# match() funciona si el patrón está al inicio\nresultado_match2 = re.match(r\"Python\", texto)\nprint(f\"match('Python'): {resultado_match2.group() if resultado_match2 else 'No encontrado'}\")\n\nsearch('es'): es\nmatch('es'): No encontrado\nmatch('Python'): Python"
+  },
+  {
+    "objectID": "slides/semana01/s2_regex.html#re.findall-y-re.finditer",
+    "href": "slides/semana01/s2_regex.html#re.findall-y-re.finditer",
+    "title": "Expresiones Regulares",
+    "section": "re.findall() y re.finditer()",
+    "text": "re.findall() y re.finditer()\n\nimport re\n\ntexto = \"Precios: $100, $250, $75 y $1000\"\n\n# findall() devuelve lista de strings\nprecios_str = re.findall(r\"\\$(\\d+)\", texto)\nprint(f\"findall(): {precios_str}\")\n\n# finditer() devuelve objetos Match con más información\nprint(\"\\nfinditer():\")\nfor match in re.finditer(r\"\\$(\\d+)\", texto):\n    print(f\"  '{match.group()}' en posición {match.start()}-{match.end()}, valor: {match.group(1)}\")\n\nfindall(): ['100', '250', '75', '1000']\n\nfinditer():\n  '$100' en posición 9-13, valor: 100\n  '$250' en posición 15-19, valor: 250\n  '$75' en posición 21-24, valor: 75\n  '$1000' en posición 27-32, valor: 1000"
+  },
+  {
+    "objectID": "slides/semana01/s2_regex.html#re.sub---sustitución",
+    "href": "slides/semana01/s2_regex.html#re.sub---sustitución",
+    "title": "Expresiones Regulares",
+    "section": "re.sub() - Sustitución",
+    "text": "re.sub() - Sustitución\n\nimport re\n\ntexto = \"Mi teléfono es 591-78945612 y mi CI es 12345678\"\n\n# Censurar números de teléfono\ncensurado = re.sub(r\"\\d{3}-\\d{8}\", \"[TELÉFONO OCULTO]\", texto)\nprint(f\"Censurado: {censurado}\")\n\n# Usar grupos en el reemplazo con \\1, \\2, etc.\nfecha = \"2026-02-04\"\nfecha_formato = re.sub(r\"(\\d{4})-(\\d{2})-(\\d{2})\", r\"\\3/\\2/\\1\", fecha)\nprint(f\"Fecha reformateada: {fecha_formato}\")\n\nCensurado: Mi teléfono es [TELÉFONO OCULTO] y mi CI es 12345678\nFecha reformateada: 04/02/2026"
+  },
+  {
+    "objectID": "slides/semana01/s2_regex.html#re.compile---compilación",
+    "href": "slides/semana01/s2_regex.html#re.compile---compilación",
+    "title": "Expresiones Regulares",
+    "section": "re.compile() - Compilación",
+    "text": "re.compile() - Compilación\nCuando usamos el mismo patrón múltiples veces, es más eficiente compilarlo:\n\nimport re\n\n# Compilar el patrón UNA vez\npatron_email = re.compile(r\"\\b[\\w.]+@[\\w.]+\\.\\w{2,}\\b\", re.IGNORECASE)\n\ntextos = [\n    \"Contacto: admin@UCB.edu.bo\",\n    \"No hay email aquí\",\n    \"Escribe a soporte@gmail.com o ventas@empresa.com\"\n]\n\nfor texto in textos:\n    emails = patron_email.findall(texto)\n    print(f\"En '{texto[:30]}...': {emails if emails else 'ninguno'}\")\n\nEn 'Contacto: admin@UCB.edu.bo...': ['admin@UCB.edu.bo']\nEn 'No hay email aquí...': ninguno\nEn 'Escribe a soporte@gmail.com o ...': ['soporte@gmail.com', 'ventas@empresa.com']"
+  },
+  {
+    "objectID": "slides/semana01/s2_regex.html#flags-banderas",
+    "href": "slides/semana01/s2_regex.html#flags-banderas",
+    "title": "Expresiones Regulares",
+    "section": "Flags (Banderas)",
+    "text": "Flags (Banderas)\n\n\n\nFlag\nAbreviatura\nDescripción\n\n\n\n\nre.IGNORECASE\nre.I\nIgnora mayúsculas/minúsculas\n\n\nre.MULTILINE\nre.M\n^ y $ aplican a cada línea\n\n\nre.DOTALL\nre.S\n. también coincide con \\n\n\n\nre.VERBOSE\nre.X\nPermite comentarios en el patrón\n\n\n\n\nimport re\n\ntexto = \"Python\\nPYTHON\\npython\"\n\n# Sin flag: solo encuentra exacto\nprint(f\"Sin flag: {re.findall(r'python', texto)}\")\n\n# Con IGNORECASE\nprint(f\"IGNORECASE: {re.findall(r'python', texto, re.IGNORECASE)}\")\n\nSin flag: ['python']\nIGNORECASE: ['Python', 'PYTHON', 'python']"
+  },
+  {
+    "objectID": "slides/semana01/s2_regex.html#tokenización-con-regex",
+    "href": "slides/semana01/s2_regex.html#tokenización-con-regex",
+    "title": "Expresiones Regulares",
+    "section": "1. Tokenización con Regex",
+    "text": "1. Tokenización con Regex\n\nimport re\n\ntexto = \"¡Hola! ¿Cómo estás? Bien, gracias :) #NLP @usuario\"\n\n# Tokenización simple por espacios (NO ideal)\ntokens_simple = texto.split()\nprint(f\"Split simple: {tokens_simple}\")\n\n# Tokenización con regex (mejor)\npatron_token = r\"\\w+|[^\\w\\s]\"\ntokens_regex = re.findall(patron_token, texto)\nprint(f\"Regex tokens: {tokens_regex}\")\n\n# Incluyendo hashtags y menciones como tokens únicos\npatron_social = r\"[@#]\\w+|\\w+|[^\\w\\s]\"\ntokens_social = re.findall(patron_social, texto)\nprint(f\"Social tokens: {tokens_social}\")\n\nSplit simple: ['¡Hola!', '¿Cómo', 'estás?', 'Bien,', 'gracias', ':)', '#NLP', '@usuario']\nRegex tokens: ['¡', 'Hola', '!', '¿', 'Cómo', 'estás', '?', 'Bien', ',', 'gracias', ':', ')', '#', 'NLP', '@', 'usuario']\nSocial tokens: ['¡', 'Hola', '!', '¿', 'Cómo', 'estás', '?', 'Bien', ',', 'gracias', ':', ')', '#NLP', '@usuario']"
+  },
+  {
+    "objectID": "slides/semana01/s2_regex.html#limpieza-de-texto",
+    "href": "slides/semana01/s2_regex.html#limpieza-de-texto",
+    "title": "Expresiones Regulares",
+    "section": "2. Limpieza de Texto",
+    "text": "2. Limpieza de Texto\n\nimport re\n\ntexto_sucio = \"\"\"\n    ¡¡¡Hola!!!   ¿¿Qué tal??  \n    Visita https://ejemplo.com para más info...\n    Contacto:   admin@mail.com   📧\n\"\"\"\n\ndef limpiar_texto(texto):\n    # Eliminar URLs\n    texto = re.sub(r\"https?://\\S+\", \"\", texto)\n    # Eliminar emails\n    texto = re.sub(r\"\\S+@\\S+\", \"\", texto)\n    # Eliminar emojis (simplificado)\n    texto = re.sub(r\"[^\\w\\s¿?¡!.,]\", \"\", texto)\n    # Normalizar espacios\n    texto = re.sub(r\"\\s+\", \" \", texto)\n    # Normalizar puntuación repetida\n    texto = re.sub(r\"([¿?¡!.])\\1+\", r\"\\1\", texto)\n    return texto.strip()\n\nprint(f\"Original:\\n{texto_sucio}\")\nprint(f\"\\nLimpio:\\n{limpiar_texto(texto_sucio)}\")\n\nOriginal:\n\n    ¡¡¡Hola!!!   ¿¿Qué tal??  \n    Visita https://ejemplo.com para más info...\n    Contacto:   admin@mail.com   📧\n\n\nLimpio:\n¡Hola! ¿Qué tal? Visita para más info. Contacto"
+  },
+  {
+    "objectID": "slides/semana01/s2_regex.html#extracción-de-entidades-simples",
+    "href": "slides/semana01/s2_regex.html#extracción-de-entidades-simples",
+    "title": "Expresiones Regulares",
+    "section": "3. Extracción de Entidades Simples",
+    "text": "3. Extracción de Entidades Simples\n\nimport re\n\ntexto = \"\"\"\nEl paciente Juan Pérez (CI: 12345678) tiene cita el 15/03/2026.\nContactar al Dr. García al 591-71234567.\nDirección: Av. 6 de Agosto #1234, La Paz.\n\"\"\"\n\n# Extraer fechas\nfechas = re.findall(r\"\\d{2}/\\d{2}/\\d{4}\", texto)\nprint(f\"Fechas: {fechas}\")\n\n# Extraer teléfonos\ntelefonos = re.findall(r\"\\d{3}-\\d{8}\", texto)\nprint(f\"Teléfonos: {telefonos}\")\n\n# Extraer CI (Carnet de Identidad)\nci = re.findall(r\"CI:\\s*(\\d{7,8})\", texto)\nprint(f\"CI: {ci}\")\n\n# Extraer nombres propios (simplificado: palabra capitalizada)\nnombres = re.findall(r\"\\b[A-ZÁÉÍÓÚ][a-záéíóú]+(?:\\s+[A-ZÁÉÍÓÚ][a-záéíóú]+)*\\b\", texto)\nprint(f\"Posibles nombres: {nombres}\")\n\nFechas: ['15/03/2026']\nTeléfonos: ['591-71234567']\nCI: ['12345678']\nPosibles nombres: ['El', 'Juan Pérez', 'Contactar', 'Dr', 'García', 'Dirección', 'Av', 'Agosto', 'La Paz']"
+  },
+  {
+    "objectID": "slides/semana01/s2_regex.html#validación-de-formatos",
+    "href": "slides/semana01/s2_regex.html#validación-de-formatos",
+    "title": "Expresiones Regulares",
+    "section": "4. Validación de Formatos",
+    "text": "4. Validación de Formatos\n\nimport re\n\ndef validar_email(email):\n    patron = r\"^[\\w.+-]+@[\\w-]+\\.[\\w.-]+$\"\n    return bool(re.match(patron, email))\n\ndef validar_telefono_bo(telefono):\n    # Formato Bolivia: 591-XXXXXXXX o +591 XXXXXXXX\n    patron = r\"^(\\+?591[-\\s]?)?\\d{8}$\"\n    return bool(re.match(patron, telefono))\n\n# Pruebas\nemails = [\"test@ucb.edu.bo\", \"invalido@\", \"otro.email@gmail.com\"]\nfor e in emails:\n    print(f\"'{e}' → {'✅ Válido' if validar_email(e) else '❌ Inválido'}\")\n\nprint()\ntelefonos = [\"591-78945612\", \"+591 71234567\", \"123456\"]\nfor t in telefonos:\n    print(f\"'{t}' → {'✅ Válido' if validar_telefono_bo(t) else '❌ Inválido'}\")\n\n'test@ucb.edu.bo' → ✅ Válido\n'invalido@' → ❌ Inválido\n'otro.email@gmail.com' → ✅ Válido\n\n'591-78945612' → ✅ Válido\n'+591 71234567' → ✅ Válido\n'123456' → ❌ Inválido"
+  },
+  {
+    "objectID": "slides/semana01/s2_regex.html#desafío-extractor-de-hashtags",
+    "href": "slides/semana01/s2_regex.html#desafío-extractor-de-hashtags",
+    "title": "Expresiones Regulares",
+    "section": "Desafío: Extractor de Hashtags",
+    "text": "Desafío: Extractor de Hashtags\nEscribe una función que extraiga todos los hashtags de un texto de red social.\n\n\nCode\nimport re\n\ndef extraer_hashtags(texto):\n    \"\"\"\n    Extrae hashtags de un texto.\n    Un hashtag empieza con # seguido de letras/números/guiones bajos.\n    \"\"\"\n    patron = r\"#\\w+\"\n    return re.findall(patron, texto)\n\n# Prueba\ntweet = \"Aprendiendo #NLP con #Python es muy #divertido! 🎉 #MachineLearning #IA\"\nhashtags = extraer_hashtags(tweet)\nprint(f\"Texto: {tweet}\")\nprint(f\"Hashtags: {hashtags}\")\n\n\nTexto: Aprendiendo #NLP con #Python es muy #divertido! 🎉 #MachineLearning #IA\nHashtags: ['#NLP', '#Python', '#divertido', '#MachineLearning', '#IA']\n\n\n\n\n\n\n\n\nTu turno\n\n\n¿Cómo modificarías el patrón para que también capture hashtags con acentos como #ProgramaciónEnEspañol?"
+  },
+  {
+    "objectID": "slides/semana01/s2_regex.html#lo-que-aprendimos-hoy",
+    "href": "slides/semana01/s2_regex.html#lo-que-aprendimos-hoy",
+    "title": "Expresiones Regulares",
+    "section": "Lo que Aprendimos Hoy ✅",
+    "text": "Lo que Aprendimos Hoy ✅\n\n\nConceptos:\n\nQué son las expresiones regulares\nMetacaracteres: . ^ $ \\d \\w \\s\nClases de caracteres: [abc] [^abc]\nCuantificadores: * + ? {n,m}\nGreedy vs. Lazy\n\n\nPython:\n\nMódulo re\nsearch(), match(), findall()\nsub(), split(), compile()\nGrupos de captura () y (?P&lt;name&gt;)\nFlags: IGNORECASE, MULTILINE"
+  },
+  {
+    "objectID": "slides/semana01/s2_regex.html#recursos-para-practicar",
+    "href": "slides/semana01/s2_regex.html#recursos-para-practicar",
+    "title": "Expresiones Regulares",
+    "section": "Recursos para Practicar 📚",
+    "text": "Recursos para Practicar 📚\n\n\nHerramientas online:\n\nregex101.com - Tester con explicaciones\nregexr.com - Editor visual\ndebuggex.com - Visualizador de FSM\n\n\nLectura recomendada:\n\nCapítulo 2: Speech and Language Processing (Jurafsky & Martin)\nPython re documentation"
+  },
+  {
+    "objectID": "slides/semana01/s2_regex.html#próxima-sesión-preprocesamiento",
+    "href": "slides/semana01/s2_regex.html#próxima-sesión-preprocesamiento",
+    "title": "Expresiones Regulares",
+    "section": "Próxima Sesión: Preprocesamiento 🔧",
+    "text": "Próxima Sesión: Preprocesamiento 🔧\n\n\n\n\n\n\nS3: Tokenización, Lematización y Stemming\n\n\n\nTokenización avanzada con NLTK y spaCy\nDiferencia entre stemming y lematización\nNormalización de texto para NLP\n\n\n\n\nPreparación:\npip install nltk spacy\npython -m spacy download es_core_news_sm"
+  },
+  {
+    "objectID": "general.html",
+    "href": "general.html",
+    "title": "Course Syllabus: Natural Language Processing (NLP)",
+    "section": "",
+    "text": "This schedule merges the 5 Modules from your course documents with a deep dive into modern LLM applications.\n\n\n\n\n\n\n\n\nPhase\nWeeks\nFocus Topics\n\n\n\n\nI: Foundations\n1–4\nNLP History, Regex, Pipeline (Segmentation, Tokenization), Lemmatization vs. Stemming.\n\n\nII: Machine Learning\n5–8\nText Statistics, Naïve Bayes, Sentiment Analysis, Logistic Regression, and Vector Space Models.\n\n\nIII: Neural NLP\n9–12\nWord Embeddings (Word2Vec/GloVe), Feedforward Networks, RNNs, and LSTMs.\n\n\nIV: The LLM Era\n13–16\nAttention, Transformers (BERT/GPT), Pre-trained Models, and Question Answering.\n\n\nV: Mastery\n17–20\nRAG Pipelines, Ethics & Bias, Cutting-edge Trends, and Capstone Project Presentations."
+  },
+  {
+    "objectID": "general.html#course-schedule-20-weeks",
+    "href": "general.html#course-schedule-20-weeks",
+    "title": "Course Syllabus: Natural Language Processing (NLP)",
+    "section": "",
+    "text": "This schedule merges the 5 Modules from your course documents with a deep dive into modern LLM applications.\n\n\n\n\n\n\n\n\nPhase\nWeeks\nFocus Topics\n\n\n\n\nI: Foundations\n1–4\nNLP History, Regex, Pipeline (Segmentation, Tokenization), Lemmatization vs. Stemming.\n\n\nII: Machine Learning\n5–8\nText Statistics, Naïve Bayes, Sentiment Analysis, Logistic Regression, and Vector Space Models.\n\n\nIII: Neural NLP\n9–12\nWord Embeddings (Word2Vec/GloVe), Feedforward Networks, RNNs, and LSTMs.\n\n\nIV: The LLM Era\n13–16\nAttention, Transformers (BERT/GPT), Pre-trained Models, and Question Answering.\n\n\nV: Mastery\n17–20\nRAG Pipelines, Ethics & Bias, Cutting-edge Trends, and Capstone Project Presentations."
+  },
+  {
+    "objectID": "general.html#evaluation-grading",
+    "href": "general.html#evaluation-grading",
+    "title": "Course Syllabus: Natural Language Processing (NLP)",
+    "section": "2. Evaluation & Grading",
+    "text": "2. Evaluation & Grading\nWeights are based on the SST University Evaluation Criteria.\n\nFinal Exam (30%): Comprehensive assessment of theory and math.\nExercises (20%): Hands-on Python coding assignments.\nGroup Project (30%): Building a functional NLP application (e.g., Sentiment Analyzer or Chatbot).\nQuizzes (10%): Bi-weekly knowledge checks.\nClass Participation (10%): Engagement in discussions and remote sessions."
+  },
+  {
+    "objectID": "general.html#generative-ai-academic-integrity-policy",
+    "href": "general.html#generative-ai-academic-integrity-policy",
+    "title": "Course Syllabus: Natural Language Processing (NLP)",
+    "section": "3. Generative AI & Academic Integrity Policy",
+    "text": "3. Generative AI & Academic Integrity Policy\nAs this is an NLP course, use of AI is permitted under strict transparency rules.\n\nTransparency: Any code or text generated by AI must be disclosed with a Conversation Share Link (e.g., ChatGPT or Claude shared link).\nThe “Human-in-the-loop” Rule: You may use AI to debug or brainstorm, but you must be able to explain the “how” and “why” during random oral spot-checks.\nProhibited Use: Using AI to generate direct answers for quizzes or the final exam without critical engagement is considered academic misconduct."
+  },
+  {
+    "objectID": "general.html#automation-building-slides-with-quarto",
+    "href": "general.html#automation-building-slides-with-quarto",
+    "title": "Course Syllabus: Natural Language Processing (NLP)",
+    "section": "4. Automation: Building Slides with Quarto",
+    "text": "4. Automation: Building Slides with Quarto\nQuarto allows you to create interactive Reveal.js slides using simple Markdown and Python.\n\nA. Your Slide Template (presentation.qmd)\nCopy this into a text file to start.\n---\ntitle: \"Week 1: Introduction to NLP\"\nsubtitle: \"Natural Language Processing & Semantic Analysis\"\nauthor: \"Francisco Suárez\"\nformat: \n  revealjs:\n    theme: sky\n    transition: slide\n    incremental: true \n    chalkboard: true\n    code-fold: true\n---\n\n## What is NLP?\n- Intersection of Computer Science, AI, and Linguistics.\n- Goal: Enable machines to understand and derive meaning from text/speech.\n\n## The NLP Pipeline\n::: {.columns}\n::: {.column width=\"50%\"}\n1. Data Collection\n2. Text Cleaning\n3. Pre-processing.\n:::\n\n::: {.column width=\"50%\"}\n\n\n::: {#633e8b4e .cell execution_count=1}\n``` {.python .cell-code}\n# Example of simple tokenization in Python\ntext = \"The sky is clear.\"\ntokens = text.split()\nprint(tokens)\n```\n\n::: {.cell-output .cell-output-stdout}\n```\n['The', 'sky', 'is', 'clear.']\n```\n:::\n:::\n\n\n:::\n:::\n\n## Semantic Analysis\n\n&gt; Semantic analysis is the process of drawing meaning from text.\n\n$$ Meaning = f(Grammar, Context, Relationship) $$\n\n\nB. Prompt for Automating Content\nWhen you want an AI to write the code for the next 19 weeks of slides, use this specific prompt:\n\n“Act as a college professor. Generate the Quarto Markdown (.qmd) code for a 15-slide presentation on [Insert Topic, e.g., Transformers].\nUse the Reveal.js format. Include: 1. A YAML header with the ‘sky’ theme. 2. At least two slides with executable Python code blocks ({python}). 3. One slide with a LaTeX equation for the math. 4. Use ::: {.incremental} for bullet points. 5. Base the content on the standard NLP pipeline (Tokenization \\(\\rightarrow\\) Embedding \\(\\rightarrow\\) Model).”\n\n\nQuarto Tutorial: Markdown to Slideshow\nThis video provides a complete walkthrough on setting up Quarto to transform your Markdown files into professional, code-ready presentations.\nhttp://googleusercontent.com/youtube_content/0\n```"
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "NLP y Análisis Semántico",
+    "section": "",
+    "text": "Introducción a NLP\nExpresiones Regulares\nPreprocesamiento de Texto"
+  },
+  {
+    "objectID": "index.html#diapositivas",
+    "href": "index.html#diapositivas",
+    "title": "NLP y Análisis Semántico",
+    "section": "",
+    "text": "Introducción a NLP\nExpresiones Regulares\nPreprocesamiento de Texto"
+  },
+  {
+    "objectID": "index.html#información-general",
+    "href": "index.html#información-general",
+    "title": "NLP y Análisis Semántico",
+    "section": "Información general",
+    "text": "Información general\n\nPrograma del Curso"
+  },
+  {
+    "objectID": "programa.html",
+    "href": "programa.html",
+    "title": "Programa de Procesamiento de Lenguaje Natural (NLP)",
+    "section": "",
+    "text": "Semana\nTema\nEntregable / Actividad\n\n\n\n\n1\nIntroducción & Expresiones Regulares\n\n\n\n\nS1: ¿Qué es NLP? Historia (Test de Turing a ChatGPT)\nLectura introductoria\n\n\n\nS2: Expresiones Regulares: La navaja suiza del NLP\nQuiz 1 (conceptos básicos)\n\n\n\nS3: Preprocesamiento básico: Tokenización, Lematización y Stemming\nPráctica de laboratorio\n\n\n2\nSemántica Léxica & Espacio Vectorial\n\n\n\n\nS1: Bolsa de Palabras (BoW) y One-hot encoding\n\n\n\n\nS2: TF-IDF: Encontrando lo relevante en un documento\nQuiz 2\n\n\n\nS3: Información Mutua Puntual (PMI) y N-gramas\n\n\n\n3\nModelado de Lenguaje (Clásico)\n\n\n\n\nS1: Modelos de lenguaje N-gram y Regla de la Cadena\n\n\n\n\nS2: Evaluación: Perplejidad y técnicas de Suavizado\nQuiz 3\n\n\n\nS3: Modelos Ocultos de Markov (HMM) para etiquetado POS\n\n\n\n4\nLa Revolución Vectorial\n\n\n\n\nS1: Word2Vec: Skip-gram y CBOW\n\n\n\n\nS2: GloVe y FastText (embeddings de subpalabras)\n\n\n\n\nS3: Visualización de datos de alta dimensión (t-SNE y PCA)\n📝 Tarea 1: Analizador de sentimiento usando TF-IDF + Regresión Logística\n\n\n5\nRedes Neuronales para NLP\n\n\n\n\nS1: Repaso de Perceptrones y Retropropagación\n\n\n\n\nS2: Perceptrones Multicapa para Clasificación de Texto\nQuiz 4\n\n\n\nS3: Variantes de Descenso de Gradiente y Regularización (Dropout)\n\n\n\n6\nRedes Neuronales Recurrentes (RNNs)\n\n\n\n\nS1: Arquitectura RNN: Manejando longitud variable\n\n\n\n\nS2: Gradientes que desaparecen y la solución LSTM\nQuiz 5\n\n\n\nS3: Unidades Recurrentes con Compuertas (GRU) y RNNs Bidireccionales\n\n\n\n7\nSecuencia a Secuencia (Seq2Seq)\n\n\n\n\nS1: Arquitecturas Codificador-Decodificador\n\n\n\n\nS2: Aplicaciones: Traducción Automática Neuronal (NMT)\n\n\n\n\nS3: El problema del “cuello de botella” y el nacimiento de la Atención\n\n\n\n8\nRedes Neuronales Convolucionales para NLP\n\n\n\n\nS1: Convoluciones 1D para texto\n\n\n\n\nS2: Max Pooling Global vs. Local\nQuiz 6\n\n\n\nS3: Comparación RNNs vs. CNNs para clasificación\n📝 Tarea 2: Generador de nombres a nivel de caracteres con LSTM\n\n\n9\nAuto-Atención & Transformers\n\n\n\n\nS1: Atención de Producto Escalar (Queries, Keys, Values)\n\n\n\n\nS2: Atención Multi-Cabeza y Codificación Posicional\n\n\n\n\nS3: El bloque Transformer completo (Residuales, Normalización)\n\n\n\n10\nBERT y la Revolución del Codificador\n\n\n\n\nS1: Modelado de Lenguaje Enmascarado (MLM)\n\n\n\n\nS2: Fine-tuning de BERT para tareas downstream (NER, SQuAD)\nRepaso para examen parcial\n\n\n\nS3: Variaciones: RoBERTa, ALBERT y DistilBERT\nQuiz 7\n\n\n11\n📚 EXAMEN PARCIAL\n🎯 Examen Parcial (Semanas 1-10)\n\n\n\nEvaluación teórica de conceptos fundamentales\nCubre: Fundamentos, Modelos Clásicos, RNNs, Transformers básicos\n\n\n12\nGPT y la Revolución del Decodificador\n\n\n\n\nS1: Modelado de Lenguaje Causal\n\n\n\n\nS2: Aprendizaje Zero-shot, One-shot y Few-shot\n\n\n\n\nS3: Comparación modelos Autoregresivos (GPT) vs. Autoencoding (BERT)\n📝 Tarea 3: Fine-tuning de BERT para Clasificación de Noticias con Hugging Face\n\n\n13\nEtiquetado de Secuencias & NER\n\n\n\n\nS1: Reconocimiento de Entidades Nombradas (NER) a profundidad\n\n\n\n\nS2: Campos Aleatorios Condicionales (CRF) vs. Softmax\nQuiz 8\n\n\n\nS3: Extracción de Información y Extracción de Relaciones\n\n\n\n14\nLeyes de Escalamiento & Entrenamiento de LLMs\n\n\n\n\nS1: Cómputo, Datos y Parámetros: Por qué más grande es (usualmente) mejor\n\n\n\n\nS2: Aprendizaje por Refuerzo con Retroalimentación Humana (RLHF)\n\n\n\n\nS3: Ajuste por Instrucciones vs. Pre-entrenamiento\n\n\n\n15\nIngeniería de Prompts & Aprendizaje en Contexto\n\n\n\n\nS1: Prompting Cadena de Pensamiento (CoT)\nQuiz 9\n\n\n\nS2: Auto-Consistencia y Árbol de Pensamientos\n\n\n\n\nS3: Hacking de Prompts y Vulnerabilidades\n\n\n\n16\nRAG: Generación Aumentada por Recuperación\n\n\n\n\nS1: Bases de Datos Vectoriales: Pinecone, Milvus, FAISS\n\n\n\n\nS2: Construyendo un pipeline RAG: Recuperador + Generador\n\n\n\n\nS3: Búsqueda Semántica vs. Búsqueda por Palabras Clave\n📝 Tarea 4: Aplicación “Chat con tu PDF” usando RAG y API de Llama-3 o GPT-4o\n\n\n17\nFine-Tuning Eficiente en Parámetros (PEFT)\n\n\n\n\nS1: Adaptadores y LoRA (Adaptación de Bajo Rango)\nQuiz 10\n\n\n\nS2: Cuantización (4-bit, 8-bit) y bitsandbytes\n\n\n\n\nS3: Despliegue de modelos: ONNX y TensorRT\n\n\n\n18\nÉtica en NLP & Dominios Especializados\n\n\n\n\nS1: Sesgo en Word Embeddings y LLMs\n\n\n\n\nS2: Alucinaciones, Seguridad y Red Teaming\n\n\n\n\nS3: NLP Multimodal (CLIP/LLaVA), NLP para Salud/Legal, Idiomas de bajos recursos\nEntrega de propuesta de proyecto final\n\n\n19\nTaller de Proyecto Final I\n\n\n\n\nS1: Presentación de Propuestas de Proyectos\n🎤 Presentaciones de propuestas (grupos)\n\n\n\nS2: Sesiones de revisión de código\nRetroalimentación entre pares\n\n\n\nS3: Resolución de problemas / Horas de oficina\n\n\n\n20\nTaller de Proyecto Final II & Presentaciones\n\n\n\n\nS1: Depuración final\n\n\n\n\nS2: Presentaciones de Proyectos de Estudiantes\n🎤 Presentaciones finales (grupos)\n\n\n\nS3: Futuro del NLP: AGI, Agentes y más allá\n📦 Entrega final del proyecto\n\n\n\n\n\n\n\n\n\n\nEntregable\nSemana\nPorcentaje\n\n\n\n\nQuizzes (10 en total)\n1-17\n10%\n\n\nTarea 1: Analizador de Sentimiento\n4\n10%\n\n\nTarea 2: Generador de Nombres LSTM\n8\n10%\n\n\nExamen Parcial\n11\n20%\n\n\nTarea 3: Fine-tuning BERT\n12\n10%\n\n\nTarea 4: Chat con PDF (RAG)\n16\n10%\n\n\nProyecto Final (Capstone)\n20\n30%\n\n\nTOTAL\n\n100%\n\n\n\n\n\n\n\n\nLenguaje: Python 3.10+\nLibrerías principales:\n\nNLTK - Procesamiento de texto clásico\nspaCy - NLP industrial\nPyTorch - Framework de deep learning (preferido para investigación)\nHugging Face (Transformers, Datasets, PEFT) - Modelos preentrenados\nLangChain - Aplicaciones con LLMs\n\n\n\n\n\n\n\n\n\nEvento\nSemana\nDescripción\n\n\n\n\n📝 Tarea 1\n4\nAnalizador de sentimiento TF-IDF\n\n\n📝 Tarea 2\n8\nGenerador LSTM de nombres\n\n\n🎯 Examen Parcial\n11\nEvaluación teórica (Semanas 1-10)\n\n\n📝 Tarea 3\n12\nFine-tuning BERT\n\n\n📝 Tarea 4\n16\nAplicación RAG\n\n\n📄 Propuesta Proyecto\n18\nEntrega de propuesta escrita\n\n\n🎤 Presentación Propuestas\n19\nPresentaciones grupales\n\n\n🎤 Presentaciones Finales\n20\nDemo de proyectos\n\n\n📦 Entrega Final\n20\nCódigo + Documentación"
+  },
+  {
+    "objectID": "programa.html#duración-20-semanas",
+    "href": "programa.html#duración-20-semanas",
+    "title": "Programa de Procesamiento de Lenguaje Natural (NLP)",
+    "section": "",
+    "text": "Semana\nTema\nEntregable / Actividad\n\n\n\n\n1\nIntroducción & Expresiones Regulares\n\n\n\n\nS1: ¿Qué es NLP? Historia (Test de Turing a ChatGPT)\nLectura introductoria\n\n\n\nS2: Expresiones Regulares: La navaja suiza del NLP\nQuiz 1 (conceptos básicos)\n\n\n\nS3: Preprocesamiento básico: Tokenización, Lematización y Stemming\nPráctica de laboratorio\n\n\n2\nSemántica Léxica & Espacio Vectorial\n\n\n\n\nS1: Bolsa de Palabras (BoW) y One-hot encoding\n\n\n\n\nS2: TF-IDF: Encontrando lo relevante en un documento\nQuiz 2\n\n\n\nS3: Información Mutua Puntual (PMI) y N-gramas\n\n\n\n3\nModelado de Lenguaje (Clásico)\n\n\n\n\nS1: Modelos de lenguaje N-gram y Regla de la Cadena\n\n\n\n\nS2: Evaluación: Perplejidad y técnicas de Suavizado\nQuiz 3\n\n\n\nS3: Modelos Ocultos de Markov (HMM) para etiquetado POS\n\n\n\n4\nLa Revolución Vectorial\n\n\n\n\nS1: Word2Vec: Skip-gram y CBOW\n\n\n\n\nS2: GloVe y FastText (embeddings de subpalabras)\n\n\n\n\nS3: Visualización de datos de alta dimensión (t-SNE y PCA)\n📝 Tarea 1: Analizador de sentimiento usando TF-IDF + Regresión Logística\n\n\n5\nRedes Neuronales para NLP\n\n\n\n\nS1: Repaso de Perceptrones y Retropropagación\n\n\n\n\nS2: Perceptrones Multicapa para Clasificación de Texto\nQuiz 4\n\n\n\nS3: Variantes de Descenso de Gradiente y Regularización (Dropout)\n\n\n\n6\nRedes Neuronales Recurrentes (RNNs)\n\n\n\n\nS1: Arquitectura RNN: Manejando longitud variable\n\n\n\n\nS2: Gradientes que desaparecen y la solución LSTM\nQuiz 5\n\n\n\nS3: Unidades Recurrentes con Compuertas (GRU) y RNNs Bidireccionales\n\n\n\n7\nSecuencia a Secuencia (Seq2Seq)\n\n\n\n\nS1: Arquitecturas Codificador-Decodificador\n\n\n\n\nS2: Aplicaciones: Traducción Automática Neuronal (NMT)\n\n\n\n\nS3: El problema del “cuello de botella” y el nacimiento de la Atención\n\n\n\n8\nRedes Neuronales Convolucionales para NLP\n\n\n\n\nS1: Convoluciones 1D para texto\n\n\n\n\nS2: Max Pooling Global vs. Local\nQuiz 6\n\n\n\nS3: Comparación RNNs vs. CNNs para clasificación\n📝 Tarea 2: Generador de nombres a nivel de caracteres con LSTM\n\n\n9\nAuto-Atención & Transformers\n\n\n\n\nS1: Atención de Producto Escalar (Queries, Keys, Values)\n\n\n\n\nS2: Atención Multi-Cabeza y Codificación Posicional\n\n\n\n\nS3: El bloque Transformer completo (Residuales, Normalización)\n\n\n\n10\nBERT y la Revolución del Codificador\n\n\n\n\nS1: Modelado de Lenguaje Enmascarado (MLM)\n\n\n\n\nS2: Fine-tuning de BERT para tareas downstream (NER, SQuAD)\nRepaso para examen parcial\n\n\n\nS3: Variaciones: RoBERTa, ALBERT y DistilBERT\nQuiz 7\n\n\n11\n📚 EXAMEN PARCIAL\n🎯 Examen Parcial (Semanas 1-10)\n\n\n\nEvaluación teórica de conceptos fundamentales\nCubre: Fundamentos, Modelos Clásicos, RNNs, Transformers básicos\n\n\n12\nGPT y la Revolución del Decodificador\n\n\n\n\nS1: Modelado de Lenguaje Causal\n\n\n\n\nS2: Aprendizaje Zero-shot, One-shot y Few-shot\n\n\n\n\nS3: Comparación modelos Autoregresivos (GPT) vs. Autoencoding (BERT)\n📝 Tarea 3: Fine-tuning de BERT para Clasificación de Noticias con Hugging Face\n\n\n13\nEtiquetado de Secuencias & NER\n\n\n\n\nS1: Reconocimiento de Entidades Nombradas (NER) a profundidad\n\n\n\n\nS2: Campos Aleatorios Condicionales (CRF) vs. Softmax\nQuiz 8\n\n\n\nS3: Extracción de Información y Extracción de Relaciones\n\n\n\n14\nLeyes de Escalamiento & Entrenamiento de LLMs\n\n\n\n\nS1: Cómputo, Datos y Parámetros: Por qué más grande es (usualmente) mejor\n\n\n\n\nS2: Aprendizaje por Refuerzo con Retroalimentación Humana (RLHF)\n\n\n\n\nS3: Ajuste por Instrucciones vs. Pre-entrenamiento\n\n\n\n15\nIngeniería de Prompts & Aprendizaje en Contexto\n\n\n\n\nS1: Prompting Cadena de Pensamiento (CoT)\nQuiz 9\n\n\n\nS2: Auto-Consistencia y Árbol de Pensamientos\n\n\n\n\nS3: Hacking de Prompts y Vulnerabilidades\n\n\n\n16\nRAG: Generación Aumentada por Recuperación\n\n\n\n\nS1: Bases de Datos Vectoriales: Pinecone, Milvus, FAISS\n\n\n\n\nS2: Construyendo un pipeline RAG: Recuperador + Generador\n\n\n\n\nS3: Búsqueda Semántica vs. Búsqueda por Palabras Clave\n📝 Tarea 4: Aplicación “Chat con tu PDF” usando RAG y API de Llama-3 o GPT-4o\n\n\n17\nFine-Tuning Eficiente en Parámetros (PEFT)\n\n\n\n\nS1: Adaptadores y LoRA (Adaptación de Bajo Rango)\nQuiz 10\n\n\n\nS2: Cuantización (4-bit, 8-bit) y bitsandbytes\n\n\n\n\nS3: Despliegue de modelos: ONNX y TensorRT\n\n\n\n18\nÉtica en NLP & Dominios Especializados\n\n\n\n\nS1: Sesgo en Word Embeddings y LLMs\n\n\n\n\nS2: Alucinaciones, Seguridad y Red Teaming\n\n\n\n\nS3: NLP Multimodal (CLIP/LLaVA), NLP para Salud/Legal, Idiomas de bajos recursos\nEntrega de propuesta de proyecto final\n\n\n19\nTaller de Proyecto Final I\n\n\n\n\nS1: Presentación de Propuestas de Proyectos\n🎤 Presentaciones de propuestas (grupos)\n\n\n\nS2: Sesiones de revisión de código\nRetroalimentación entre pares\n\n\n\nS3: Resolución de problemas / Horas de oficina\n\n\n\n20\nTaller de Proyecto Final II & Presentaciones\n\n\n\n\nS1: Depuración final\n\n\n\n\nS2: Presentaciones de Proyectos de Estudiantes\n🎤 Presentaciones finales (grupos)\n\n\n\nS3: Futuro del NLP: AGI, Agentes y más allá\n📦 Entrega final del proyecto"
+  },
+  {
+    "objectID": "programa.html#resumen-de-entregables",
+    "href": "programa.html#resumen-de-entregables",
+    "title": "Programa de Procesamiento de Lenguaje Natural (NLP)",
+    "section": "",
+    "text": "Entregable\nSemana\nPorcentaje\n\n\n\n\nQuizzes (10 en total)\n1-17\n10%\n\n\nTarea 1: Analizador de Sentimiento\n4\n10%\n\n\nTarea 2: Generador de Nombres LSTM\n8\n10%\n\n\nExamen Parcial\n11\n20%\n\n\nTarea 3: Fine-tuning BERT\n12\n10%\n\n\nTarea 4: Chat con PDF (RAG)\n16\n10%\n\n\nProyecto Final (Capstone)\n20\n30%\n\n\nTOTAL\n\n100%"
+  },
+  {
+    "objectID": "programa.html#herramientas-y-librerías-recomendadas",
+    "href": "programa.html#herramientas-y-librerías-recomendadas",
+    "title": "Programa de Procesamiento de Lenguaje Natural (NLP)",
+    "section": "",
+    "text": "Lenguaje: Python 3.10+\nLibrerías principales:\n\nNLTK - Procesamiento de texto clásico\nspaCy - NLP industrial\nPyTorch - Framework de deep learning (preferido para investigación)\nHugging Face (Transformers, Datasets, PEFT) - Modelos preentrenados\nLangChain - Aplicaciones con LLMs"
+  },
+  {
+    "objectID": "programa.html#fechas-importantes",
+    "href": "programa.html#fechas-importantes",
+    "title": "Programa de Procesamiento de Lenguaje Natural (NLP)",
+    "section": "",
+    "text": "Evento\nSemana\nDescripción\n\n\n\n\n📝 Tarea 1\n4\nAnalizador de sentimiento TF-IDF\n\n\n📝 Tarea 2\n8\nGenerador LSTM de nombres\n\n\n🎯 Examen Parcial\n11\nEvaluación teórica (Semanas 1-10)\n\n\n📝 Tarea 3\n12\nFine-tuning BERT\n\n\n📝 Tarea 4\n16\nAplicación RAG\n\n\n📄 Propuesta Proyecto\n18\nEntrega de propuesta escrita\n\n\n🎤 Presentación Propuestas\n19\nPresentaciones grupales\n\n\n🎤 Presentaciones Finales\n20\nDemo de proyectos\n\n\n📦 Entrega Final\n20\nCódigo + Documentación"
+  },
+  {
+    "objectID": "slides/semana01/s1_intro_nlp.html#agenda-de-hoy",
+    "href": "slides/semana01/s1_intro_nlp.html#agenda-de-hoy",
+    "title": "Introducción al Procesamiento de Lenguaje Natural",
+    "section": "Agenda de Hoy",
+    "text": "Agenda de Hoy\n\n\nPrimera Parte\n\n🎯 Bienvenida y Reglas del Juego\n📊 Sistema de Evaluación\n🤖 Política de uso de IA\n\n\nSegunda Parte\n\n🧠 ¿Qué es NLP?\n📜 Historia y Evolución\n💡 Aplicaciones Modernas"
+  },
+  {
+    "objectID": "slides/semana01/s1_intro_nlp.html#bienvenidos-al-curso",
+    "href": "slides/semana01/s1_intro_nlp.html#bienvenidos-al-curso",
+    "title": "Introducción al Procesamiento de Lenguaje Natural",
+    "section": "Bienvenidos al Curso",
+    "text": "Bienvenidos al Curso\nNLP y Análisis Semántico\n\n“El lenguaje es el vestido del pensamiento.” — Samuel Johnson\n\nEste curso les llevará en un viaje desde los fundamentos del procesamiento de texto hasta los modelos de lenguaje más avanzados como ChatGPT y Claude.\n\n\n\n\n\n\nObjetivo General\n\n\nDesarrollar competencias teóricas y prácticas en el análisis computacional del lenguaje humano."
+  },
+  {
+    "objectID": "slides/semana01/s1_intro_nlp.html#qué-aprenderemos",
+    "href": "slides/semana01/s1_intro_nlp.html#qué-aprenderemos",
+    "title": "Introducción al Procesamiento de Lenguaje Natural",
+    "section": "¿Qué Aprenderemos?",
+    "text": "¿Qué Aprenderemos?\n\n\nFundamentos\n\nExpresiones regulares\nTokenización y preprocesamiento\nModelos de lenguaje clásicos\nWord Embeddings\n\n\nAvanzado\n\nRedes Neuronales Recurrentes\nArquitectura Transformer\nBERT, GPT y LLMs\nRAG y Aplicaciones"
+  },
+  {
+    "objectID": "slides/semana01/s1_intro_nlp.html#sistema-de-evaluación",
+    "href": "slides/semana01/s1_intro_nlp.html#sistema-de-evaluación",
+    "title": "Introducción al Procesamiento de Lenguaje Natural",
+    "section": "Sistema de Evaluación",
+    "text": "Sistema de Evaluación\n\nDistribución de la Evaluación\n\n\nComponente\nPeso\nDescripción\n\n\n\n\nExamen\n30%\nEvaluación teórica (Semanas 1-10)\n\n\nProyecto Grupal\n30%\nAplicación NLP completa\n\n\nEjercicios (Tareas)\n20%\n4 tareas prácticas de programación\n\n\nQuizzes\n10%\nEvaluaciones cortas bi-semanales\n\n\nParticipación\n10%\nAsistencia y contribución en clase"
+  },
+  {
+    "objectID": "slides/semana01/s1_intro_nlp.html#política-de-inteligencia-artificial",
+    "href": "slides/semana01/s1_intro_nlp.html#política-de-inteligencia-artificial",
+    "title": "Introducción al Procesamiento de Lenguaje Natural",
+    "section": "Política de Inteligencia Artificial 🤖",
+    "text": "Política de Inteligencia Artificial 🤖\n\n\n\n\n\n\nUso Permitido de LLMs\n\n\nSe permite el uso de herramientas de IA (ChatGPT, Claude, Copilot, etc.) bajo las siguientes condiciones:\n\n\n\n\nTransparencia: Siempre declarar qué herramienta se utilizó\nEnlace compartido: Incluir el link de la conversación cuando sea posible\nComprensión: Poder explicar y defender el código generado\n\n\n\n\n\n\n\n⚠️ En Tareas y Exámenes\n\n\n\n❌ NO pedir la respuesta directa a un problema\n✅ SÍ consultar sobre pasos específicos de un procedimiento ya establecido\n✅ SÍ aclarar dudas conceptuales o de sintaxis"
+  },
+  {
+    "objectID": "slides/semana01/s1_intro_nlp.html#ejemplos-de-prompts-permitidos-vs.-no-permitidos",
+    "href": "slides/semana01/s1_intro_nlp.html#ejemplos-de-prompts-permitidos-vs.-no-permitidos",
+    "title": "Introducción al Procesamiento de Lenguaje Natural",
+    "section": "Ejemplos de Prompts: Permitidos vs. No Permitidos",
+    "text": "Ejemplos de Prompts: Permitidos vs. No Permitidos\n\n\n❌ No Permitido\n\"Resuelve este ejercicio de TF-IDF \npara estos documentos: ...\"\n\n\"Dame el código para clasificar \nsentimientos con BERT\"\n\n\"¿Cuál es la respuesta a la \npregunta 3 del examen?\"\nPedir soluciones completas o respuestas directas\n\n✅ Permitido\n\"¿Cómo se calcula el IDF de \nun término?\"\n\n\"Tengo este error en PyTorch, \n¿qué significa?\"\n\n\"Explícame la diferencia entre \nprecision y recall\"\nConsultar conceptos, sintaxis o pasos específicos\n\n\n\n\n\n\n\nRegla de Oro\n\n\nSi el LLM hace tu trabajo, está mal. Si te ayuda a entender para que tú hagas el trabajo, está bien."
+  },
+  {
+    "objectID": "slides/semana01/s1_intro_nlp.html#definición-de-nlp",
+    "href": "slides/semana01/s1_intro_nlp.html#definición-de-nlp",
+    "title": "Introducción al Procesamiento de Lenguaje Natural",
+    "section": "Definición de NLP",
+    "text": "Definición de NLP\n\n\nEl Procesamiento de Lenguaje Natural (NLP) es un campo interdisciplinario que se encuentra en la intersección de:\n\n💻 Ciencias de la Computación\n🧠 Inteligencia Artificial\n📖 Lingüística\n\n\n\n\nCode\ngraph TD\n    A[Ciencias de la&lt;br&gt;Computación] --&gt; D[NLP]\n    B[Inteligencia&lt;br&gt;Artificial] --&gt; D\n    C[Lingüística] --&gt; D\n    style D fill:#0077b6,stroke:#023e8a,color:#fff\n\n\n\n\n\ngraph TD\n    A[Ciencias de la&lt;br&gt;Computación] --&gt; D[NLP]\n    B[Inteligencia&lt;br&gt;Artificial] --&gt; D\n    C[Lingüística] --&gt; D\n    style D fill:#0077b6,stroke:#023e8a,color:#fff"
+  },
+  {
+    "objectID": "slides/semana01/s1_intro_nlp.html#el-problema-fundamental",
+    "href": "slides/semana01/s1_intro_nlp.html#el-problema-fundamental",
+    "title": "Introducción al Procesamiento de Lenguaje Natural",
+    "section": "El Problema Fundamental",
+    "text": "El Problema Fundamental\n\n\nComunicación Humana 🗣️\n\nAmbigüedad inherente\nContexto implícito\nIronía y sarcasmo\nVariaciones culturales\nErrores gramaticales\n\n\n“Vi al hombre con el telescopio” — ¿Quién lo tiene?\n\n\nComunicación de Máquinas 🖥️\n\nBinario: 0 y 1\nInstrucciones precisas\nSin ambigüedad\nDeterminístico\n\n01001000 01101111 01101100 01100001\n= “Hola” en ASCII\n\n\n\n\n\n\n\nEl Desafío\n\n\n¿Cómo enseñamos a una máquina a entender el lenguaje humano con toda su complejidad?"
+  },
+  {
+    "objectID": "slides/semana01/s1_intro_nlp.html#demostración-tu-primer-código-nlp",
+    "href": "slides/semana01/s1_intro_nlp.html#demostración-tu-primer-código-nlp",
+    "title": "Introducción al Procesamiento de Lenguaje Natural",
+    "section": "Demostración: Tu Primer Código NLP",
+    "text": "Demostración: Tu Primer Código NLP\nVeamos cómo una computadora “ve” una oración:\n\n# Dividir una frase en palabras (tokenización básica)\noracion = \"El procesamiento de lenguaje natural es fascinante\"\n\n# Método simple: split()\npalabras = oracion.split()\n\nprint(f\"Oración original: '{oracion}'\")\nprint(f\"Número de palabras: {len(palabras)}\")\nprint(f\"Lista de tokens: {palabras}\")\n\n# Ver cada palabra con su posición\nfor i, palabra in enumerate(palabras):\n    print(f\"  Token {i}: '{palabra}' (longitud: {len(palabra)})\")\n\nOración original: 'El procesamiento de lenguaje natural es fascinante'\nNúmero de palabras: 7\nLista de tokens: ['El', 'procesamiento', 'de', 'lenguaje', 'natural', 'es', 'fascinante']\n  Token 0: 'El' (longitud: 2)\n  Token 1: 'procesamiento' (longitud: 13)\n  Token 2: 'de' (longitud: 2)\n  Token 3: 'lenguaje' (longitud: 8)\n  Token 4: 'natural' (longitud: 7)\n  Token 5: 'es' (longitud: 2)\n  Token 6: 'fascinante' (longitud: 10)"
+  },
+  {
+    "objectID": "slides/semana01/s1_intro_nlp.html#el-pipeline-de-nlp",
+    "href": "slides/semana01/s1_intro_nlp.html#el-pipeline-de-nlp",
+    "title": "Introducción al Procesamiento de Lenguaje Natural",
+    "section": "El Pipeline de NLP",
+    "text": "El Pipeline de NLP\n\n\nCode\nflowchart LR\n    A[📥 Recolección&lt;br&gt;de Datos] --&gt; B[🧹 Limpieza y&lt;br&gt;Preprocesamiento]\n    B --&gt; C[🔤 Tokenización]\n    C --&gt; D[📊 Extracción de&lt;br&gt;Características]\n    D --&gt; E[🤖 Modelado]\n    E --&gt; F[📈 Evaluación]\n    F --&gt; G[🚀 Despliegue]\n    \n    style A fill:#caf0f8,color:#000\n    style B fill:#ade8f4,color:#000\n    style C fill:#90e0ef,color:#000\n    style D fill:#48cae4,color:#000\n    style E fill:#00b4d8,color:#fff\n    style F fill:#0096c7,color:#fff\n    style G fill:#0077b6,color:#fff\n\n\n\n\n\nflowchart LR\n    A[📥 Recolección&lt;br&gt;de Datos] --&gt; B[🧹 Limpieza y&lt;br&gt;Preprocesamiento]\n    B --&gt; C[🔤 Tokenización]\n    C --&gt; D[📊 Extracción de&lt;br&gt;Características]\n    D --&gt; E[🤖 Modelado]\n    E --&gt; F[📈 Evaluación]\n    F --&gt; G[🚀 Despliegue]\n    \n    style A fill:#caf0f8,color:#000\n    style B fill:#ade8f4,color:#000\n    style C fill:#90e0ef,color:#000\n    style D fill:#48cae4,color:#000\n    style E fill:#00b4d8,color:#fff\n    style F fill:#0096c7,color:#fff\n    style G fill:#0077b6,color:#fff\n\n\n\n\n\n\n\n\n\nPreprocesamiento\n\nEliminación de ruido\nNormalización\nTokenización\nLematización\n\n\nModelado\n\nRepresentación vectorial\nEntrenamiento\nInferencia\nFine-tuning"
+  },
+  {
+    "objectID": "slides/semana01/s1_intro_nlp.html#línea-del-tiempo-del-nlp",
+    "href": "slides/semana01/s1_intro_nlp.html#línea-del-tiempo-del-nlp",
+    "title": "Introducción al Procesamiento de Lenguaje Natural",
+    "section": "Línea del Tiempo del NLP",
+    "text": "Línea del Tiempo del NLP\n\n\nCode\ntimeline\n    title Evolución del Procesamiento de Lenguaje Natural\n    1950 : Test de Turing\n         : \"¿Pueden pensar las máquinas?\"\n    1954 : Experimento Georgetown-IBM\n         : Primera traducción automática\n    1966 : ELIZA\n         : Primer chatbot\n    1970s : Invierno de la IA\n          : Desilusión y recortes\n    1980s : Modelos Estadísticos\n          : N-grams y probabilidad\n    2013 : Word2Vec\n         : Representaciones densas\n    2017 : Transformer\n         : \"Attention is All You Need\"\n    2018 : BERT\n         : Bidireccional\n    2022 : ChatGPT\n         : IA Generativa masiva\n\n\n\n\n\ntimeline\n    title Evolución del Procesamiento de Lenguaje Natural\n    1950 : Test de Turing\n         : \"¿Pueden pensar las máquinas?\"\n    1954 : Experimento Georgetown-IBM\n         : Primera traducción automática\n    1966 : ELIZA\n         : Primer chatbot\n    1970s : Invierno de la IA\n          : Desilusión y recortes\n    1980s : Modelos Estadísticos\n          : N-grams y probabilidad\n    2013 : Word2Vec\n         : Representaciones densas\n    2017 : Transformer\n         : \"Attention is All You Need\"\n    2018 : BERT\n         : Bidireccional\n    2022 : ChatGPT\n         : IA Generativa masiva"
+  },
+  {
+    "objectID": "slides/semana01/s1_intro_nlp.html#el-test-de-turing",
+    "href": "slides/semana01/s1_intro_nlp.html#el-test-de-turing",
+    "title": "Introducción al Procesamiento de Lenguaje Natural",
+    "section": "1950: El Test de Turing 🎭",
+    "text": "1950: El Test de Turing 🎭\n\n\nAlan Turing propuso en su artículo “Computing Machinery and Intelligence”:\n\n“¿Pueden pensar las máquinas?”\n\n. . .\nEl Juego de la Imitación:\n\nUn interrogador humano (C)\nUn humano (B)\nUna máquina (A)\n\nSi C no puede distinguir entre A y B, la máquina “piensa”.\n\n\n\nCode\ngraph TD\n    C[🧑 Interrogador&lt;br&gt;C] --&gt;|Preguntas| A[🤖 Máquina&lt;br&gt;A]\n    C --&gt;|Preguntas| B[👤 Humano&lt;br&gt;B]\n    A --&gt;|Respuestas| C\n    B --&gt;|Respuestas| C\n    style C fill:#ffd166\n    style A fill:#ef476f\n    style B fill:#06d6a0\n\n\n\n\n\ngraph TD\n    C[🧑 Interrogador&lt;br&gt;C] --&gt;|Preguntas| A[🤖 Máquina&lt;br&gt;A]\n    C --&gt;|Preguntas| B[👤 Humano&lt;br&gt;B]\n    A --&gt;|Respuestas| C\n    B --&gt;|Respuestas| C\n    style C fill:#ffd166\n    style A fill:#ef476f\n    style B fill:#06d6a0"
+  },
+  {
+    "objectID": "slides/semana01/s1_intro_nlp.html#experimento-georgetown-ibm",
+    "href": "slides/semana01/s1_intro_nlp.html#experimento-georgetown-ibm",
+    "title": "Introducción al Procesamiento de Lenguaje Natural",
+    "section": "1954: Experimento Georgetown-IBM 🌐",
+    "text": "1954: Experimento Georgetown-IBM 🌐\n\n\nEl primer sistema de traducción automática público:\n\nTraducción del ruso al inglés\nSolo 250 palabras de vocabulario\n6 reglas gramaticales\n60 oraciones traducidas\n\n. . .\nPredicción optimista: &gt; “En 3 a 5 años, la traducción automática será un problema resuelto”\n. . .\n\n\n\n\n\n\nSpoiler\n\n\nTardamos más de 60 años en lograr traducciones de calidad con Neural MT.\n\n\n\n\nEjemplo traducido:\n🇷🇺 “Мы передаём мысли посредством речи”\n⬇️\n🇺🇸 “We transmit thoughts by means of speech”"
+  },
+  {
+    "objectID": "slides/semana01/s1_intro_nlp.html#eliza---el-primer-chatbot",
+    "href": "slides/semana01/s1_intro_nlp.html#eliza---el-primer-chatbot",
+    "title": "Introducción al Procesamiento de Lenguaje Natural",
+    "section": "1966: ELIZA - El Primer Chatbot 💬",
+    "text": "1966: ELIZA - El Primer Chatbot 💬\nCreado por Joseph Weizenbaum en el MIT:\n\n\nCaracterísticas:\n\nSimulaba un psicoterapeuta\nUsaba pattern matching\nTransformaba declaraciones en preguntas\nSin comprensión real\n\n\nEjemplo de conversación:\nUsuario: Estoy muy triste hoy\nELIZA: ¿Por qué estás triste?\n\nUsuario: Mi madre me critica\nELIZA: Cuéntame más sobre tu madre\n\nUsuario: Ella nunca está satisfecha\nELIZA: ¿Quién más en tu familia \n       no está satisfecho?\n\n\n\n\n\n\n\n\nEfecto ELIZA\n\n\nMuchos usuarios creían que ELIZA realmente los “entendía”, demostrando nuestra tendencia a antropomorfizar las máquinas."
+  },
+  {
+    "objectID": "slides/semana01/s1_intro_nlp.html#s-el-invierno-de-la-ia",
+    "href": "slides/semana01/s1_intro_nlp.html#s-el-invierno-de-la-ia",
+    "title": "Introducción al Procesamiento de Lenguaje Natural",
+    "section": "1970s: El Invierno de la IA ❄️",
+    "text": "1970s: El Invierno de la IA ❄️\n\n\nEl Informe ALPAC (1966) concluyó:\n\n“La traducción automática es más lenta, menos precisa y dos veces más costosa que la traducción humana”\n\n. . .\nConsecuencias:\n\n📉 Recortes masivos de financiamiento\n🚫 Cancelación de proyectos\n😔 Desilusión generalizada\n🔬 Investigación limitada por décadas\n\n\nLimitaciones identificadas:\n\nAmbigüedad del lenguaje\nConocimiento del mundo\nCapacidad computacional\nDatos insuficientes"
+  },
+  {
+    "objectID": "slides/semana01/s1_intro_nlp.html#s-2000s-revolución-estadística",
+    "href": "slides/semana01/s1_intro_nlp.html#s-2000s-revolución-estadística",
+    "title": "Introducción al Procesamiento de Lenguaje Natural",
+    "section": "1980s-2000s: Revolución Estadística 📊",
+    "text": "1980s-2000s: Revolución Estadística 📊\nEl cambio de paradigma: De reglas a probabilidades\n\n\nEnfoque basado en reglas:\nSI palabra = \"banco\" Y \n   contexto = \"dinero\"\nENTONCES significado = \"institución financiera\"\nProblema: ¿Cuántas reglas necesitamos?\n\nEnfoque estadístico: \\[P(\\text{significado}|\\text{contexto})\\]\nAprender de datos en lugar de programar reglas.\n\nN-gramas\nModelos de Markov\nNaive Bayes\n\n\n\n\n\n\n\n\n\nCita Famosa\n\n\n\n“Every time I fire a linguist, the performance of the speech recognizer goes up”\n— Fred Jelinek, IBM (1985)"
+  },
+  {
+    "objectID": "slides/semana01/s1_intro_nlp.html#la-era-de-los-embeddings",
+    "href": "slides/semana01/s1_intro_nlp.html#la-era-de-los-embeddings",
+    "title": "Introducción al Procesamiento de Lenguaje Natural",
+    "section": "2013-2017: La Era de los Embeddings 🎯",
+    "text": "2013-2017: La Era de los Embeddings 🎯\nWord2Vec (Mikolov et al., 2013) revolucionó la representación de palabras:\n\n\nAntes: One-hot encoding\nrey   = [1,0,0,0,0,...]\nreina = [0,1,0,0,0,...]\nNo captura relaciones semánticas\n\nDespués: Dense vectors\nrey   = [0.2, 0.8, -0.1, ...]\nreina = [0.3, 0.7, -0.2, ...]\nPalabras similares → vectores cercanos\n\n\nLa famosa analogía:\n\\[\\vec{rey} - \\vec{hombre} + \\vec{mujer} \\approx \\vec{reina}\\]"
+  },
+  {
+    "objectID": "slides/semana01/s1_intro_nlp.html#attention-is-all-you-need",
+    "href": "slides/semana01/s1_intro_nlp.html#attention-is-all-you-need",
+    "title": "Introducción al Procesamiento de Lenguaje Natural",
+    "section": "2017: Attention is All You Need 🔥",
+    "text": "2017: Attention is All You Need 🔥\nEl paper que cambió todo: Transformer (Vaswani et al., 2017)\n\n\nInnovaciones clave:\n\nSelf-Attention: Cada palabra atiende a todas las demás\nParalelización: Entrenamiento más eficiente que RNNs\nEscalabilidad: Mejor rendimiento con más datos\n\n. . .\nEl mecanismo de atención: \\[\\text{Attention}(Q,K,V) = \\text{softmax}\\left(\\frac{QK^T}{\\sqrt{d_k}}\\right)V\\]\n\n\n\nCode\ngraph TB\n    subgraph Transformer\n        A[Input] --&gt; B[Encoder]\n        B --&gt; C[**Attention**]\n        C --&gt; D[Decoder]\n        D --&gt; E[Output]\n    end\n    style A fill:#ffffff,stroke:#333,stroke-width:2px,color:#000\n    style B fill:#e3f2fd,stroke:#333,stroke-width:2px,color:#000\n    style C fill:#ffcdd2,stroke:#d32f2f,stroke-width:4px,color:#000\n    style D fill:#e3f2fd,stroke:#333,stroke-width:2px,color:#000\n    style E fill:#ffffff,stroke:#333,stroke-width:2px,color:#000\n    style Transformer fill:#ffffff,stroke:#333,color:#000\n    linkStyle default stroke:#333,stroke-width:2px\n\n\n\n\n\ngraph TB\n    subgraph Transformer\n        A[Input] --&gt; B[Encoder]\n        B --&gt; C[**Attention**]\n        C --&gt; D[Decoder]\n        D --&gt; E[Output]\n    end\n    style A fill:#ffffff,stroke:#333,stroke-width:2px,color:#000\n    style B fill:#e3f2fd,stroke:#333,stroke-width:2px,color:#000\n    style C fill:#ffcdd2,stroke:#d32f2f,stroke-width:4px,color:#000\n    style D fill:#e3f2fd,stroke:#333,stroke-width:2px,color:#000\n    style E fill:#ffffff,stroke:#333,stroke-width:2px,color:#000\n    style Transformer fill:#ffffff,stroke:#333,color:#000\n    linkStyle default stroke:#333,stroke-width:2px"
+  },
+  {
+    "objectID": "slides/semana01/s1_intro_nlp.html#bert-y-gpt",
+    "href": "slides/semana01/s1_intro_nlp.html#bert-y-gpt",
+    "title": "Introducción al Procesamiento de Lenguaje Natural",
+    "section": "2018-2022: BERT y GPT 🚀",
+    "text": "2018-2022: BERT y GPT 🚀\n\n\nBERT (Google, 2018)\nBidirectional Encoder Representations from Transformers\n\nBidireccional\nMasked Language Model\nFine-tuning para tareas\nExcelente para comprensión\n\n\nGPT (OpenAI, 2018-2023)\nGenerative Pre-trained Transformer\n\nUnidireccional (izq→der)\nCausal Language Model\nFew-shot learning\nExcelente para generación\n\n\n\n\n\n\n\n\n\nChatGPT (Nov 2022)\n\n\nGPT-3.5 + RLHF = La IA que llegó a 100 millones de usuarios en 2 meses."
+  },
+  {
+    "objectID": "slides/semana01/s1_intro_nlp.html#del-test-de-turing-a-chatgpt",
+    "href": "slides/semana01/s1_intro_nlp.html#del-test-de-turing-a-chatgpt",
+    "title": "Introducción al Procesamiento de Lenguaje Natural",
+    "section": "Del Test de Turing a ChatGPT",
+    "text": "Del Test de Turing a ChatGPT\n\n\nCode\ngraph LR\n    A[1950&lt;br&gt;Test de Turing&lt;br&gt;🤔 Filosofía] --&gt; B[1960s&lt;br&gt;Reglas&lt;br&gt;📝 Simbólico]\n    B --&gt; C[1980s&lt;br&gt;Estadístico&lt;br&gt;📊 Probabilidad]\n    C --&gt; D[2013&lt;br&gt;Embeddings&lt;br&gt;🎯 Representación]\n    D --&gt; E[2017&lt;br&gt;Transformers&lt;br&gt;⚡ Atención]\n    E --&gt; F[2022&lt;br&gt;ChatGPT&lt;br&gt;🚀 AGI?]\n    \n    style A fill:#ffd166\n    style B fill:#f4a261\n    style C fill:#e76f51\n    style D fill:#2a9d8f\n    style E fill:#264653\n    style F fill:#e63946\n\n\n\n\n\ngraph LR\n    A[1950&lt;br&gt;Test de Turing&lt;br&gt;🤔 Filosofía] --&gt; B[1960s&lt;br&gt;Reglas&lt;br&gt;📝 Simbólico]\n    B --&gt; C[1980s&lt;br&gt;Estadístico&lt;br&gt;📊 Probabilidad]\n    C --&gt; D[2013&lt;br&gt;Embeddings&lt;br&gt;🎯 Representación]\n    D --&gt; E[2017&lt;br&gt;Transformers&lt;br&gt;⚡ Atención]\n    E --&gt; F[2022&lt;br&gt;ChatGPT&lt;br&gt;🚀 AGI?]\n    \n    style A fill:#ffd166\n    style B fill:#f4a261\n    style C fill:#e76f51\n    style D fill:#2a9d8f\n    style E fill:#264653\n    style F fill:#e63946"
+  },
+  {
+    "objectID": "slides/semana01/s1_intro_nlp.html#top-10-aplicaciones-de-nlp",
+    "href": "slides/semana01/s1_intro_nlp.html#top-10-aplicaciones-de-nlp",
+    "title": "Introducción al Procesamiento de Lenguaje Natural",
+    "section": "Top 10 Aplicaciones de NLP",
+    "text": "Top 10 Aplicaciones de NLP\n\n\n\n💬 Chatbots y Asistentes Virtuales\n\nSiri, Alexa, Google Assistant\n\n🌐 Traducción Automática\n\nGoogle Translate, DeepL\n\n😊 Análisis de Sentimiento\n\nMonitoreo de redes sociales\n\n🎤 Reconocimiento de Voz\n\nTranscripción, dictado\n\n📝 Generación de Texto\n\nEscritura asistida, resúmenes\n\n\n\n\n🔍 Búsqueda Semántica\n\nMotores de búsqueda inteligentes\n\n🏷️ Extracción de Información\n\nNER, relaciones\n\n❓ Question Answering\n\nRAG, sistemas de soporte\n\n📧 Filtrado de Spam\n\nClasificación de correos\n\n🏥 NLP Biomédico\n\nAnálisis de literatura científica"
+  },
+  {
+    "objectID": "slides/semana01/s1_intro_nlp.html#por-qué-nlp-ahora",
+    "href": "slides/semana01/s1_intro_nlp.html#por-qué-nlp-ahora",
+    "title": "Introducción al Procesamiento de Lenguaje Natural",
+    "section": "¿Por qué NLP Ahora?",
+    "text": "¿Por qué NLP Ahora?\n\n\n📊 Datos\n\nExplosión de texto digital\nRedes sociales\nDigitalización de documentos\n\n\n⚡ Cómputo\n\nGPUs asequibles\nCloud computing\nEntrenamiento distribuido\n\n\n🧠 Algoritmos\n\nTransformers\nTransfer learning\nModelos pre-entrenados\n\n\n\n\n\nCode\nimport matplotlib.pyplot as plt\n\naños = [2018, 2019, 2020, 2021, 2022, 2023, 2024]\nparametros = [0.1, 1.5, 175, 530, 540, 1000, 1800]  # En miles de millones\n\nplt.figure(figsize=(10, 4))\nplt.plot(años, parametros, marker='o', linewidth=2, markersize=8, color='#0077b6')\nplt.fill_between(años, parametros, alpha=0.3, color='#00b4d8')\nplt.xlabel('Año', fontsize=12)\nplt.ylabel('Parámetros (miles de millones)', fontsize=12)\nplt.title('Crecimiento del tamaño de modelos de lenguaje', fontsize=14)\nplt.yscale('log')\nplt.grid(True, alpha=0.3)\nplt.tight_layout()\nplt.show()"
+  },
+  {
+    "objectID": "slides/semana01/s1_intro_nlp.html#lo-que-aprendimos-hoy",
+    "href": "slides/semana01/s1_intro_nlp.html#lo-que-aprendimos-hoy",
+    "title": "Introducción al Procesamiento de Lenguaje Natural",
+    "section": "Lo que Aprendimos Hoy ✅",
+    "text": "Lo que Aprendimos Hoy ✅\n\nReglas del curso: Evaluación, política de IA, expectativas\nNLP = Ciencias de la Computación + IA + Lingüística\nHistoria: Del Test de Turing (1950) a ChatGPT (2022)\nEvolución: Reglas → Estadística → Deep Learning → Transformers\nAplicaciones: Traducción, chatbots, análisis de sentimiento…"
+  },
+  {
+    "objectID": "slides/semana01/s1_intro_nlp.html#para-la-próxima-clase",
+    "href": "slides/semana01/s1_intro_nlp.html#para-la-próxima-clase",
+    "title": "Introducción al Procesamiento de Lenguaje Natural",
+    "section": "Para la Próxima Clase 📚",
+    "text": "Para la Próxima Clase 📚\n\n\nLectura:\n\nCapítulo 1: Speech and Language Processing (Jurafsky & Martin)\nArtículo: “Attention is All You Need” (opcional)\n\n\nPreparación:\n\nInstalar Python 3.10+\nCrear entorno virtual\nInstalar: nltk, spacy\n\npip install nltk spacy\npython -m spacy download es_core_news_sm"
+  },
+  {
+    "objectID": "slides/semana01/s1_intro_nlp.html#próxima-sesión-expresiones-regulares",
+    "href": "slides/semana01/s1_intro_nlp.html#próxima-sesión-expresiones-regulares",
+    "title": "Introducción al Procesamiento de Lenguaje Natural",
+    "section": "Próxima Sesión: Expresiones Regulares 🔧",
+    "text": "Próxima Sesión: Expresiones Regulares 🔧\n\n“Algunas personas, cuando se enfrentan a un problema, piensan: ‘Ya sé, usaré expresiones regulares.’ Ahora tienen dos problemas.”\n— Jamie Zawinski\n\n\n\n\n\n\n\n\nS2: Regular Expressions - La Navaja Suiza del NLP\n\n\nAprenderemos a buscar, extraer y manipular patrones de texto de forma eficiente."
+  }
+]
