@@ -1,0 +1,1554 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<script src="s1_intro_nlp_files/libs/clipboard/clipboard.min.js"></script>
+<script src="s1_intro_nlp_files/libs/quarto-html/tabby.min.js"></script>
+<script src="s1_intro_nlp_files/libs/quarto-html/popper.min.js"></script>
+<script src="s1_intro_nlp_files/libs/quarto-html/tippy.umd.min.js"></script>
+<link href="s1_intro_nlp_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="s1_intro_nlp_files/libs/quarto-html/light-border.css" rel="stylesheet">
+<link href="s1_intro_nlp_files/libs/quarto-html/quarto-syntax-highlighting-bcbce66894bfa8e7e94e40e0186b9bb8.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
+  <meta name="generator" content="quarto-1.7.29">
+
+  <meta name="author" content="Prof.&nbsp;Francisco Suárez">
+  <meta name="dcterms.date" content="2026-02-03">
+  <title>Introducción al Procesamiento de Lenguaje Natural</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+  <link rel="stylesheet" href="s1_intro_nlp_files/libs/revealjs/dist/reset.css">
+  <link rel="stylesheet" href="s1_intro_nlp_files/libs/revealjs/dist/reveal.css">
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+      vertical-align: middle;
+    }
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+      }
+    pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+    div.sourceCode
+      { color: #24292e;  }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span { color: #24292e; } /* Normal */
+    code span.al { color: #ff5555; font-weight: bold; } /* Alert */
+    code span.an { color: #6a737d; } /* Annotation */
+    code span.at { color: #d73a49; } /* Attribute */
+    code span.bn { color: #005cc5; } /* BaseN */
+    code span.bu { color: #d73a49; } /* BuiltIn */
+    code span.cf { color: #d73a49; } /* ControlFlow */
+    code span.ch { color: #032f62; } /* Char */
+    code span.cn { color: #005cc5; } /* Constant */
+    code span.co { color: #6a737d; } /* Comment */
+    code span.cv { color: #6a737d; } /* CommentVar */
+    code span.do { color: #6a737d; } /* Documentation */
+    code span.dt { color: #d73a49; } /* DataType */
+    code span.dv { color: #005cc5; } /* DecVal */
+    code span.er { color: #ff5555; text-decoration: underline; } /* Error */
+    code span.ex { color: #d73a49; font-weight: bold; } /* Extension */
+    code span.fl { color: #005cc5; } /* Float */
+    code span.fu { color: #6f42c1; } /* Function */
+    code span.im { color: #032f62; } /* Import */
+    code span.in { color: #6a737d; } /* Information */
+    code span.kw { color: #d73a49; } /* Keyword */
+    code span.op { color: #24292e; } /* Operator */
+    code span.ot { color: #6f42c1; } /* Other */
+    code span.pp { color: #d73a49; } /* Preprocessor */
+    code span.re { color: #6a737d; } /* RegionMarker */
+    code span.sc { color: #005cc5; } /* SpecialChar */
+    code span.ss { color: #032f62; } /* SpecialString */
+    code span.st { color: #032f62; } /* String */
+    code span.va { color: #e36209; } /* Variable */
+    code span.vs { color: #032f62; } /* VerbatimString */
+    code span.wa { color: #ff5555; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="s1_intro_nlp_files/libs/revealjs/dist/theme/quarto-39d1eab08b8faec97b8adc39508066ea.css">
+  <link href="s1_intro_nlp_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.css" rel="stylesheet">
+  <link href="s1_intro_nlp_files/libs/revealjs/plugin/reveal-menu/menu.css" rel="stylesheet">
+  <link href="s1_intro_nlp_files/libs/revealjs/plugin/reveal-menu/quarto-menu.css" rel="stylesheet">
+  <link href="s1_intro_nlp_files/libs/revealjs/plugin/reveal-chalkboard/font-awesome/css/all.css" rel="stylesheet">
+  <link href="s1_intro_nlp_files/libs/revealjs/plugin/reveal-chalkboard/style.css" rel="stylesheet">
+  <link href="s1_intro_nlp_files/libs/revealjs/plugin/quarto-support/footer.css" rel="stylesheet">
+  <style type="text/css">
+    .reveal div.sourceCode {
+      margin: 0;
+      overflow: auto;
+    }
+    .reveal div.hanging-indent {
+      margin-left: 1em;
+      text-indent: -1em;
+    }
+    .reveal .slide:not(.center) {
+      height: 100%;
+      overflow-y: auto;
+    }
+    .reveal .slide.scrollable {
+      overflow-y: auto;
+    }
+    .reveal .footnotes {
+      height: 100%;
+      overflow-y: auto;
+    }
+    .reveal .slide .absolute {
+      position: absolute;
+      display: block;
+    }
+    .reveal .footnotes ol {
+      counter-reset: ol;
+      list-style-type: none; 
+      margin-left: 0;
+    }
+    .reveal .footnotes ol li:before {
+      counter-increment: ol;
+      content: counter(ol) ". "; 
+    }
+    .reveal .footnotes ol li > p:first-child {
+      display: inline-block;
+    }
+    .reveal .slide ul,
+    .reveal .slide ol {
+      margin-bottom: 0.5em;
+    }
+    .reveal .slide ul li,
+    .reveal .slide ol li {
+      margin-top: 0.4em;
+      margin-bottom: 0.2em;
+    }
+    .reveal .slide ul[role="tablist"] li {
+      margin-bottom: 0;
+    }
+    .reveal .slide ul li > *:first-child,
+    .reveal .slide ol li > *:first-child {
+      margin-block-start: 0;
+    }
+    .reveal .slide ul li > *:last-child,
+    .reveal .slide ol li > *:last-child {
+      margin-block-end: 0;
+    }
+    .reveal .slide .columns:nth-child(3) {
+      margin-block-start: 0.8em;
+    }
+    .reveal blockquote {
+      box-shadow: none;
+    }
+    .reveal .tippy-content>* {
+      margin-top: 0.2em;
+      margin-bottom: 0.7em;
+    }
+    .reveal .tippy-content>*:last-child {
+      margin-bottom: 0.2em;
+    }
+    .reveal .slide > img.stretch.quarto-figure-center,
+    .reveal .slide > img.r-stretch.quarto-figure-center {
+      display: block;
+      margin-left: auto;
+      margin-right: auto; 
+    }
+    .reveal .slide > img.stretch.quarto-figure-left,
+    .reveal .slide > img.r-stretch.quarto-figure-left  {
+      display: block;
+      margin-left: 0;
+      margin-right: auto; 
+    }
+    .reveal .slide > img.stretch.quarto-figure-right,
+    .reveal .slide > img.r-stretch.quarto-figure-right  {
+      display: block;
+      margin-left: auto;
+      margin-right: 0; 
+    }
+  </style>
+  <script src="s1_intro_nlp_files/libs/quarto-diagram/mermaid.min.js"></script>
+  <script src="s1_intro_nlp_files/libs/quarto-diagram/mermaid-init.js"></script>
+  <link href="s1_intro_nlp_files/libs/quarto-diagram/mermaid.css" rel="stylesheet">
+</head>
+<body class="quarto-light">
+  <div class="reveal">
+    <div class="slides">
+
+<section id="title-slide" class="quarto-title-block center">
+  <h1 class="title">Introducción al Procesamiento de Lenguaje Natural</h1>
+  <p class="subtitle">S1: ¿Qué es NLP? Historia (Del Test de Turing a ChatGPT)</p>
+
+<div class="quarto-title-authors">
+<div class="quarto-title-author">
+<div class="quarto-title-author-name">
+Prof.&nbsp;Francisco Suárez 
+</div>
+        <p class="quarto-title-affiliation">
+            Universidad Católica Boliviana
+          </p>
+    </div>
+</div>
+
+  <p class="date">2026-02-03</p>
+</section>
+<section id="agenda-de-hoy" class="slide level2 smaller scrollable">
+<h2>Agenda de Hoy</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<p><strong>Primera Parte</strong></p>
+<ol type="1">
+<li>🎯 Bienvenida y Reglas del Juego</li>
+<li>📊 Sistema de Evaluación</li>
+<li>🤖 Política de uso de IA</li>
+</ol>
+</div><div class="column" style="width:50%;">
+<p><strong>Segunda Parte</strong></p>
+<ol start="4" type="1">
+<li>🧠 ¿Qué es NLP?</li>
+<li>📜 Historia y Evolución</li>
+<li>💡 Aplicaciones Modernas</li>
+</ol>
+</div></div>
+</section>
+<section>
+<section id="bloque-1-bienvenida-y-reglas-del-juego" class="title-slide slide level1 center" data-background-color="#0077b6">
+<h1>Bloque 1: Bienvenida y Reglas del Juego</h1>
+
+</section>
+<section id="bienvenidos-al-curso" class="slide level2 smaller">
+<h2>Bienvenidos al Curso</h2>
+<h3 id="nlp-y-análisis-semántico">NLP y Análisis Semántico</h3>
+<blockquote>
+<p><em>“El lenguaje es el vestido del pensamiento.”</em> — Samuel Johnson</p>
+</blockquote>
+<p>Este curso les llevará en un viaje desde los fundamentos del procesamiento de texto hasta los modelos de lenguaje más avanzados como <strong>ChatGPT</strong> y <strong>Claude</strong>.</p>
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Objetivo General</strong></p>
+</div>
+<div class="callout-content">
+<p>Desarrollar competencias teóricas y prácticas en el análisis computacional del lenguaje humano.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="qué-aprenderemos" class="slide level2 smaller">
+<h2>¿Qué Aprenderemos?</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<p><strong>Fundamentos</strong></p>
+<ul>
+<li>Expresiones regulares</li>
+<li>Tokenización y preprocesamiento</li>
+<li>Modelos de lenguaje clásicos</li>
+<li>Word Embeddings</li>
+</ul>
+</div><div class="column" style="width:50%;">
+<p><strong>Avanzado</strong></p>
+<ul>
+<li>Redes Neuronales Recurrentes</li>
+<li>Arquitectura Transformer</li>
+<li>BERT, GPT y LLMs</li>
+<li>RAG y Aplicaciones</li>
+</ul>
+</div></div>
+</section>
+<section id="sistema-de-evaluación" class="slide level2 smaller">
+<h2>Sistema de Evaluación</h2>
+<table class="table-striped table-hover caption-top">
+<caption>Distribución de la Evaluación</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Componente</th>
+<th style="text-align: center;">Peso</th>
+<th style="text-align: left;">Descripción</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>Examen</strong></td>
+<td style="text-align: center;">30%</td>
+<td style="text-align: left;">Evaluación teórica (Semanas 1-10)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Proyecto Grupal</strong></td>
+<td style="text-align: center;">30%</td>
+<td style="text-align: left;">Aplicación NLP completa</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Ejercicios (Tareas)</strong></td>
+<td style="text-align: center;">20%</td>
+<td style="text-align: left;">4 tareas prácticas de programación</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Quizzes</strong></td>
+<td style="text-align: center;">10%</td>
+<td style="text-align: left;">Evaluaciones cortas bi-semanales</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Participación</strong></td>
+<td style="text-align: center;">10%</td>
+<td style="text-align: left;">Asistencia y contribución en clase</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="política-de-inteligencia-artificial" class="slide level2 smaller scrollable">
+<h2>Política de Inteligencia Artificial 🤖</h2>
+<div class="callout callout-important callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Uso Permitido de LLMs</strong></p>
+</div>
+<div class="callout-content">
+<p>Se <strong>permite</strong> el uso de herramientas de IA (ChatGPT, Claude, Copilot, etc.) bajo las siguientes condiciones:</p>
+</div>
+</div>
+</div>
+<ol type="1">
+<li><strong>Transparencia:</strong> Siempre declarar qué herramienta se utilizó</li>
+<li><strong>Enlace compartido:</strong> Incluir el <strong>link de la conversación</strong> cuando sea posible</li>
+<li><strong>Comprensión:</strong> Poder explicar y defender el código generado</li>
+</ol>
+<div class="callout callout-warning callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>⚠️ En Tareas y Exámenes</strong></p>
+</div>
+<div class="callout-content">
+<ul>
+<li>❌ <strong>NO</strong> pedir la respuesta directa a un problema</li>
+<li>✅ <strong>SÍ</strong> consultar sobre pasos específicos de un procedimiento ya establecido</li>
+<li>✅ <strong>SÍ</strong> aclarar dudas conceptuales o de sintaxis</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+<section id="ejemplos-de-prompts-permitidos-vs.-no-permitidos" class="slide level2 smaller">
+<h2>Ejemplos de Prompts: Permitidos vs.&nbsp;No Permitidos</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<h3 id="no-permitido">❌ No Permitido</h3>
+<div class="sourceCode" id="cb1"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb1-1"><a href=""></a>"Resuelve este ejercicio de TF-IDF </span>
+<span id="cb1-2"><a href=""></a>para estos documentos: ..."</span>
+<span id="cb1-3"><a href=""></a></span>
+<span id="cb1-4"><a href=""></a>"Dame el código para clasificar </span>
+<span id="cb1-5"><a href=""></a>sentimientos con BERT"</span>
+<span id="cb1-6"><a href=""></a></span>
+<span id="cb1-7"><a href=""></a>"¿Cuál es la respuesta a la </span>
+<span id="cb1-8"><a href=""></a>pregunta 3 del examen?"</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><em>Pedir soluciones completas o respuestas directas</em></p>
+</div><div class="column" style="width:50%;">
+<h3 id="permitido">✅ Permitido</h3>
+<div class="sourceCode" id="cb2"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb2-1"><a href=""></a>"¿Cómo se calcula el IDF de </span>
+<span id="cb2-2"><a href=""></a>un término?"</span>
+<span id="cb2-3"><a href=""></a></span>
+<span id="cb2-4"><a href=""></a>"Tengo este error en PyTorch, </span>
+<span id="cb2-5"><a href=""></a>¿qué significa?"</span>
+<span id="cb2-6"><a href=""></a></span>
+<span id="cb2-7"><a href=""></a>"Explícame la diferencia entre </span>
+<span id="cb2-8"><a href=""></a>precision y recall"</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><em>Consultar conceptos, sintaxis o pasos específicos</em></p>
+</div></div>
+<div class="callout callout-tip callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Regla de Oro</strong></p>
+</div>
+<div class="callout-content">
+<p>Si el LLM hace <strong>tu trabajo</strong>, está mal. Si te <strong>ayuda a entender</strong> para que tú hagas el trabajo, está bien.</p>
+</div>
+</div>
+</div>
+</section></section>
+<section>
+<section id="bloque-2-qué-es-nlp" class="title-slide slide level1 center" data-background-color="#023e8a">
+<h1>Bloque 2: ¿Qué es NLP?</h1>
+
+</section>
+<section id="definición-de-nlp" class="slide level2">
+<h2>Definición de NLP</h2>
+<div class="columns">
+<div class="column" style="width:60%;">
+<p>El <strong>Procesamiento de Lenguaje Natural</strong> (NLP) es un campo interdisciplinario que se encuentra en la intersección de:</p>
+<ul>
+<li>💻 <strong>Ciencias de la Computación</strong></li>
+<li>🧠 <strong>Inteligencia Artificial</strong></li>
+<li>📖 <strong>Lingüística</strong></li>
+</ul>
+</div><div class="column" style="width:40%;">
+<div class="cell" data-reveal="true" data-fig-width="4" data-fig-height="4" data-layout-align="default">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource default number-lines code-with-copy"><code class="sourceCode default"><span id="cb3-1"><a href=""></a>graph TD</span>
+<span id="cb3-2"><a href=""></a>    A[Ciencias de la&lt;br&gt;Computación] --&gt; D[NLP]</span>
+<span id="cb3-3"><a href=""></a>    B[Inteligencia&lt;br&gt;Artificial] --&gt; D</span>
+<span id="cb3-4"><a href=""></a>    C[Lingüística] --&gt; D</span>
+<span id="cb3-5"><a href=""></a>    style D fill:#0077b6,stroke:#023e8a,color:#fff</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<p></p><figure class=""><p></p>
+<div>
+<pre class="mermaid mermaid-js">graph TD
+    A[Ciencias de la&lt;br&gt;Computación] --&gt; D[NLP]
+    B[Inteligencia&lt;br&gt;Artificial] --&gt; D
+    C[Lingüística] --&gt; D
+    style D fill:#0077b6,stroke:#023e8a,color:#fff
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+<section id="el-problema-fundamental" class="slide level2 smaller">
+<h2>El Problema Fundamental</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<h3 id="comunicación-humana">Comunicación Humana 🗣️</h3>
+<ul>
+<li>Ambigüedad inherente</li>
+<li>Contexto implícito</li>
+<li>Ironía y sarcasmo</li>
+<li>Variaciones culturales</li>
+<li>Errores gramaticales</li>
+</ul>
+<blockquote>
+<p><em>“Vi al hombre con el telescopio”</em> — ¿Quién lo tiene?</p>
+</blockquote>
+</div><div class="column" style="width:50%;">
+<h3 id="comunicación-de-máquinas">Comunicación de Máquinas 🖥️</h3>
+<ul>
+<li>Binario: <code>0</code> y <code>1</code></li>
+<li>Instrucciones precisas</li>
+<li>Sin ambigüedad</li>
+<li>Determinístico</li>
+</ul>
+<pre><code>01001000 01101111 01101100 01100001</code></pre>
+<p>= “Hola” en ASCII</p>
+</div></div>
+<div class="callout callout-warning callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>El Desafío</strong></p>
+</div>
+<div class="callout-content">
+<p>¿Cómo enseñamos a una máquina a entender el lenguaje humano con toda su complejidad?</p>
+</div>
+</div>
+</div>
+</section>
+<section id="demostración-tu-primer-código-nlp" class="slide level2 smaller">
+<h2>Demostración: Tu Primer Código NLP</h2>
+<p>Veamos cómo una computadora “ve” una oración:</p>
+<div id="cb8aa901" class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href=""></a><span class="co"># Dividir una frase en palabras (tokenización básica)</span></span>
+<span id="cb5-2"><a href=""></a>oracion <span class="op">=</span> <span class="st">"El procesamiento de lenguaje natural es fascinante"</span></span>
+<span id="cb5-3"><a href=""></a></span>
+<span id="cb5-4"><a href=""></a><span class="co"># Método simple: split()</span></span>
+<span id="cb5-5"><a href=""></a>palabras <span class="op">=</span> oracion.split()</span>
+<span id="cb5-6"><a href=""></a></span>
+<span id="cb5-7"><a href=""></a><span class="bu">print</span>(<span class="ss">f"Oración original: '</span><span class="sc">{</span>oracion<span class="sc">}</span><span class="ss">'"</span>)</span>
+<span id="cb5-8"><a href=""></a><span class="bu">print</span>(<span class="ss">f"Número de palabras: </span><span class="sc">{</span><span class="bu">len</span>(palabras)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb5-9"><a href=""></a><span class="bu">print</span>(<span class="ss">f"Lista de tokens: </span><span class="sc">{</span>palabras<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb5-10"><a href=""></a></span>
+<span id="cb5-11"><a href=""></a><span class="co"># Ver cada palabra con su posición</span></span>
+<span id="cb5-12"><a href=""></a><span class="cf">for</span> i, palabra <span class="kw">in</span> <span class="bu">enumerate</span>(palabras):</span>
+<span id="cb5-13"><a href=""></a>    <span class="bu">print</span>(<span class="ss">f"  Token </span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">: '</span><span class="sc">{</span>palabra<span class="sc">}</span><span class="ss">' (longitud: </span><span class="sc">{</span><span class="bu">len</span>(palabra)<span class="sc">}</span><span class="ss">)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Oración original: 'El procesamiento de lenguaje natural es fascinante'
+Número de palabras: 7
+Lista de tokens: ['El', 'procesamiento', 'de', 'lenguaje', 'natural', 'es', 'fascinante']
+  Token 0: 'El' (longitud: 2)
+  Token 1: 'procesamiento' (longitud: 13)
+  Token 2: 'de' (longitud: 2)
+  Token 3: 'lenguaje' (longitud: 8)
+  Token 4: 'natural' (longitud: 7)
+  Token 5: 'es' (longitud: 2)
+  Token 6: 'fascinante' (longitud: 10)</code></pre>
+</div>
+</div>
+</section>
+<section id="el-pipeline-de-nlp" class="slide level2 smaller">
+<h2>El Pipeline de NLP</h2>
+<div class="cell" data-reveal="true" data-fig-width="10" data-layout-align="default">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource default number-lines code-with-copy"><code class="sourceCode default"><span id="cb7-1"><a href=""></a>flowchart LR</span>
+<span id="cb7-2"><a href=""></a>    A[📥 Recolección&lt;br&gt;de Datos] --&gt; B[🧹 Limpieza y&lt;br&gt;Preprocesamiento]</span>
+<span id="cb7-3"><a href=""></a>    B --&gt; C[🔤 Tokenización]</span>
+<span id="cb7-4"><a href=""></a>    C --&gt; D[📊 Extracción de&lt;br&gt;Características]</span>
+<span id="cb7-5"><a href=""></a>    D --&gt; E[🤖 Modelado]</span>
+<span id="cb7-6"><a href=""></a>    E --&gt; F[📈 Evaluación]</span>
+<span id="cb7-7"><a href=""></a>    F --&gt; G[🚀 Despliegue]</span>
+<span id="cb7-8"><a href=""></a>    </span>
+<span id="cb7-9"><a href=""></a>    style A fill:#caf0f8,color:#000</span>
+<span id="cb7-10"><a href=""></a>    style B fill:#ade8f4,color:#000</span>
+<span id="cb7-11"><a href=""></a>    style C fill:#90e0ef,color:#000</span>
+<span id="cb7-12"><a href=""></a>    style D fill:#48cae4,color:#000</span>
+<span id="cb7-13"><a href=""></a>    style E fill:#00b4d8,color:#fff</span>
+<span id="cb7-14"><a href=""></a>    style F fill:#0096c7,color:#fff</span>
+<span id="cb7-15"><a href=""></a>    style G fill:#0077b6,color:#fff</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<p></p><figure class=""><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart LR
+    A[📥 Recolección&lt;br&gt;de Datos] --&gt; B[🧹 Limpieza y&lt;br&gt;Preprocesamiento]
+    B --&gt; C[🔤 Tokenización]
+    C --&gt; D[📊 Extracción de&lt;br&gt;Características]
+    D --&gt; E[🤖 Modelado]
+    E --&gt; F[📈 Evaluación]
+    F --&gt; G[🚀 Despliegue]
+    
+    style A fill:#caf0f8,color:#000
+    style B fill:#ade8f4,color:#000
+    style C fill:#90e0ef,color:#000
+    style D fill:#48cae4,color:#000
+    style E fill:#00b4d8,color:#fff
+    style F fill:#0096c7,color:#fff
+    style G fill:#0077b6,color:#fff
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<div class="fragment">
+<div class="columns">
+<div class="column" style="width:50%;">
+<p><strong>Preprocesamiento</strong></p>
+<ul>
+<li>Eliminación de ruido</li>
+<li>Normalización</li>
+<li>Tokenización</li>
+<li>Lematización</li>
+</ul>
+</div><div class="column" style="width:50%;">
+<p><strong>Modelado</strong></p>
+<ul>
+<li>Representación vectorial</li>
+<li>Entrenamiento</li>
+<li>Inferencia</li>
+<li>Fine-tuning</li>
+</ul>
+</div></div>
+</div>
+</section></section>
+<section>
+<section id="bloque-3-historia-y-evolución" class="title-slide slide level1 center" data-background-color="#03045e">
+<h1>Bloque 3: Historia y Evolución</h1>
+
+</section>
+<section id="línea-del-tiempo-del-nlp" class="slide level2 smaller">
+<h2>Línea del Tiempo del NLP</h2>
+<div class="cell" data-reveal="true" data-fig-width="12" data-layout-align="default">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource default number-lines code-with-copy"><code class="sourceCode default"><span id="cb8-1"><a href=""></a>timeline</span>
+<span id="cb8-2"><a href=""></a>    title Evolución del Procesamiento de Lenguaje Natural</span>
+<span id="cb8-3"><a href=""></a>    1950 : Test de Turing</span>
+<span id="cb8-4"><a href=""></a>         : "¿Pueden pensar las máquinas?"</span>
+<span id="cb8-5"><a href=""></a>    1954 : Experimento Georgetown-IBM</span>
+<span id="cb8-6"><a href=""></a>         : Primera traducción automática</span>
+<span id="cb8-7"><a href=""></a>    1966 : ELIZA</span>
+<span id="cb8-8"><a href=""></a>         : Primer chatbot</span>
+<span id="cb8-9"><a href=""></a>    1970s : Invierno de la IA</span>
+<span id="cb8-10"><a href=""></a>          : Desilusión y recortes</span>
+<span id="cb8-11"><a href=""></a>    1980s : Modelos Estadísticos</span>
+<span id="cb8-12"><a href=""></a>          : N-grams y probabilidad</span>
+<span id="cb8-13"><a href=""></a>    2013 : Word2Vec</span>
+<span id="cb8-14"><a href=""></a>         : Representaciones densas</span>
+<span id="cb8-15"><a href=""></a>    2017 : Transformer</span>
+<span id="cb8-16"><a href=""></a>         : "Attention is All You Need"</span>
+<span id="cb8-17"><a href=""></a>    2018 : BERT</span>
+<span id="cb8-18"><a href=""></a>         : Bidireccional</span>
+<span id="cb8-19"><a href=""></a>    2022 : ChatGPT</span>
+<span id="cb8-20"><a href=""></a>         : IA Generativa masiva</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<p></p><figure class=""><p></p>
+<div>
+<pre class="mermaid mermaid-js">timeline
+    title Evolución del Procesamiento de Lenguaje Natural
+    1950 : Test de Turing
+         : "¿Pueden pensar las máquinas?"
+    1954 : Experimento Georgetown-IBM
+         : Primera traducción automática
+    1966 : ELIZA
+         : Primer chatbot
+    1970s : Invierno de la IA
+          : Desilusión y recortes
+    1980s : Modelos Estadísticos
+          : N-grams y probabilidad
+    2013 : Word2Vec
+         : Representaciones densas
+    2017 : Transformer
+         : "Attention is All You Need"
+    2018 : BERT
+         : Bidireccional
+    2022 : ChatGPT
+         : IA Generativa masiva
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+</section>
+<section id="el-test-de-turing" class="slide level2 smaller scrollable">
+<h2>1950: El Test de Turing 🎭</h2>
+<div class="columns">
+<div class="column" style="width:60%;">
+<p><strong>Alan Turing</strong> propuso en su artículo <em>“Computing Machinery and Intelligence”</em>:</p>
+<blockquote>
+<p><em>“¿Pueden pensar las máquinas?”</em></p>
+</blockquote>
+<p>. . .</p>
+<p><strong>El Juego de la Imitación:</strong></p>
+<ol type="1">
+<li>Un interrogador humano (C)</li>
+<li>Un humano (B)</li>
+<li>Una máquina (A)</li>
+</ol>
+<p>Si C no puede distinguir entre A y B, la máquina “piensa”.</p>
+</div><div class="column" style="width:40%;">
+<div class="cell" data-reveal="true" data-layout-align="default">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource default number-lines code-with-copy"><code class="sourceCode default"><span id="cb9-1"><a href=""></a>graph TD</span>
+<span id="cb9-2"><a href=""></a>    C[🧑 Interrogador&lt;br&gt;C] --&gt;|Preguntas| A[🤖 Máquina&lt;br&gt;A]</span>
+<span id="cb9-3"><a href=""></a>    C --&gt;|Preguntas| B[👤 Humano&lt;br&gt;B]</span>
+<span id="cb9-4"><a href=""></a>    A --&gt;|Respuestas| C</span>
+<span id="cb9-5"><a href=""></a>    B --&gt;|Respuestas| C</span>
+<span id="cb9-6"><a href=""></a>    style C fill:#ffd166</span>
+<span id="cb9-7"><a href=""></a>    style A fill:#ef476f</span>
+<span id="cb9-8"><a href=""></a>    style B fill:#06d6a0</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<p></p><figure class=""><p></p>
+<div>
+<pre class="mermaid mermaid-js">graph TD
+    C[🧑 Interrogador&lt;br&gt;C] --&gt;|Preguntas| A[🤖 Máquina&lt;br&gt;A]
+    C --&gt;|Preguntas| B[👤 Humano&lt;br&gt;B]
+    A --&gt;|Respuestas| C
+    B --&gt;|Respuestas| C
+    style C fill:#ffd166
+    style A fill:#ef476f
+    style B fill:#06d6a0
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+<section id="experimento-georgetown-ibm" class="slide level2 smaller">
+<h2>1954: Experimento Georgetown-IBM 🌐</h2>
+<div class="columns">
+<div class="column" style="width:70%;">
+<p>El <strong>primer sistema de traducción automática</strong> público:</p>
+<ul>
+<li>Traducción del <strong>ruso al inglés</strong></li>
+<li>Solo 250 palabras de vocabulario</li>
+<li>6 reglas gramaticales</li>
+<li>60 oraciones traducidas</li>
+</ul>
+<p>. . .</p>
+<p><strong>Predicción optimista:</strong> &gt; <em>“En 3 a 5 años, la traducción automática será un problema resuelto”</em></p>
+<p>. . .</p>
+<div class="callout callout-caution callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Spoiler</strong></p>
+</div>
+<div class="callout-content">
+<p>Tardamos más de 60 años en lograr traducciones de calidad con Neural MT.</p>
+</div>
+</div>
+</div>
+</div><div class="column" style="width:30%;">
+<p><strong>Ejemplo traducido:</strong></p>
+<p>🇷🇺 <em>“Мы передаём мысли посредством речи”</em></p>
+<p>⬇️</p>
+<p>🇺🇸 <em>“We transmit thoughts by means of speech”</em></p>
+</div></div>
+</section>
+<section id="eliza---el-primer-chatbot" class="slide level2 smaller">
+<h2>1966: ELIZA - El Primer Chatbot 💬</h2>
+<p>Creado por <strong>Joseph Weizenbaum</strong> en el MIT:</p>
+<div class="columns">
+<div class="column" style="width:50%;">
+<p><strong>Características:</strong></p>
+<ul>
+<li>Simulaba un psicoterapeuta</li>
+<li>Usaba <strong>pattern matching</strong></li>
+<li>Transformaba declaraciones en preguntas</li>
+<li>Sin comprensión real</li>
+</ul>
+</div><div class="column" style="width:50%;">
+<p><strong>Ejemplo de conversación:</strong></p>
+<pre><code>Usuario: Estoy muy triste hoy
+ELIZA: ¿Por qué estás triste?
+
+Usuario: Mi madre me critica
+ELIZA: Cuéntame más sobre tu madre
+
+Usuario: Ella nunca está satisfecha
+ELIZA: ¿Quién más en tu familia 
+       no está satisfecho?</code></pre>
+</div></div>
+<div class="fragment">
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Efecto ELIZA</strong></p>
+</div>
+<div class="callout-content">
+<p>Muchos usuarios creían que ELIZA realmente los “entendía”, demostrando nuestra tendencia a antropomorfizar las máquinas.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="s-el-invierno-de-la-ia" class="slide level2 smaller scrollable">
+<h2>1970s: El Invierno de la IA ❄️</h2>
+<div class="columns">
+<div class="column" style="width:60%;">
+<p><strong>El Informe ALPAC (1966)</strong> concluyó:</p>
+<blockquote>
+<p><em>“La traducción automática es más lenta, menos precisa y dos veces más costosa que la traducción humana”</em></p>
+</blockquote>
+<p>. . .</p>
+<p><strong>Consecuencias:</strong></p>
+<ul>
+<li>📉 Recortes masivos de financiamiento</li>
+<li>🚫 Cancelación de proyectos</li>
+<li>😔 Desilusión generalizada</li>
+<li>🔬 Investigación limitada por décadas</li>
+</ul>
+</div><div class="column" style="width:40%;">
+<p><strong>Limitaciones identificadas:</strong></p>
+<ol type="1">
+<li>Ambigüedad del lenguaje</li>
+<li>Conocimiento del mundo</li>
+<li>Capacidad computacional</li>
+<li>Datos insuficientes</li>
+</ol>
+</div></div>
+</section>
+<section id="s-2000s-revolución-estadística" class="slide level2 smaller">
+<h2>1980s-2000s: Revolución Estadística 📊</h2>
+<p><strong>El cambio de paradigma:</strong> De <strong>reglas</strong> a <strong>probabilidades</strong></p>
+<div class="columns">
+<div class="column" style="width:50%;">
+<p><strong>Enfoque basado en reglas:</strong></p>
+<pre><code>SI palabra = "banco" Y 
+   contexto = "dinero"
+ENTONCES significado = "institución financiera"</code></pre>
+<p><em>Problema:</em> ¿Cuántas reglas necesitamos?</p>
+</div><div class="column" style="width:50%;">
+<p><strong>Enfoque estadístico:</strong> <span class="math display">\[P(\text{significado}|\text{contexto})\]</span></p>
+<p>Aprender de <strong>datos</strong> en lugar de programar reglas.</p>
+<ul>
+<li>N-gramas</li>
+<li>Modelos de Markov</li>
+<li>Naive Bayes</li>
+</ul>
+</div></div>
+<div class="fragment">
+<div class="callout callout-tip callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Cita Famosa</strong></p>
+</div>
+<div class="callout-content">
+<blockquote>
+<p><em>“Every time I fire a linguist, the performance of the speech recognizer goes up”</em><br>
+— Fred Jelinek, IBM (1985)</p>
+</blockquote>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="la-era-de-los-embeddings" class="slide level2 smaller">
+<h2>2013-2017: La Era de los Embeddings 🎯</h2>
+<p><strong>Word2Vec</strong> (Mikolov et al., 2013) revolucionó la representación de palabras:</p>
+<div class="columns">
+<div class="column" style="width:50%;">
+<p><strong>Antes: One-hot encoding</strong></p>
+<pre><code>rey   = [1,0,0,0,0,...]
+reina = [0,1,0,0,0,...]</code></pre>
+<p><em>No captura relaciones semánticas</em></p>
+</div><div class="column" style="width:50%;">
+<p><strong>Después: Dense vectors</strong></p>
+<pre><code>rey   = [0.2, 0.8, -0.1, ...]
+reina = [0.3, 0.7, -0.2, ...]</code></pre>
+<p><em>Palabras similares → vectores cercanos</em></p>
+</div></div>
+<div class="fragment">
+<p><strong>La famosa analogía:</strong></p>
+<p><span class="math display">\[\vec{rey} - \vec{hombre} + \vec{mujer} \approx \vec{reina}\]</span></p>
+</div>
+</section>
+<section id="attention-is-all-you-need" class="slide level2 smaller scrollable">
+<h2>2017: Attention is All You Need 🔥</h2>
+<p>El paper que cambió todo: <strong>Transformer</strong> (Vaswani et al., 2017)</p>
+<div class="columns">
+<div class="column" style="width:60%;">
+<p><strong>Innovaciones clave:</strong></p>
+<ol type="1">
+<li><strong>Self-Attention:</strong> Cada palabra atiende a todas las demás</li>
+<li><strong>Paralelización:</strong> Entrenamiento más eficiente que RNNs</li>
+<li><strong>Escalabilidad:</strong> Mejor rendimiento con más datos</li>
+</ol>
+<p>. . .</p>
+<p><strong>El mecanismo de atención:</strong> <span class="math display">\[\text{Attention}(Q,K,V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V\]</span></p>
+</div><div class="column" style="width:40%;">
+<div class="cell" data-reveal="true" data-layout-align="default">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode numberSource default number-lines code-with-copy"><code class="sourceCode default"><span id="cb14-1"><a href=""></a>graph TB</span>
+<span id="cb14-2"><a href=""></a>    subgraph Transformer</span>
+<span id="cb14-3"><a href=""></a>        A[Input] --&gt; B[Encoder]</span>
+<span id="cb14-4"><a href=""></a>        B --&gt; C[**Attention**]</span>
+<span id="cb14-5"><a href=""></a>        C --&gt; D[Decoder]</span>
+<span id="cb14-6"><a href=""></a>        D --&gt; E[Output]</span>
+<span id="cb14-7"><a href=""></a>    end</span>
+<span id="cb14-8"><a href=""></a>    style A fill:#ffffff,stroke:#333,stroke-width:2px,color:#000</span>
+<span id="cb14-9"><a href=""></a>    style B fill:#e3f2fd,stroke:#333,stroke-width:2px,color:#000</span>
+<span id="cb14-10"><a href=""></a>    style C fill:#ffcdd2,stroke:#d32f2f,stroke-width:4px,color:#000</span>
+<span id="cb14-11"><a href=""></a>    style D fill:#e3f2fd,stroke:#333,stroke-width:2px,color:#000</span>
+<span id="cb14-12"><a href=""></a>    style E fill:#ffffff,stroke:#333,stroke-width:2px,color:#000</span>
+<span id="cb14-13"><a href=""></a>    style Transformer fill:#ffffff,stroke:#333,color:#000</span>
+<span id="cb14-14"><a href=""></a>    linkStyle default stroke:#333,stroke-width:2px</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<p></p><figure class=""><p></p>
+<div>
+<pre class="mermaid mermaid-js">graph TB
+    subgraph Transformer
+        A[Input] --&gt; B[Encoder]
+        B --&gt; C[**Attention**]
+        C --&gt; D[Decoder]
+        D --&gt; E[Output]
+    end
+    style A fill:#ffffff,stroke:#333,stroke-width:2px,color:#000
+    style B fill:#e3f2fd,stroke:#333,stroke-width:2px,color:#000
+    style C fill:#ffcdd2,stroke:#d32f2f,stroke-width:4px,color:#000
+    style D fill:#e3f2fd,stroke:#333,stroke-width:2px,color:#000
+    style E fill:#ffffff,stroke:#333,stroke-width:2px,color:#000
+    style Transformer fill:#ffffff,stroke:#333,color:#000
+    linkStyle default stroke:#333,stroke-width:2px
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+<section id="bert-y-gpt" class="slide level2 smaller">
+<h2>2018-2022: BERT y GPT 🚀</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<h3 id="bert-google-2018">BERT (Google, 2018)</h3>
+<p><strong>B</strong>idirectional <strong>E</strong>ncoder <strong>R</strong>epresentations from <strong>T</strong>ransformers</p>
+<ul>
+<li>Bidireccional</li>
+<li>Masked Language Model</li>
+<li>Fine-tuning para tareas</li>
+<li>Excelente para <strong>comprensión</strong></li>
+</ul>
+</div><div class="column" style="width:50%;">
+<h3 id="gpt-openai-2018-2023">GPT (OpenAI, 2018-2023)</h3>
+<p><strong>G</strong>enerative <strong>P</strong>re-trained <strong>T</strong>ransformer</p>
+<ul>
+<li>Unidireccional (izq→der)</li>
+<li>Causal Language Model</li>
+<li>Few-shot learning</li>
+<li>Excelente para <strong>generación</strong></li>
+</ul>
+</div></div>
+<div class="fragment">
+<div class="callout callout-important callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>ChatGPT (Nov 2022)</strong></p>
+</div>
+<div class="callout-content">
+<p>GPT-3.5 + RLHF = La IA que llegó a 100 millones de usuarios en 2 meses.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="del-test-de-turing-a-chatgpt" class="slide level2 smaller">
+<h2>Del Test de Turing a ChatGPT</h2>
+<div class="cell" data-reveal="true" data-fig-width="12" data-layout-align="default">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode numberSource default number-lines code-with-copy"><code class="sourceCode default"><span id="cb15-1"><a href=""></a>graph LR</span>
+<span id="cb15-2"><a href=""></a>    A[1950&lt;br&gt;Test de Turing&lt;br&gt;🤔 Filosofía] --&gt; B[1960s&lt;br&gt;Reglas&lt;br&gt;📝 Simbólico]</span>
+<span id="cb15-3"><a href=""></a>    B --&gt; C[1980s&lt;br&gt;Estadístico&lt;br&gt;📊 Probabilidad]</span>
+<span id="cb15-4"><a href=""></a>    C --&gt; D[2013&lt;br&gt;Embeddings&lt;br&gt;🎯 Representación]</span>
+<span id="cb15-5"><a href=""></a>    D --&gt; E[2017&lt;br&gt;Transformers&lt;br&gt;⚡ Atención]</span>
+<span id="cb15-6"><a href=""></a>    E --&gt; F[2022&lt;br&gt;ChatGPT&lt;br&gt;🚀 AGI?]</span>
+<span id="cb15-7"><a href=""></a>    </span>
+<span id="cb15-8"><a href=""></a>    style A fill:#ffd166</span>
+<span id="cb15-9"><a href=""></a>    style B fill:#f4a261</span>
+<span id="cb15-10"><a href=""></a>    style C fill:#e76f51</span>
+<span id="cb15-11"><a href=""></a>    style D fill:#2a9d8f</span>
+<span id="cb15-12"><a href=""></a>    style E fill:#264653</span>
+<span id="cb15-13"><a href=""></a>    style F fill:#e63946</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<p></p><figure class=""><p></p>
+<div>
+<pre class="mermaid mermaid-js">graph LR
+    A[1950&lt;br&gt;Test de Turing&lt;br&gt;🤔 Filosofía] --&gt; B[1960s&lt;br&gt;Reglas&lt;br&gt;📝 Simbólico]
+    B --&gt; C[1980s&lt;br&gt;Estadístico&lt;br&gt;📊 Probabilidad]
+    C --&gt; D[2013&lt;br&gt;Embeddings&lt;br&gt;🎯 Representación]
+    D --&gt; E[2017&lt;br&gt;Transformers&lt;br&gt;⚡ Atención]
+    E --&gt; F[2022&lt;br&gt;ChatGPT&lt;br&gt;🚀 AGI?]
+    
+    style A fill:#ffd166
+    style B fill:#f4a261
+    style C fill:#e76f51
+    style D fill:#2a9d8f
+    style E fill:#264653
+    style F fill:#e63946
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+</section></section>
+<section>
+<section id="bloque-4-aplicaciones-de-nlp" class="title-slide slide level1 center" data-background-color="#001219">
+<h1>Bloque 4: Aplicaciones de NLP</h1>
+
+</section>
+<section id="top-10-aplicaciones-de-nlp" class="slide level2 smaller scrollable">
+<h2>Top 10 Aplicaciones de NLP</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<ol type="1">
+<li>💬 <strong>Chatbots y Asistentes Virtuales</strong>
+<ul>
+<li>Siri, Alexa, Google Assistant</li>
+</ul></li>
+<li>🌐 <strong>Traducción Automática</strong>
+<ul>
+<li>Google Translate, DeepL</li>
+</ul></li>
+<li>😊 <strong>Análisis de Sentimiento</strong>
+<ul>
+<li>Monitoreo de redes sociales</li>
+</ul></li>
+<li>🎤 <strong>Reconocimiento de Voz</strong>
+<ul>
+<li>Transcripción, dictado</li>
+</ul></li>
+<li>📝 <strong>Generación de Texto</strong>
+<ul>
+<li>Escritura asistida, resúmenes</li>
+</ul></li>
+</ol>
+</div><div class="column" style="width:50%;">
+<ol start="6" type="1">
+<li>🔍 <strong>Búsqueda Semántica</strong>
+<ul>
+<li>Motores de búsqueda inteligentes</li>
+</ul></li>
+<li>🏷️ <strong>Extracción de Información</strong>
+<ul>
+<li>NER, relaciones</li>
+</ul></li>
+<li>❓ <strong>Question Answering</strong>
+<ul>
+<li>RAG, sistemas de soporte</li>
+</ul></li>
+<li>📧 <strong>Filtrado de Spam</strong>
+<ul>
+<li>Clasificación de correos</li>
+</ul></li>
+<li>🏥 <strong>NLP Biomédico</strong>
+<ul>
+<li>Análisis de literatura científica</li>
+</ul></li>
+</ol>
+</div></div>
+</section>
+<section id="por-qué-nlp-ahora" class="slide level2 smaller">
+<h2>¿Por qué NLP Ahora?</h2>
+<div class="columns">
+<div class="column" style="width:33%;">
+<h3 id="datos">📊 Datos</h3>
+<ul>
+<li>Explosión de texto digital</li>
+<li>Redes sociales</li>
+<li>Digitalización de documentos</li>
+</ul>
+</div><div class="column" style="width:33%;">
+<h3 id="cómputo">⚡ Cómputo</h3>
+<ul>
+<li>GPUs asequibles</li>
+<li>Cloud computing</li>
+<li>Entrenamiento distribuido</li>
+</ul>
+</div><div class="column" style="width:33%;">
+<h3 id="algoritmos">🧠 Algoritmos</h3>
+<ul>
+<li>Transformers</li>
+<li>Transfer learning</li>
+<li>Modelos pre-entrenados</li>
+</ul>
+</div></div>
+<div class="fragment">
+<div id="82d2d77b" class="cell" data-fig-height="3" data-fig-width="8" data-execution_count="2">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href=""></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb16-2"><a href=""></a></span>
+<span id="cb16-3"><a href=""></a>años <span class="op">=</span> [<span class="dv">2018</span>, <span class="dv">2019</span>, <span class="dv">2020</span>, <span class="dv">2021</span>, <span class="dv">2022</span>, <span class="dv">2023</span>, <span class="dv">2024</span>]</span>
+<span id="cb16-4"><a href=""></a>parametros <span class="op">=</span> [<span class="fl">0.1</span>, <span class="fl">1.5</span>, <span class="dv">175</span>, <span class="dv">530</span>, <span class="dv">540</span>, <span class="dv">1000</span>, <span class="dv">1800</span>]  <span class="co"># En miles de millones</span></span>
+<span id="cb16-5"><a href=""></a></span>
+<span id="cb16-6"><a href=""></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">4</span>))</span>
+<span id="cb16-7"><a href=""></a>plt.plot(años, parametros, marker<span class="op">=</span><span class="st">'o'</span>, linewidth<span class="op">=</span><span class="dv">2</span>, markersize<span class="op">=</span><span class="dv">8</span>, color<span class="op">=</span><span class="st">'#0077b6'</span>)</span>
+<span id="cb16-8"><a href=""></a>plt.fill_between(años, parametros, alpha<span class="op">=</span><span class="fl">0.3</span>, color<span class="op">=</span><span class="st">'#00b4d8'</span>)</span>
+<span id="cb16-9"><a href=""></a>plt.xlabel(<span class="st">'Año'</span>, fontsize<span class="op">=</span><span class="dv">12</span>)</span>
+<span id="cb16-10"><a href=""></a>plt.ylabel(<span class="st">'Parámetros (miles de millones)'</span>, fontsize<span class="op">=</span><span class="dv">12</span>)</span>
+<span id="cb16-11"><a href=""></a>plt.title(<span class="st">'Crecimiento del tamaño de modelos de lenguaje'</span>, fontsize<span class="op">=</span><span class="dv">14</span>)</span>
+<span id="cb16-12"><a href=""></a>plt.yscale(<span class="st">'log'</span>)</span>
+<span id="cb16-13"><a href=""></a>plt.grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb16-14"><a href=""></a>plt.tight_layout()</span>
+<span id="cb16-15"><a href=""></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div>
+<figure>
+<p><img data-src="s1_intro_nlp_files/figure-revealjs/cell-3-output-1.png"></p>
+</figure>
+</div>
+</div>
+</div>
+</div>
+</section></section>
+<section>
+<section id="resumen-y-próximos-pasos" class="title-slide slide level1 center" data-background-color="#0077b6">
+<h1>Resumen y Próximos Pasos</h1>
+
+</section>
+<section id="lo-que-aprendimos-hoy" class="slide level2 scrollable">
+<h2>Lo que Aprendimos Hoy ✅</h2>
+<ol type="1">
+<li class="fragment"><strong>Reglas del curso:</strong> Evaluación, política de IA, expectativas</li>
+<li class="fragment"><strong>NLP</strong> = Ciencias de la Computación + IA + Lingüística</li>
+<li class="fragment"><strong>Historia:</strong> Del Test de Turing (1950) a ChatGPT (2022)</li>
+<li class="fragment"><strong>Evolución:</strong> Reglas → Estadística → Deep Learning → Transformers</li>
+<li class="fragment"><strong>Aplicaciones:</strong> Traducción, chatbots, análisis de sentimiento…</li>
+</ol>
+</section>
+<section id="para-la-próxima-clase" class="slide level2">
+<h2>Para la Próxima Clase 📚</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<p><strong>Lectura:</strong></p>
+<ul>
+<li>Capítulo 1: <em>Speech and Language Processing</em> (Jurafsky &amp; Martin)</li>
+<li>Artículo: <em>“Attention is All You Need”</em> (opcional)</li>
+</ul>
+</div><div class="column" style="width:50%;">
+<p><strong>Preparación:</strong></p>
+<ul>
+<li>Instalar Python 3.10+</li>
+<li>Crear entorno virtual</li>
+<li>Instalar: <code>nltk</code>, <code>spacy</code></li>
+</ul>
+<div class="sourceCode" id="cb17"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb17-1"><a href=""></a><span class="ex">pip</span> install nltk spacy</span>
+<span id="cb17-2"><a href=""></a><span class="ex">python</span> <span class="at">-m</span> spacy download es_core_news_sm</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div></div>
+</section>
+<section id="próxima-sesión-expresiones-regulares" class="slide level2">
+<h2>Próxima Sesión: Expresiones Regulares 🔧</h2>
+<blockquote>
+<p><em>“Algunas personas, cuando se enfrentan a un problema, piensan: ‘Ya sé, usaré expresiones regulares.’ Ahora tienen dos problemas.”</em><br>
+— Jamie Zawinski</p>
+</blockquote>
+<div class="fragment">
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>S2: Regular Expressions - La Navaja Suiza del NLP</strong></p>
+</div>
+<div class="callout-content">
+<p>Aprenderemos a buscar, extraer y manipular patrones de texto de forma eficiente.</p>
+</div>
+</div>
+</div>
+</div>
+</section></section>
+<section id="preguntas" class="title-slide slide level1 center" data-background-color="#03045e">
+<h1>¿Preguntas? 🙋</h1>
+<div class="r-fit-text">
+<p><strong>¡Gracias!</strong></p>
+</div>
+<p>📧 francisco.suarez@ucb.edu.bo</p>
+<p>🔗 Materiales: <a href="https://github.com/ucb-nlp">github.com/ucb-nlp</a></p>
+
+</section>
+    </div>
+  <div class="quarto-auto-generated-content" style="display: none;">
+<div class="footer footer-default">
+<p>NLP y Análisis Semántico | Semana 1</p>
+</div>
+</div></div>
+
+  <script>window.backupDefine = window.define; window.define = undefined;</script>
+  <script src="s1_intro_nlp_files/libs/revealjs/dist/reveal.js"></script>
+  <!-- reveal.js plugins -->
+  <script src="s1_intro_nlp_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.js"></script>
+  <script src="s1_intro_nlp_files/libs/revealjs/plugin/pdf-export/pdfexport.js"></script>
+  <script src="s1_intro_nlp_files/libs/revealjs/plugin/reveal-menu/menu.js"></script>
+  <script src="s1_intro_nlp_files/libs/revealjs/plugin/reveal-menu/quarto-menu.js"></script>
+  <script src="s1_intro_nlp_files/libs/revealjs/plugin/reveal-chalkboard/plugin.js"></script>
+  <script src="s1_intro_nlp_files/libs/revealjs/plugin/quarto-support/support.js"></script>
+  
+
+  <script src="s1_intro_nlp_files/libs/revealjs/plugin/notes/notes.js"></script>
+  <script src="s1_intro_nlp_files/libs/revealjs/plugin/search/search.js"></script>
+  <script src="s1_intro_nlp_files/libs/revealjs/plugin/zoom/zoom.js"></script>
+  <script src="s1_intro_nlp_files/libs/revealjs/plugin/math/math.js"></script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script>
+
+  <script>
+
+      // Full list of configuration options available at:
+      // https://revealjs.com/config/
+      Reveal.initialize({
+'controlsAuto': true,
+'previewLinksAuto': false,
+'pdfSeparateFragments': false,
+'autoAnimateEasing': "ease",
+'autoAnimateDuration': 1,
+'autoAnimateUnmatched': true,
+'jumpToSlide': true,
+'menu': {"side":"left","useTextContentForMissingTitles":true,"markers":false,"loadIcons":false,"custom":[{"title":"Tools","icon":"<i class=\"fas fa-gear\"></i>","content":"<ul class=\"slide-menu-items\">\n<li class=\"slide-tool-item active\" data-item=\"0\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.fullscreen(event)\"><kbd>f</kbd> Fullscreen</a></li>\n<li class=\"slide-tool-item\" data-item=\"1\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.speakerMode(event)\"><kbd>s</kbd> Speaker View</a></li>\n<li class=\"slide-tool-item\" data-item=\"2\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.overview(event)\"><kbd>o</kbd> Slide Overview</a></li>\n<li class=\"slide-tool-item\" data-item=\"3\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.togglePdfExport(event)\"><kbd>e</kbd> PDF Export Mode</a></li>\n<li class=\"slide-tool-item\" data-item=\"4\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.toggleScrollView(event)\"><kbd>r</kbd> Scroll View Mode</a></li>\n<li class=\"slide-tool-item\" data-item=\"5\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.toggleChalkboard(event)\"><kbd>b</kbd> Toggle Chalkboard</a></li>\n<li class=\"slide-tool-item\" data-item=\"6\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.toggleNotesCanvas(event)\"><kbd>c</kbd> Toggle Notes Canvas</a></li>\n<li class=\"slide-tool-item\" data-item=\"7\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.downloadDrawings(event)\"><kbd>d</kbd> Download Drawings</a></li>\n<li class=\"slide-tool-item\" data-item=\"8\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.keyboardHelp(event)\"><kbd>?</kbd> Keyboard Help</a></li>\n</ul>"}],"openButton":true},
+'chalkboard': {"buttons":true},
+'smaller': false,
+ 
+        // Display controls in the bottom right corner
+        controls: false,
+
+        // Help the user learn the controls by providing hints, for example by
+        // bouncing the down arrow when they first encounter a vertical slide
+        controlsTutorial: false,
+
+        // Determines where controls appear, "edges" or "bottom-right"
+        controlsLayout: 'edges',
+
+        // Visibility rule for backwards navigation arrows; "faded", "hidden"
+        // or "visible"
+        controlsBackArrows: 'faded',
+
+        // Display a presentation progress bar
+        progress: true,
+
+        // Display the page number of the current slide
+        slideNumber: 'c/t',
+
+        // 'all', 'print', or 'speaker'
+        showSlideNumber: 'all',
+
+        // Add the current slide number to the URL hash so that reloading the
+        // page/copying the URL will return you to the same slide
+        hash: true,
+
+        // Start with 1 for the hash rather than 0
+        hashOneBasedIndex: false,
+
+        // Flags if we should monitor the hash and change slides accordingly
+        respondToHashChanges: true,
+
+        // Push each slide change to the browser history
+        history: true,
+
+        // Enable keyboard shortcuts for navigation
+        keyboard: true,
+
+        // Enable the slide overview mode
+        overview: true,
+
+        // Disables the default reveal.js slide layout (scaling and centering)
+        // so that you can use custom CSS layout
+        disableLayout: false,
+
+        // Vertical centering of slides
+        center: false,
+
+        // Enables touch navigation on devices with touch input
+        touch: true,
+
+        // Loop the presentation
+        loop: false,
+
+        // Change the presentation direction to be RTL
+        rtl: false,
+
+        // see https://revealjs.com/vertical-slides/#navigation-mode
+        navigationMode: 'linear',
+
+        // Randomizes the order of slides each time the presentation loads
+        shuffle: false,
+
+        // Turns fragments on and off globally
+        fragments: true,
+
+        // Flags whether to include the current fragment in the URL,
+        // so that reloading brings you to the same fragment position
+        fragmentInURL: false,
+
+        // Flags if the presentation is running in an embedded mode,
+        // i.e. contained within a limited portion of the screen
+        embedded: false,
+
+        // Flags if we should show a help overlay when the questionmark
+        // key is pressed
+        help: true,
+
+        // Flags if it should be possible to pause the presentation (blackout)
+        pause: true,
+
+        // Flags if speaker notes should be visible to all viewers
+        showNotes: false,
+
+        // Global override for autoplaying embedded media (null/true/false)
+        autoPlayMedia: null,
+
+        // Global override for preloading lazy-loaded iframes (null/true/false)
+        preloadIframes: null,
+
+        // Number of milliseconds between automatically proceeding to the
+        // next slide, disabled when set to 0, this value can be overwritten
+        // by using a data-autoslide attribute on your slides
+        autoSlide: 0,
+
+        // Stop auto-sliding after user input
+        autoSlideStoppable: true,
+
+        // Use this method for navigation when auto-sliding
+        autoSlideMethod: null,
+
+        // Specify the average time in seconds that you think you will spend
+        // presenting each slide. This is used to show a pacing timer in the
+        // speaker view
+        defaultTiming: null,
+
+        // Enable slide navigation via mouse wheel
+        mouseWheel: false,
+
+        // The display mode that will be used to show slides
+        display: 'block',
+
+        // Hide cursor if inactive
+        hideInactiveCursor: true,
+
+        // Time before the cursor is hidden (in ms)
+        hideCursorTime: 5000,
+
+        // Opens links in an iframe preview overlay
+        previewLinks: false,
+
+        // Transition style (none/fade/slide/convex/concave/zoom)
+        transition: 'slide',
+
+        // Transition speed (default/fast/slow)
+        transitionSpeed: 'default',
+
+        // Transition style for full page slide backgrounds
+        // (none/fade/slide/convex/concave/zoom)
+        backgroundTransition: 'none',
+
+        // Number of slides away from the current that are visible
+        viewDistance: 3,
+
+        // Number of slides away from the current that are visible on mobile
+        // devices. It is advisable to set this to a lower number than
+        // viewDistance in order to save resources.
+        mobileViewDistance: 2,
+
+        // The "normal" size of the presentation, aspect ratio will be preserved
+        // when the presentation is scaled to fit different resolutions. Can be
+        // specified using percentage units.
+        width: 1050,
+
+        height: 700,
+
+        // Factor of the display size that should remain empty around the content
+        margin: 0.1,
+
+        math: {
+          mathjax: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/MathJax.js',
+          config: 'TeX-AMS_HTML-full',
+          tex2jax: {
+            inlineMath: [['\\(','\\)']],
+            displayMath: [['\\[','\\]']],
+            balanceBraces: true,
+            processEscapes: false,
+            processRefs: true,
+            processEnvironments: true,
+            preview: 'TeX',
+            skipTags: ['script','noscript','style','textarea','pre','code'],
+            ignoreClass: 'tex2jax_ignore',
+            processClass: 'tex2jax_process'
+          },
+        },
+
+        // reveal.js plugins
+        plugins: [QuartoLineHighlight, PdfExport, RevealMenu, RevealChalkboard, QuartoSupport,
+
+          RevealMath,
+          RevealNotes,
+          RevealSearch,
+          RevealZoom
+        ]
+      });
+    </script>
+    <script id="quarto-html-after-body" type="application/javascript">
+      window.document.addEventListener("DOMContentLoaded", function (event) {
+        const tabsets =  window.document.querySelectorAll(".panel-tabset-tabby")
+        tabsets.forEach(function(tabset) {
+          const tabby = new Tabby('#' + tabset.id);
+        });
+        const isCodeAnnotation = (el) => {
+          for (const clz of el.classList) {
+            if (clz.startsWith('code-annotation-')) {                     
+              return true;
+            }
+          }
+          return false;
+        }
+        const onCopySuccess = function(e) {
+          // button target
+          const button = e.trigger;
+          // don't keep focus
+          button.blur();
+          // flash "checked"
+          button.classList.add('code-copy-button-checked');
+          var currentTitle = button.getAttribute("title");
+          button.setAttribute("title", "Copied!");
+          let tooltip;
+          if (window.bootstrap) {
+            button.setAttribute("data-bs-toggle", "tooltip");
+            button.setAttribute("data-bs-placement", "left");
+            button.setAttribute("data-bs-title", "Copied!");
+            tooltip = new bootstrap.Tooltip(button, 
+              { trigger: "manual", 
+                customClass: "code-copy-button-tooltip",
+                offset: [0, -8]});
+            tooltip.show();    
+          }
+          setTimeout(function() {
+            if (tooltip) {
+              tooltip.hide();
+              button.removeAttribute("data-bs-title");
+              button.removeAttribute("data-bs-toggle");
+              button.removeAttribute("data-bs-placement");
+            }
+            button.setAttribute("title", currentTitle);
+            button.classList.remove('code-copy-button-checked');
+          }, 1000);
+          // clear code selection
+          e.clearSelection();
+        }
+        const getTextToCopy = function(trigger) {
+            const codeEl = trigger.previousElementSibling.cloneNode(true);
+            for (const childEl of codeEl.children) {
+              if (isCodeAnnotation(childEl)) {
+                childEl.remove();
+              }
+            }
+            return codeEl.innerText;
+        }
+        const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+          text: getTextToCopy
+        });
+        clipboard.on('success', onCopySuccess);
+        if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+          const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+            text: getTextToCopy,
+            container: window.document.getElementById('quarto-embedded-source-code-modal')
+          });
+          clipboardModal.on('success', onCopySuccess);
+        }
+          var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+          var mailtoRegex = new RegExp(/^mailto:/);
+            var filterRegex = new RegExp('/' + window.location.host + '/');
+          var isInternal = (href) => {
+              return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+          }
+          // Inspect non-navigation links and adorn them if external
+         var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+          for (var i=0; i<links.length; i++) {
+            const link = links[i];
+            if (!isInternal(link.href)) {
+              // undo the damage that might have been done by quarto-nav.js in the case of
+              // links that we want to consider external
+              if (link.dataset.originalHref !== undefined) {
+                link.href = link.dataset.originalHref;
+              }
+            }
+          }
+        function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+          const config = {
+            allowHTML: true,
+            maxWidth: 500,
+            delay: 100,
+            arrow: false,
+            appendTo: function(el) {
+                return el.closest('section.slide') || el.parentElement;
+            },
+            interactive: true,
+            interactiveBorder: 10,
+            theme: 'light-border',
+            placement: 'bottom-start',
+          };
+          if (contentFn) {
+            config.content = contentFn;
+          }
+          if (onTriggerFn) {
+            config.onTrigger = onTriggerFn;
+          }
+          if (onUntriggerFn) {
+            config.onUntrigger = onUntriggerFn;
+          }
+            config['offset'] = [0,0];
+            config['maxWidth'] = 700;
+          window.tippy(el, config); 
+        }
+        const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+        for (var i=0; i<noterefs.length; i++) {
+          const ref = noterefs[i];
+          tippyHover(ref, function() {
+            // use id or data attribute instead here
+            let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+            try { href = new URL(href).hash; } catch {}
+            const id = href.replace(/^#\/?/, "");
+            const note = window.document.getElementById(id);
+            if (note) {
+              return note.innerHTML;
+            } else {
+              return "";
+            }
+          });
+        }
+        const findCites = (el) => {
+          const parentEl = el.parentElement;
+          if (parentEl) {
+            const cites = parentEl.dataset.cites;
+            if (cites) {
+              return {
+                el,
+                cites: cites.split(' ')
+              };
+            } else {
+              return findCites(el.parentElement)
+            }
+          } else {
+            return undefined;
+          }
+        };
+        var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+        for (var i=0; i<bibliorefs.length; i++) {
+          const ref = bibliorefs[i];
+          const citeInfo = findCites(ref);
+          if (citeInfo) {
+            tippyHover(citeInfo.el, function() {
+              var popup = window.document.createElement('div');
+              citeInfo.cites.forEach(function(cite) {
+                var citeDiv = window.document.createElement('div');
+                citeDiv.classList.add('hanging-indent');
+                citeDiv.classList.add('csl-entry');
+                var biblioDiv = window.document.getElementById('ref-' + cite);
+                if (biblioDiv) {
+                  citeDiv.innerHTML = biblioDiv.innerHTML;
+                }
+                popup.appendChild(citeDiv);
+              });
+              return popup.innerHTML;
+            });
+          }
+        }
+      });
+      </script>
+    
+
+</body></html>

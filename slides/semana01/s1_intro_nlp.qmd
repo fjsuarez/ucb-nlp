@@ -1,0 +1,781 @@
+---
+title: "Introducción al Procesamiento de Lenguaje Natural"
+subtitle: "S1: ¿Qué es NLP? Historia (Del Test de Turing a ChatGPT)"
+author: "Prof. Francisco Suárez"
+institute: "Universidad Católica Boliviana"
+date: today
+format:
+  revealjs:
+    theme: sky
+    transition: slide
+    slide-number: true
+    chalkboard: true
+    code-fold: true
+    code-tools: true
+    highlight-style: github
+    footer: "NLP y Análisis Semántico | Semana 1"
+    logo: ""
+    incremental: false
+    scrollable: true
+execute:
+  echo: true
+  warning: false
+---
+
+## Agenda de Hoy {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+**Primera Parte**
+
+1. 🎯 Bienvenida y Reglas del Juego
+2. 📊 Sistema de Evaluación
+3. 🤖 Política de uso de IA
+
+:::
+::: {.column width="50%"}
+**Segunda Parte**
+
+4. 🧠 ¿Qué es NLP?
+5. 📜 Historia y Evolución
+6. 💡 Aplicaciones Modernas
+
+:::
+:::
+
+# Bloque 1: Bienvenida y Reglas del Juego {background-color="#0077b6"}
+
+## Bienvenidos al Curso {.smaller}
+
+### NLP y Análisis Semántico
+
+> *"El lenguaje es el vestido del pensamiento."* — Samuel Johnson
+
+Este curso les llevará en un viaje desde los fundamentos del procesamiento de texto hasta los modelos de lenguaje más avanzados como **ChatGPT** y **Claude**.
+
+::: {.callout-note}
+## Objetivo General
+Desarrollar competencias teóricas y prácticas en el análisis computacional del lenguaje humano.
+:::
+
+## ¿Qué Aprenderemos? {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+**Fundamentos**
+
+- Expresiones regulares
+- Tokenización y preprocesamiento
+- Modelos de lenguaje clásicos
+- Word Embeddings
+
+:::
+::: {.column width="50%"}
+**Avanzado**
+
+- Redes Neuronales Recurrentes
+- Arquitectura Transformer
+- BERT, GPT y LLMs
+- RAG y Aplicaciones
+
+:::
+:::
+
+## Sistema de Evaluación {.smaller}
+
+| Componente | Peso | Descripción |
+|:-----------|:----:|:------------|
+| **Examen** | 30% | Evaluación teórica (Semanas 1-10) |
+| **Proyecto Grupal** | 30% | Aplicación NLP completa |
+| **Ejercicios (Tareas)** | 20% | 4 tareas prácticas de programación |
+| **Quizzes** | 10% | Evaluaciones cortas bi-semanales |
+| **Participación** | 10% | Asistencia y contribución en clase |
+
+: Distribución de la Evaluación {.striped .hover}
+
+## Política de Inteligencia Artificial 🤖 {.smaller}
+
+::: {.callout-important}
+## Uso Permitido de LLMs
+Se **permite** el uso de herramientas de IA (ChatGPT, Claude, Copilot, etc.) bajo las siguientes condiciones:
+:::
+
+1. **Transparencia:** Siempre declarar qué herramienta se utilizó
+2. **Enlace compartido:** Incluir el **link de la conversación** cuando sea posible
+3. **Comprensión:** Poder explicar y defender el código generado
+
+::: {.callout-warning}
+## ⚠️ En Tareas y Exámenes
+- ❌ **NO** pedir la respuesta directa a un problema
+- ✅ **SÍ** consultar sobre pasos específicos de un procedimiento ya establecido
+- ✅ **SÍ** aclarar dudas conceptuales o de sintaxis
+:::
+
+## Ejemplos de Prompts: Permitidos vs. No Permitidos {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### ❌ No Permitido
+
+```text
+"Resuelve este ejercicio de TF-IDF 
+para estos documentos: ..."
+
+"Dame el código para clasificar 
+sentimientos con BERT"
+
+"¿Cuál es la respuesta a la 
+pregunta 3 del examen?"
+```
+
+*Pedir soluciones completas o respuestas directas*
+
+:::
+::: {.column width="50%"}
+
+### ✅ Permitido
+
+```text
+"¿Cómo se calcula el IDF de 
+un término?"
+
+"Tengo este error en PyTorch, 
+¿qué significa?"
+
+"Explícame la diferencia entre 
+precision y recall"
+```
+
+*Consultar conceptos, sintaxis o pasos específicos*
+
+:::
+:::
+
+::: {.callout-tip}
+## Regla de Oro
+Si el LLM hace **tu trabajo**, está mal. Si te **ayuda a entender** para que tú hagas el trabajo, está bien.
+:::
+
+# Bloque 2: ¿Qué es NLP? {background-color="#023e8a"}
+
+## Definición de NLP
+
+::: {.columns}
+::: {.column width="60%"}
+
+El **Procesamiento de Lenguaje Natural** (NLP) es un campo interdisciplinario que se encuentra en la intersección de:
+
+- 💻 **Ciencias de la Computación**
+- 🧠 **Inteligencia Artificial**
+- 📖 **Lingüística**
+
+:::
+::: {.column width="40%"}
+
+```{mermaid}
+%%| fig-width: 4
+%%| fig-height: 4
+graph TD
+    A[Ciencias de la<br>Computación] --> D[NLP]
+    B[Inteligencia<br>Artificial] --> D
+    C[Lingüística] --> D
+    style D fill:#0077b6,stroke:#023e8a,color:#fff
+```
+
+:::
+:::
+
+## El Problema Fundamental {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Comunicación Humana 🗣️
+
+- Ambigüedad inherente
+- Contexto implícito
+- Ironía y sarcasmo
+- Variaciones culturales
+- Errores gramaticales
+
+> *"Vi al hombre con el telescopio"* — ¿Quién lo tiene?
+
+:::
+::: {.column width="50%"}
+
+### Comunicación de Máquinas 🖥️
+
+- Binario: `0` y `1`
+- Instrucciones precisas
+- Sin ambigüedad
+- Determinístico
+
+```
+01001000 01101111 01101100 01100001
+```
+= "Hola" en ASCII
+
+:::
+:::
+
+::: {.callout-warning}
+## El Desafío
+¿Cómo enseñamos a una máquina a entender el lenguaje humano con toda su complejidad?
+:::
+
+## Demostración: Tu Primer Código NLP {.smaller}
+
+Veamos cómo una computadora "ve" una oración:
+
+```{python}
+#| code-fold: false
+#| echo: true
+
+# Dividir una frase en palabras (tokenización básica)
+oracion = "El procesamiento de lenguaje natural es fascinante"
+
+# Método simple: split()
+palabras = oracion.split()
+
+print(f"Oración original: '{oracion}'")
+print(f"Número de palabras: {len(palabras)}")
+print(f"Lista de tokens: {palabras}")
+
+# Ver cada palabra con su posición
+for i, palabra in enumerate(palabras):
+    print(f"  Token {i}: '{palabra}' (longitud: {len(palabra)})")
+```
+
+## El Pipeline de NLP {.smaller}
+
+```{mermaid}
+%%| fig-width: 10
+flowchart LR
+    A[📥 Recolección<br>de Datos] --> B[🧹 Limpieza y<br>Preprocesamiento]
+    B --> C[🔤 Tokenización]
+    C --> D[📊 Extracción de<br>Características]
+    D --> E[🤖 Modelado]
+    E --> F[📈 Evaluación]
+    F --> G[🚀 Despliegue]
+    
+    style A fill:#caf0f8,color:#000
+    style B fill:#ade8f4,color:#000
+    style C fill:#90e0ef,color:#000
+    style D fill:#48cae4,color:#000
+    style E fill:#00b4d8,color:#fff
+    style F fill:#0096c7,color:#fff
+    style G fill:#0077b6,color:#fff
+```
+
+. . .
+
+::: {.columns}
+::: {.column width="50%"}
+**Preprocesamiento**
+
+- Eliminación de ruido
+- Normalización
+- Tokenización
+- Lematización
+:::
+::: {.column width="50%"}
+**Modelado**
+
+- Representación vectorial
+- Entrenamiento
+- Inferencia
+- Fine-tuning
+:::
+:::
+
+# Bloque 3: Historia y Evolución {background-color="#03045e"}
+
+## Línea del Tiempo del NLP {.smaller}
+
+```{mermaid}
+%%| fig-width: 12
+timeline
+    title Evolución del Procesamiento de Lenguaje Natural
+    1950 : Test de Turing
+         : "¿Pueden pensar las máquinas?"
+    1954 : Experimento Georgetown-IBM
+         : Primera traducción automática
+    1966 : ELIZA
+         : Primer chatbot
+    1970s : Invierno de la IA
+          : Desilusión y recortes
+    1980s : Modelos Estadísticos
+          : N-grams y probabilidad
+    2013 : Word2Vec
+         : Representaciones densas
+    2017 : Transformer
+         : "Attention is All You Need"
+    2018 : BERT
+         : Bidireccional
+    2022 : ChatGPT
+         : IA Generativa masiva
+```
+
+## 1950: El Test de Turing 🎭 {.smaller}
+
+::: {.columns}
+::: {.column width="60%"}
+
+**Alan Turing** propuso en su artículo *"Computing Machinery and Intelligence"*:
+
+> *"¿Pueden pensar las máquinas?"*
+
+. . .
+
+**El Juego de la Imitación:**
+
+1. Un interrogador humano (C)
+2. Un humano (B)
+3. Una máquina (A)
+
+Si C no puede distinguir entre A y B, la máquina "piensa".
+
+:::
+::: {.column width="40%"}
+
+```{mermaid}
+graph TD
+    C[🧑 Interrogador<br>C] -->|Preguntas| A[🤖 Máquina<br>A]
+    C -->|Preguntas| B[👤 Humano<br>B]
+    A -->|Respuestas| C
+    B -->|Respuestas| C
+    style C fill:#ffd166
+    style A fill:#ef476f
+    style B fill:#06d6a0
+```
+
+:::
+:::
+
+## 1954: Experimento Georgetown-IBM 🌐 {.smaller}
+
+::: {.columns}
+::: {.column width="70%"}
+
+El **primer sistema de traducción automática** público:
+
+- Traducción del **ruso al inglés**
+- Solo 250 palabras de vocabulario
+- 6 reglas gramaticales
+- 60 oraciones traducidas
+
+. . .
+
+**Predicción optimista:**
+> *"En 3 a 5 años, la traducción automática será un problema resuelto"*
+
+. . .
+
+::: {.callout-caution}
+## Spoiler
+Tardamos más de 60 años en lograr traducciones de calidad con Neural MT.
+:::
+
+:::
+::: {.column width="30%"}
+
+**Ejemplo traducido:**
+
+🇷🇺 *"Мы передаём мысли посредством речи"*
+
+⬇️
+
+🇺🇸 *"We transmit thoughts by means of speech"*
+
+:::
+:::
+
+## 1966: ELIZA - El Primer Chatbot 💬 {.smaller}
+
+Creado por **Joseph Weizenbaum** en el MIT:
+
+::: {.columns}
+::: {.column width="50%"}
+
+**Características:**
+
+- Simulaba un psicoterapeuta
+- Usaba **pattern matching**
+- Transformaba declaraciones en preguntas
+- Sin comprensión real
+
+:::
+::: {.column width="50%"}
+
+**Ejemplo de conversación:**
+
+```
+Usuario: Estoy muy triste hoy
+ELIZA: ¿Por qué estás triste?
+
+Usuario: Mi madre me critica
+ELIZA: Cuéntame más sobre tu madre
+
+Usuario: Ella nunca está satisfecha
+ELIZA: ¿Quién más en tu familia 
+       no está satisfecho?
+```
+
+:::
+:::
+
+. . .
+
+::: {.callout-note}
+## Efecto ELIZA
+Muchos usuarios creían que ELIZA realmente los "entendía", demostrando nuestra tendencia a antropomorfizar las máquinas.
+:::
+
+## 1970s: El Invierno de la IA ❄️ {.smaller}
+
+::: {.columns}
+::: {.column width="60%"}
+
+**El Informe ALPAC (1966)** concluyó:
+
+> *"La traducción automática es más lenta, menos precisa y dos veces más costosa que la traducción humana"*
+
+. . .
+
+**Consecuencias:**
+
+- 📉 Recortes masivos de financiamiento
+- 🚫 Cancelación de proyectos
+- 😔 Desilusión generalizada
+- 🔬 Investigación limitada por décadas
+
+:::
+::: {.column width="40%"}
+
+**Limitaciones identificadas:**
+
+1. Ambigüedad del lenguaje
+2. Conocimiento del mundo
+3. Capacidad computacional
+4. Datos insuficientes
+
+:::
+:::
+
+## 1980s-2000s: Revolución Estadística 📊 {.smaller}
+
+**El cambio de paradigma:** De **reglas** a **probabilidades**
+
+::: {.columns}
+::: {.column width="50%"}
+
+**Enfoque basado en reglas:**
+```
+SI palabra = "banco" Y 
+   contexto = "dinero"
+ENTONCES significado = "institución financiera"
+```
+
+*Problema:* ¿Cuántas reglas necesitamos?
+
+:::
+::: {.column width="50%"}
+
+**Enfoque estadístico:**
+$$P(\text{significado}|\text{contexto})$$
+
+Aprender de **datos** en lugar de programar reglas.
+
+- N-gramas
+- Modelos de Markov
+- Naive Bayes
+
+:::
+:::
+
+. . .
+
+::: {.callout-tip}
+## Cita Famosa
+> *"Every time I fire a linguist, the performance of the speech recognizer goes up"*  
+> — Fred Jelinek, IBM (1985)
+:::
+
+## 2013-2017: La Era de los Embeddings 🎯 {.smaller}
+
+**Word2Vec** (Mikolov et al., 2013) revolucionó la representación de palabras:
+
+::: {.columns}
+::: {.column width="50%"}
+
+**Antes: One-hot encoding**
+```
+rey   = [1,0,0,0,0,...]
+reina = [0,1,0,0,0,...]
+```
+*No captura relaciones semánticas*
+
+:::
+::: {.column width="50%"}
+
+**Después: Dense vectors**
+```
+rey   = [0.2, 0.8, -0.1, ...]
+reina = [0.3, 0.7, -0.2, ...]
+```
+*Palabras similares → vectores cercanos*
+
+:::
+:::
+
+. . .
+
+**La famosa analogía:**
+
+$$\vec{rey} - \vec{hombre} + \vec{mujer} \approx \vec{reina}$$
+
+## 2017: Attention is All You Need 🔥 {.smaller}
+
+El paper que cambió todo: **Transformer** (Vaswani et al., 2017)
+
+::: {.columns}
+::: {.column width="60%"}
+
+**Innovaciones clave:**
+
+1. **Self-Attention:** Cada palabra atiende a todas las demás
+2. **Paralelización:** Entrenamiento más eficiente que RNNs
+3. **Escalabilidad:** Mejor rendimiento con más datos
+
+. . .
+
+**El mecanismo de atención:**
+$$\text{Attention}(Q,K,V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V$$
+
+:::
+::: {.column width="40%"}
+
+```{mermaid}
+graph TB
+    subgraph Transformer
+        A[Input] --> B[Encoder]
+        B --> C[**Attention**]
+        C --> D[Decoder]
+        D --> E[Output]
+    end
+    style A fill:#ffffff,stroke:#333,stroke-width:2px,color:#000
+    style B fill:#e3f2fd,stroke:#333,stroke-width:2px,color:#000
+    style C fill:#ffcdd2,stroke:#d32f2f,stroke-width:4px,color:#000
+    style D fill:#e3f2fd,stroke:#333,stroke-width:2px,color:#000
+    style E fill:#ffffff,stroke:#333,stroke-width:2px,color:#000
+    style Transformer fill:#ffffff,stroke:#333,color:#000
+    linkStyle default stroke:#333,stroke-width:2px
+```
+
+:::
+:::
+
+## 2018-2022: BERT y GPT 🚀 {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### BERT (Google, 2018)
+**B**idirectional **E**ncoder **R**epresentations from **T**ransformers
+
+- Bidireccional
+- Masked Language Model
+- Fine-tuning para tareas
+- Excelente para **comprensión**
+
+:::
+::: {.column width="50%"}
+
+### GPT (OpenAI, 2018-2023)
+**G**enerative **P**re-trained **T**ransformer
+
+- Unidireccional (izq→der)
+- Causal Language Model
+- Few-shot learning
+- Excelente para **generación**
+
+:::
+:::
+
+. . .
+
+::: {.callout-important}
+## ChatGPT (Nov 2022)
+GPT-3.5 + RLHF = La IA que llegó a 100 millones de usuarios en 2 meses.
+:::
+
+## Del Test de Turing a ChatGPT {.smaller}
+
+```{mermaid}
+%%| fig-width: 12
+graph LR
+    A[1950<br>Test de Turing<br>🤔 Filosofía] --> B[1960s<br>Reglas<br>📝 Simbólico]
+    B --> C[1980s<br>Estadístico<br>📊 Probabilidad]
+    C --> D[2013<br>Embeddings<br>🎯 Representación]
+    D --> E[2017<br>Transformers<br>⚡ Atención]
+    E --> F[2022<br>ChatGPT<br>🚀 AGI?]
+    
+    style A fill:#ffd166
+    style B fill:#f4a261
+    style C fill:#e76f51
+    style D fill:#2a9d8f
+    style E fill:#264653
+    style F fill:#e63946
+```
+
+# Bloque 4: Aplicaciones de NLP {background-color="#001219"}
+
+## Top 10 Aplicaciones de NLP {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+1. 💬 **Chatbots y Asistentes Virtuales**
+   - Siri, Alexa, Google Assistant
+
+2. 🌐 **Traducción Automática**
+   - Google Translate, DeepL
+
+3. 😊 **Análisis de Sentimiento**
+   - Monitoreo de redes sociales
+
+4. 🎤 **Reconocimiento de Voz**
+   - Transcripción, dictado
+
+5. 📝 **Generación de Texto**
+   - Escritura asistida, resúmenes
+
+:::
+::: {.column width="50%"}
+
+6. 🔍 **Búsqueda Semántica**
+   - Motores de búsqueda inteligentes
+
+7. 🏷️ **Extracción de Información**
+   - NER, relaciones
+
+8. ❓ **Question Answering**
+   - RAG, sistemas de soporte
+
+9. 📧 **Filtrado de Spam**
+   - Clasificación de correos
+
+10. 🏥 **NLP Biomédico**
+    - Análisis de literatura científica
+
+:::
+:::
+
+## ¿Por qué NLP Ahora? {.smaller}
+
+::: {.columns}
+::: {.column width="33%"}
+### 📊 Datos
+- Explosión de texto digital
+- Redes sociales
+- Digitalización de documentos
+:::
+::: {.column width="33%"}
+### ⚡ Cómputo
+- GPUs asequibles
+- Cloud computing
+- Entrenamiento distribuido
+:::
+::: {.column width="33%"}
+### 🧠 Algoritmos
+- Transformers
+- Transfer learning
+- Modelos pre-entrenados
+:::
+:::
+
+. . .
+
+```{python}
+#| code-fold: true
+#| fig-width: 8
+#| fig-height: 3
+
+import matplotlib.pyplot as plt
+
+años = [2018, 2019, 2020, 2021, 2022, 2023, 2024]
+parametros = [0.1, 1.5, 175, 530, 540, 1000, 1800]  # En miles de millones
+
+plt.figure(figsize=(10, 4))
+plt.plot(años, parametros, marker='o', linewidth=2, markersize=8, color='#0077b6')
+plt.fill_between(años, parametros, alpha=0.3, color='#00b4d8')
+plt.xlabel('Año', fontsize=12)
+plt.ylabel('Parámetros (miles de millones)', fontsize=12)
+plt.title('Crecimiento del tamaño de modelos de lenguaje', fontsize=14)
+plt.yscale('log')
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
+```
+
+# Resumen y Próximos Pasos {background-color="#0077b6"}
+
+## Lo que Aprendimos Hoy ✅
+
+::: {.incremental}
+1. **Reglas del curso:** Evaluación, política de IA, expectativas
+2. **NLP** = Ciencias de la Computación + IA + Lingüística
+3. **Historia:** Del Test de Turing (1950) a ChatGPT (2022)
+4. **Evolución:** Reglas → Estadística → Deep Learning → Transformers
+5. **Aplicaciones:** Traducción, chatbots, análisis de sentimiento...
+:::
+
+## Para la Próxima Clase 📚
+
+::: {.columns}
+::: {.column width="50%"}
+
+**Lectura:**
+
+- Capítulo 1: *Speech and Language Processing* (Jurafsky & Martin)
+- Artículo: *"Attention is All You Need"* (opcional)
+
+:::
+::: {.column width="50%"}
+
+**Preparación:**
+
+- Instalar Python 3.10+
+- Crear entorno virtual
+- Instalar: `nltk`, `spacy`
+
+```bash
+pip install nltk spacy
+python -m spacy download es_core_news_sm
+```
+
+:::
+:::
+
+## Próxima Sesión: Expresiones Regulares 🔧
+
+> *"Algunas personas, cuando se enfrentan a un problema, piensan: 'Ya sé, usaré expresiones regulares.' Ahora tienen dos problemas."*  
+> — Jamie Zawinski
+
+. . .
+
+::: {.callout-note}
+## S2: Regular Expressions - La Navaja Suiza del NLP
+Aprenderemos a buscar, extraer y manipular patrones de texto de forma eficiente.
+:::
+
+# ¿Preguntas? 🙋 {background-color="#03045e"}
+
+:::{.r-fit-text}
+**¡Gracias!**
+:::
+
+📧 fsuarez@ucb.edu.bo
+
+🔗 Materiales: [github.com/fjsuarez/ucb-nlp](https://github.com/fjsuarez/ucb-nlp)

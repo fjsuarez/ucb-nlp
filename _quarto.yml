@@ -1,0 +1,8 @@
+project:
+  type: default
+
+format:
+  html:
+    theme: cosmo
+  revealjs:
+    theme: sky

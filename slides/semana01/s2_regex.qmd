@@ -1,0 +1,674 @@
+---
+title: "Expresiones Regulares"
+subtitle: "S2: La Navaja Suiza del NLP"
+author: "Prof. Francisco Suárez"
+institute: "Universidad Católica Boliviana"
+date: today
+format:
+  revealjs:
+    theme: sky
+    transition: slide
+    slide-number: true
+    chalkboard: true
+    code-fold: true
+    code-tools: true
+    highlight-style: github
+    footer: "NLP y Análisis Semántico | Semana 1"
+    logo: ""
+    incremental: false
+    scrollable: true
+execute:
+  echo: true
+  warning: false
+---
+
+## Agenda de Hoy {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+**Primera Parte**
+
+1. 🎯 ¿Qué son las expresiones regulares?
+2. 📝 Sintaxis básica
+3. 🔧 Metacaracteres y cuantificadores
+
+:::
+::: {.column width="50%"}
+**Segunda Parte**
+
+4. 🧩 Grupos y capturas
+5. 🐍 Regex en Python
+6. 💡 Aplicaciones en NLP
+
+:::
+:::
+
+# ¿Qué son las Expresiones Regulares? {background-color="#0077b6"}
+
+## Definición
+
+> *"Algunas personas, cuando se enfrentan a un problema, piensan: 'Ya sé, usaré expresiones regulares.' Ahora tienen dos problemas."*  
+> — Jamie Zawinski
+
+. . .
+
+::: {.callout-note}
+## Expresión Regular (Regex)
+Una **expresión regular** es una secuencia de caracteres que define un **patrón de búsqueda**. Se utiliza para encontrar, extraer o reemplazar texto que coincida con dicho patrón.
+:::
+
+## ¿Por qué aprender Regex? {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+**Casos de uso comunes:**
+
+- 🔍 Buscar patrones en texto
+- ✅ Validar formatos (email, teléfono)
+- 🧹 Limpiar y normalizar datos
+- 📊 Extraer información estructurada
+- 🔄 Reemplazar texto masivamente
+
+:::
+::: {.column width="50%"}
+
+**En NLP específicamente:**
+
+- Tokenización personalizada
+- Extracción de entidades simples
+- Preprocesamiento de corpus
+- Normalización de texto
+- Filtrado de ruido
+
+:::
+:::
+
+## Historia Breve {.smaller}
+
+```{mermaid}
+%%| fig-width: 10
+timeline
+    title Historia de las Expresiones Regulares
+    1951 : Stephen Kleene
+         : Álgebra de conjuntos regulares
+    1968 : Ken Thompson
+         : Implementación en editor de texto
+    1970s : grep, sed, awk
+          : Herramientas Unix
+    1980s : Perl
+          : "Practical Extraction and Report Language"
+    1990s : PCRE
+          : Perl Compatible Regular Expressions
+    2000s : Integración universal
+          : Python, Java, JavaScript, etc.
+```
+
+# Sintaxis Básica {background-color="#023e8a"}
+
+## Caracteres Literales {.smaller}
+
+El caso más simple: buscar texto exacto.
+
+```{python}
+#| code-fold: false
+import re
+
+texto = "El gato y el perro juegan en el jardín"
+
+# Buscar la palabra "gato"
+resultado = re.search(r"gato", texto)
+print(f"Texto: '{texto}'")
+print(f"Patrón: 'gato'")
+print(f"Encontrado: '{resultado.group()}' en posición {resultado.start()}")
+```
+
+. . .
+
+::: {.callout-tip}
+## El prefijo `r`
+En Python, usamos `r"patrón"` (raw string) para evitar problemas con caracteres de escape como `\n` o `\t`.
+:::
+
+## Metacaracteres Especiales {.smaller}
+
+| Metacaracter | Significado | Ejemplo | Coincide con |
+|:------------:|:------------|:--------|:-------------|
+| `.` | Cualquier carácter (excepto `\n`) | `c.t` | cat, cut, c9t |
+| `^` | Inicio de línea/cadena | `^Hola` | "Hola mundo" |
+| `$` | Fin de línea/cadena | `mundo$` | "Hola mundo" |
+| `\d` | Dígito `[0-9]` | `\d\d` | 42, 99 |
+| `\w` | Palabra `[a-zA-Z0-9_]` | `\w+` | palabra_123 |
+| `\s` | Espacio en blanco | `\s+` | " ", "\t", "\n" |
+| `\b` | Límite de palabra | `\bcat\b` | "cat" pero no "category" |
+
+## Ejemplo: Metacaracteres {.smaller}
+
+```{python}
+#| code-fold: false
+import re
+
+texto = "Mi teléfono es 591-78945612 y mi código es A123"
+
+# \d+ encuentra secuencias de dígitos
+digitos = re.findall(r"\d+", texto)
+print(f"Dígitos encontrados: {digitos}")
+
+# \w+ encuentra secuencias de caracteres de palabra
+palabras = re.findall(r"\w+", texto)
+print(f"Palabras encontradas: {palabras}")
+
+# Buscar patrón específico: código alfanumérico
+codigo = re.search(r"[A-Z]\d{3}", texto)
+print(f"Código encontrado: {codigo.group()}")
+```
+
+## Clases de Caracteres `[ ]` {.smaller}
+
+Definen un **conjunto** de caracteres válidos para una posición.
+
+```{python}
+#| code-fold: false
+import re
+
+texto = "bag, big, bog, bug, beg, b9g"
+
+# [aeiou] = cualquier vocal
+patron_vocal = re.findall(r"b[aeiou]g", texto)
+print(f"b[aeiou]g → {patron_vocal}")
+
+# [a-z] = cualquier letra minúscula
+patron_letra = re.findall(r"b[a-z]g", texto)
+print(f"b[a-z]g → {patron_letra}")
+
+# [^aeiou] = cualquier cosa EXCEPTO vocales (negación)
+patron_no_vocal = re.findall(r"b[^aeiou]g", texto)
+print(f"b[^aeiou]g → {patron_no_vocal}")
+```
+
+## Resumen: Clases de Caracteres {.smaller}
+
+| Clase | Equivalente | Descripción |
+|:------|:------------|:------------|
+| `[abc]` | - | a, b, o c |
+| `[^abc]` | - | Cualquiera excepto a, b, c |
+| `[a-z]` | - | Cualquier minúscula |
+| `[A-Z]` | - | Cualquier mayúscula |
+| `[0-9]` | `\d` | Cualquier dígito |
+| `[a-zA-Z0-9_]` | `\w` | Carácter de "palabra" |
+| `[ \t\n\r]` | `\s` | Espacio en blanco |
+
+# Cuantificadores {background-color="#03045e"}
+
+## ¿Cuántas veces? {.smaller}
+
+Los **cuantificadores** especifican cuántas veces debe aparecer el elemento anterior.
+
+| Cuantificador | Significado | Ejemplo |
+|:-------------:|:------------|:--------|
+| `*` | 0 o más veces | `ab*c` → ac, abc, abbc |
+| `+` | 1 o más veces | `ab+c` → abc, abbc (no ac) |
+| `?` | 0 o 1 vez | `colou?r` → color, colour |
+| `{n}` | Exactamente n veces | `\d{3}` → 123, 456 |
+| `{n,}` | n o más veces | `\d{2,}` → 12, 123, 1234 |
+| `{n,m}` | Entre n y m veces | `\d{2,4}` → 12, 123, 1234 |
+
+## Ejemplo: Cuantificadores {.smaller}
+
+```{python}
+#| code-fold: false
+import re
+
+texto = "Los números son: 1, 12, 123, 1234, 12345"
+
+# Exactamente 3 dígitos
+tres_digitos = re.findall(r"\b\d{3}\b", texto)
+print(f"Exactamente 3 dígitos: {tres_digitos}")
+
+# 2 a 4 dígitos
+rango = re.findall(r"\b\d{2,4}\b", texto)
+print(f"Entre 2 y 4 dígitos: {rango}")
+
+# 1 o más dígitos (greedy por defecto)
+todos = re.findall(r"\d+", texto)
+print(f"Uno o más dígitos: {todos}")
+```
+
+## Greedy vs. Lazy {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Greedy (Codicioso) 🐷
+Por defecto, los cuantificadores son **greedy**: intentan capturar el máximo posible.
+
+```{python}
+#| code-fold: false
+import re
+
+html = "<p>Hola</p><p>Mundo</p>"
+
+# Greedy: captura todo
+greedy = re.findall(r"<p>.*</p>", html)
+print(f"Greedy: {greedy}")
+```
+
+:::
+::: {.column width="50%"}
+
+### Lazy (Perezoso) 🦥
+Agregando `?` después del cuantificador, se vuelve **lazy**: captura el mínimo.
+
+```{python}
+#| code-fold: false
+import re
+
+html = "<p>Hola</p><p>Mundo</p>"
+
+# Lazy: captura lo mínimo
+lazy = re.findall(r"<p>.*?</p>", html)
+print(f"Lazy: {lazy}")
+```
+
+:::
+:::
+
+# Grupos y Capturas {background-color="#001219"}
+
+## Grupos con Paréntesis `( )` {.smaller}
+
+Los paréntesis crean **grupos de captura** que permiten:
+
+1. Agrupar elementos para aplicar cuantificadores
+2. Extraer partes específicas del match
+3. Reutilizar el contenido capturado
+
+```{python}
+#| code-fold: false
+import re
+
+texto = "Mi email es juan.perez@ucb.edu.bo y también tengo maria@gmail.com"
+
+# Capturar partes del email
+patron = r"(\w+[\w.]*\w+)@(\w+\.\w+(?:\.\w+)?)"
+emails = re.findall(patron, texto)
+
+for usuario, dominio in emails:
+    print(f"Usuario: {usuario}, Dominio: {dominio}")
+```
+
+## Grupos con Nombre {.smaller}
+
+Podemos nombrar los grupos para mayor claridad con `(?P<nombre>...)`:
+
+```{python}
+#| code-fold: false
+import re
+
+fecha = "Hoy es 04/02/2026 y mañana será 05/02/2026"
+
+# Grupos nombrados
+patron = r"(?P<dia>\d{2})/(?P<mes>\d{2})/(?P<año>\d{4})"
+matches = re.finditer(patron, fecha)
+
+for match in matches:
+    print(f"Fecha: {match.group()}")
+    print(f"  Día: {match.group('dia')}")
+    print(f"  Mes: {match.group('mes')}")
+    print(f"  Año: {match.group('año')}")
+    print()
+```
+
+## Grupos No Capturadores {.smaller}
+
+A veces necesitamos agrupar sin capturar. Usamos `(?:...)`:
+
+```{python}
+#| code-fold: false
+import re
+
+texto = "http://ucb.edu.bo y https://google.com"
+
+# (?:...) agrupa pero NO captura
+patron = r"(?:https?://)(\w+\.\w+(?:\.\w+)?)"
+dominios = re.findall(patron, texto)
+
+print(f"Solo dominios (sin protocolo): {dominios}")
+```
+
+::: {.callout-note}
+## ¿Cuándo usar `(?:...)`?
+Cuando necesitas agrupar para aplicar un cuantificador o alternancia, pero no te interesa capturar ese grupo.
+:::
+
+# Regex en Python {background-color="#0077b6"}
+
+## El módulo `re` {.smaller}
+
+Python incluye el módulo `re` para trabajar con expresiones regulares:
+
+| Función | Descripción |
+|:--------|:------------|
+| `re.search(p, s)` | Busca la primera coincidencia |
+| `re.match(p, s)` | Busca solo al inicio de la cadena |
+| `re.findall(p, s)` | Devuelve lista de todas las coincidencias |
+| `re.finditer(p, s)` | Devuelve iterador de objetos Match |
+| `re.sub(p, r, s)` | Reemplaza coincidencias |
+| `re.split(p, s)` | Divide la cadena por el patrón |
+| `re.compile(p)` | Compila el patrón para reutilizar |
+
+## `re.search()` vs `re.match()` {.smaller}
+
+```{python}
+#| code-fold: false
+import re
+
+texto = "Python es genial"
+
+# search() busca en cualquier parte
+resultado_search = re.search(r"es", texto)
+print(f"search('es'): {resultado_search.group() if resultado_search else 'No encontrado'}")
+
+# match() solo busca al INICIO
+resultado_match = re.match(r"es", texto)
+print(f"match('es'): {resultado_match.group() if resultado_match else 'No encontrado'}")
+
+# match() funciona si el patrón está al inicio
+resultado_match2 = re.match(r"Python", texto)
+print(f"match('Python'): {resultado_match2.group() if resultado_match2 else 'No encontrado'}")
+```
+
+## `re.findall()` y `re.finditer()` {.smaller}
+
+```{python}
+#| code-fold: false
+import re
+
+texto = "Precios: $100, $250, $75 y $1000"
+
+# findall() devuelve lista de strings
+precios_str = re.findall(r"\$(\d+)", texto)
+print(f"findall(): {precios_str}")
+
+# finditer() devuelve objetos Match con más información
+print("\nfinditer():")
+for match in re.finditer(r"\$(\d+)", texto):
+    print(f"  '{match.group()}' en posición {match.start()}-{match.end()}, valor: {match.group(1)}")
+```
+
+## `re.sub()` - Sustitución {.smaller}
+
+```{python}
+#| code-fold: false
+import re
+
+texto = "Mi teléfono es 591-78945612 y mi CI es 12345678"
+
+# Censurar números de teléfono
+censurado = re.sub(r"\d{3}-\d{8}", "[TELÉFONO OCULTO]", texto)
+print(f"Censurado: {censurado}")
+
+# Usar grupos en el reemplazo con \1, \2, etc.
+fecha = "2026-02-04"
+fecha_formato = re.sub(r"(\d{4})-(\d{2})-(\d{2})", r"\3/\2/\1", fecha)
+print(f"Fecha reformateada: {fecha_formato}")
+```
+
+## `re.compile()` - Compilación {.smaller}
+
+Cuando usamos el mismo patrón múltiples veces, es más eficiente compilarlo:
+
+```{python}
+#| code-fold: false
+import re
+
+# Compilar el patrón UNA vez
+patron_email = re.compile(r"\b[\w.]+@[\w.]+\.\w{2,}\b", re.IGNORECASE)
+
+textos = [
+    "Contacto: admin@UCB.edu.bo",
+    "No hay email aquí",
+    "Escribe a soporte@gmail.com o ventas@empresa.com"
+]
+
+for texto in textos:
+    emails = patron_email.findall(texto)
+    print(f"En '{texto[:30]}...': {emails if emails else 'ninguno'}")
+```
+
+## Flags (Banderas) {.smaller}
+
+| Flag | Abreviatura | Descripción |
+|:-----|:-----------:|:------------|
+| `re.IGNORECASE` | `re.I` | Ignora mayúsculas/minúsculas |
+| `re.MULTILINE` | `re.M` | `^` y `$` aplican a cada línea |
+| `re.DOTALL` | `re.S` | `.` también coincide con `\n` |
+| `re.VERBOSE` | `re.X` | Permite comentarios en el patrón |
+
+```{python}
+#| code-fold: false
+import re
+
+texto = "Python\nPYTHON\npython"
+
+# Sin flag: solo encuentra exacto
+print(f"Sin flag: {re.findall(r'python', texto)}")
+
+# Con IGNORECASE
+print(f"IGNORECASE: {re.findall(r'python', texto, re.IGNORECASE)}")
+```
+
+# Aplicaciones en NLP {background-color="#023e8a"}
+
+## 1. Tokenización con Regex {.smaller}
+
+```{python}
+#| code-fold: false
+import re
+
+texto = "¡Hola! ¿Cómo estás? Bien, gracias :) #NLP @usuario"
+
+# Tokenización simple por espacios (NO ideal)
+tokens_simple = texto.split()
+print(f"Split simple: {tokens_simple}")
+
+# Tokenización con regex (mejor)
+patron_token = r"\w+|[^\w\s]"
+tokens_regex = re.findall(patron_token, texto)
+print(f"Regex tokens: {tokens_regex}")
+
+# Incluyendo hashtags y menciones como tokens únicos
+patron_social = r"[@#]\w+|\w+|[^\w\s]"
+tokens_social = re.findall(patron_social, texto)
+print(f"Social tokens: {tokens_social}")
+```
+
+## 2. Limpieza de Texto {.smaller}
+
+```{python}
+#| code-fold: false
+import re
+
+texto_sucio = """
+    ¡¡¡Hola!!!   ¿¿Qué tal??  
+    Visita https://ejemplo.com para más info...
+    Contacto:   admin@mail.com   📧
+"""
+
+def limpiar_texto(texto):
+    # Eliminar URLs
+    texto = re.sub(r"https?://\S+", "", texto)
+    # Eliminar emails
+    texto = re.sub(r"\S+@\S+", "", texto)
+    # Eliminar emojis (simplificado)
+    texto = re.sub(r"[^\w\s¿?¡!.,]", "", texto)
+    # Normalizar espacios
+    texto = re.sub(r"\s+", " ", texto)
+    # Normalizar puntuación repetida
+    texto = re.sub(r"([¿?¡!.])\1+", r"\1", texto)
+    return texto.strip()
+
+print(f"Original:\n{texto_sucio}")
+print(f"\nLimpio:\n{limpiar_texto(texto_sucio)}")
+```
+
+## 3. Extracción de Entidades Simples {.smaller}
+
+```{python}
+#| code-fold: false
+import re
+
+texto = """
+El paciente Juan Pérez (CI: 12345678) tiene cita el 15/03/2026.
+Contactar al Dr. García al 591-71234567.
+Dirección: Av. 6 de Agosto #1234, La Paz.
+"""
+
+# Extraer fechas
+fechas = re.findall(r"\d{2}/\d{2}/\d{4}", texto)
+print(f"Fechas: {fechas}")
+
+# Extraer teléfonos
+telefonos = re.findall(r"\d{3}-\d{8}", texto)
+print(f"Teléfonos: {telefonos}")
+
+# Extraer CI (Carnet de Identidad)
+ci = re.findall(r"CI:\s*(\d{7,8})", texto)
+print(f"CI: {ci}")
+
+# Extraer nombres propios (simplificado: palabra capitalizada)
+nombres = re.findall(r"\b[A-ZÁÉÍÓÚ][a-záéíóú]+(?:\s+[A-ZÁÉÍÓÚ][a-záéíóú]+)*\b", texto)
+print(f"Posibles nombres: {nombres}")
+```
+
+## 4. Validación de Formatos {.smaller}
+
+```{python}
+#| code-fold: false
+import re
+
+def validar_email(email):
+    patron = r"^[\w.+-]+@[\w-]+\.[\w.-]+$"
+    return bool(re.match(patron, email))
+
+def validar_telefono_bo(telefono):
+    # Formato Bolivia: 591-XXXXXXXX o +591 XXXXXXXX
+    patron = r"^(\+?591[-\s]?)?\d{8}$"
+    return bool(re.match(patron, telefono))
+
+# Pruebas
+emails = ["test@ucb.edu.bo", "invalido@", "otro.email@gmail.com"]
+for e in emails:
+    print(f"'{e}' → {'✅ Válido' if validar_email(e) else '❌ Inválido'}")
+
+print()
+telefonos = ["591-78945612", "+591 71234567", "123456"]
+for t in telefonos:
+    print(f"'{t}' → {'✅ Válido' if validar_telefono_bo(t) else '❌ Inválido'}")
+```
+
+# Ejercicio Práctico {background-color="#03045e"}
+
+## Desafío: Extractor de Hashtags {.smaller}
+
+Escribe una función que extraiga todos los hashtags de un texto de red social.
+
+```{python}
+#| code-fold: true
+import re
+
+def extraer_hashtags(texto):
+    """
+    Extrae hashtags de un texto.
+    Un hashtag empieza con # seguido de letras/números/guiones bajos.
+    """
+    patron = r"#\w+"
+    return re.findall(patron, texto)
+
+# Prueba
+tweet = "Aprendiendo #NLP con #Python es muy #divertido! 🎉 #MachineLearning #IA"
+hashtags = extraer_hashtags(tweet)
+print(f"Texto: {tweet}")
+print(f"Hashtags: {hashtags}")
+```
+
+::: {.callout-note}
+## Tu turno
+¿Cómo modificarías el patrón para que también capture hashtags con acentos como `#ProgramaciónEnEspañol`?
+:::
+
+# Resumen y Recursos {background-color="#0077b6"}
+
+## Lo que Aprendimos Hoy ✅ {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+**Conceptos:**
+
+- Qué son las expresiones regulares
+- Metacaracteres: `.` `^` `$` `\d` `\w` `\s`
+- Clases de caracteres: `[abc]` `[^abc]`
+- Cuantificadores: `*` `+` `?` `{n,m}`
+- Greedy vs. Lazy
+
+:::
+::: {.column width="50%"}
+
+**Python:**
+
+- Módulo `re`
+- `search()`, `match()`, `findall()`
+- `sub()`, `split()`, `compile()`
+- Grupos de captura `()` y `(?P<name>)`
+- Flags: `IGNORECASE`, `MULTILINE`
+
+:::
+:::
+
+## Recursos para Practicar 📚 {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+**Herramientas online:**
+
+- [regex101.com](https://regex101.com) - Tester con explicaciones
+- [regexr.com](https://regexr.com) - Editor visual
+- [debuggex.com](https://debuggex.com) - Visualizador de FSM
+
+:::
+::: {.column width="50%"}
+
+**Lectura recomendada:**
+
+- Capítulo 2: *Speech and Language Processing* (Jurafsky & Martin)
+- [Python re documentation](https://docs.python.org/3/library/re.html)
+
+:::
+:::
+
+## Próxima Sesión: Preprocesamiento 🔧 {.smaller}
+
+::: {.callout-note}
+## S3: Tokenización, Lematización y Stemming
+- Tokenización avanzada con NLTK y spaCy
+- Diferencia entre stemming y lematización
+- Normalización de texto para NLP
+:::
+
+**Preparación:**
+```bash
+pip install nltk spacy
+python -m spacy download es_core_news_sm
+```
+
+# ¿Preguntas? 🙋 {background-color="#03045e"}
+
+:::{.r-fit-text}
+**¡Gracias!**
+:::
+
+📧 fsuarez@ucb.edu.bo
+
+🔗 Materiales: [github.com/fjsuarez/ucb-nlp](https://github.com/fjsuarez/ucb-nlp)

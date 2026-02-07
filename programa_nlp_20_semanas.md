@@ -1,0 +1,130 @@
+# Programa de Procesamiento de Lenguaje Natural (NLP)
+## Duración: 20 Semanas
+
+---
+
+| Semana | Tema | Entregable / Actividad |
+|:------:|------|------------------------|
+| **1** | **Introducción & Expresiones Regulares** | |
+| | S1: ¿Qué es NLP? Historia (Test de Turing a ChatGPT) | Lectura introductoria |
+| | S2: Expresiones Regulares: La navaja suiza del NLP | Quiz 1 (conceptos básicos) |
+| | S3: Preprocesamiento básico: Tokenización, Lematización y Stemming | Práctica de laboratorio |
+| **2** | **Semántica Léxica & Espacio Vectorial** | |
+| | S1: Bolsa de Palabras (BoW) y One-hot encoding | |
+| | S2: TF-IDF: Encontrando lo relevante en un documento | Quiz 2 |
+| | S3: Información Mutua Puntual (PMI) y N-gramas | |
+| **3** | **Modelado de Lenguaje (Clásico)** | |
+| | S1: Modelos de lenguaje N-gram y Regla de la Cadena | |
+| | S2: Evaluación: Perplejidad y técnicas de Suavizado | Quiz 3 |
+| | S3: Modelos Ocultos de Markov (HMM) para etiquetado POS | |
+| **4** | **La Revolución Vectorial** | |
+| | S1: Word2Vec: Skip-gram y CBOW | |
+| | S2: GloVe y FastText (embeddings de subpalabras) | |
+| | S3: Visualización de datos de alta dimensión (t-SNE y PCA) | **📝 Tarea 1:** Analizador de sentimiento usando TF-IDF + Regresión Logística |
+| **5** | **Redes Neuronales para NLP** | |
+| | S1: Repaso de Perceptrones y Retropropagación | |
+| | S2: Perceptrones Multicapa para Clasificación de Texto | Quiz 4 |
+| | S3: Variantes de Descenso de Gradiente y Regularización (Dropout) | |
+| **6** | **Redes Neuronales Recurrentes (RNNs)** | |
+| | S1: Arquitectura RNN: Manejando longitud variable | |
+| | S2: Gradientes que desaparecen y la solución LSTM | Quiz 5 |
+| | S3: Unidades Recurrentes con Compuertas (GRU) y RNNs Bidireccionales | |
+| **7** | **Secuencia a Secuencia (Seq2Seq)** | |
+| | S1: Arquitecturas Codificador-Decodificador | |
+| | S2: Aplicaciones: Traducción Automática Neuronal (NMT) | |
+| | S3: El problema del "cuello de botella" y el nacimiento de la **Atención** | |
+| **8** | **Redes Neuronales Convolucionales para NLP** | |
+| | S1: Convoluciones 1D para texto | |
+| | S2: Max Pooling Global vs. Local | Quiz 6 |
+| | S3: Comparación RNNs vs. CNNs para clasificación | **📝 Tarea 2:** Generador de nombres a nivel de caracteres con LSTM |
+| **9** | **Auto-Atención & Transformers** | |
+| | S1: Atención de Producto Escalar (Queries, Keys, Values) | |
+| | S2: Atención Multi-Cabeza y Codificación Posicional | |
+| | S3: El bloque Transformer completo (Residuales, Normalización) | |
+| **10** | **BERT y la Revolución del Codificador** | |
+| | S1: Modelado de Lenguaje Enmascarado (MLM) | |
+| | S2: Fine-tuning de BERT para tareas downstream (NER, SQuAD) | **Repaso para examen parcial** |
+| | S3: Variaciones: RoBERTa, ALBERT y DistilBERT | Quiz 7 |
+| **11** | **📚 EXAMEN PARCIAL** | **🎯 Examen Parcial (Semanas 1-10)** |
+| | Evaluación teórica de conceptos fundamentales | Cubre: Fundamentos, Modelos Clásicos, RNNs, Transformers básicos |
+| **12** | **GPT y la Revolución del Decodificador** | |
+| | S1: Modelado de Lenguaje Causal | |
+| | S2: Aprendizaje Zero-shot, One-shot y Few-shot | |
+| | S3: Comparación modelos Autoregresivos (GPT) vs. Autoencoding (BERT) | **📝 Tarea 3:** Fine-tuning de BERT para Clasificación de Noticias con Hugging Face |
+| **13** | **Etiquetado de Secuencias & NER** | |
+| | S1: Reconocimiento de Entidades Nombradas (NER) a profundidad | |
+| | S2: Campos Aleatorios Condicionales (CRF) vs. Softmax | Quiz 8 |
+| | S3: Extracción de Información y Extracción de Relaciones | |
+| **14** | **Leyes de Escalamiento & Entrenamiento de LLMs** | |
+| | S1: Cómputo, Datos y Parámetros: Por qué más grande es (usualmente) mejor | |
+| | S2: Aprendizaje por Refuerzo con Retroalimentación Humana (RLHF) | |
+| | S3: Ajuste por Instrucciones vs. Pre-entrenamiento | |
+| **15** | **Ingeniería de Prompts & Aprendizaje en Contexto** | |
+| | S1: Prompting Cadena de Pensamiento (CoT) | Quiz 9 |
+| | S2: Auto-Consistencia y Árbol de Pensamientos | |
+| | S3: Hacking de Prompts y Vulnerabilidades | |
+| **16** | **RAG: Generación Aumentada por Recuperación** | |
+| | S1: Bases de Datos Vectoriales: Pinecone, Milvus, FAISS | |
+| | S2: Construyendo un pipeline RAG: Recuperador + Generador | |
+| | S3: Búsqueda Semántica vs. Búsqueda por Palabras Clave | **📝 Tarea 4:** Aplicación "Chat con tu PDF" usando RAG y API de Llama-3 o GPT-4o |
+| **17** | **Fine-Tuning Eficiente en Parámetros (PEFT)** | |
+| | S1: Adaptadores y LoRA (Adaptación de Bajo Rango) | Quiz 10 |
+| | S2: Cuantización (4-bit, 8-bit) y bitsandbytes | |
+| | S3: Despliegue de modelos: ONNX y TensorRT | |
+| **18** | **Ética en NLP & Dominios Especializados** | |
+| | S1: Sesgo en Word Embeddings y LLMs | |
+| | S2: Alucinaciones, Seguridad y Red Teaming | |
+| | S3: NLP Multimodal (CLIP/LLaVA), NLP para Salud/Legal, Idiomas de bajos recursos | **Entrega de propuesta de proyecto final** |
+| **19** | **Taller de Proyecto Final I** | |
+| | S1: Presentación de Propuestas de Proyectos | **🎤 Presentaciones de propuestas (grupos)** |
+| | S2: Sesiones de revisión de código | Retroalimentación entre pares |
+| | S3: Resolución de problemas / Horas de oficina | |
+| **20** | **Taller de Proyecto Final II & Presentaciones** | |
+| | S1: Depuración final | |
+| | S2: **Presentaciones de Proyectos de Estudiantes** | **🎤 Presentaciones finales (grupos)** |
+| | S3: Futuro del NLP: AGI, Agentes y más allá | **📦 Entrega final del proyecto** |
+
+---
+
+## Resumen de Entregables
+
+| Entregable | Semana | Porcentaje |
+|------------|:------:|:----------:|
+| Quizzes (10 en total) | 1-17 | **10%** |
+| Tarea 1: Analizador de Sentimiento | 4 | **10%** |
+| Tarea 2: Generador de Nombres LSTM | 8 | **10%** |
+| Examen Parcial | 11 | **20%** |
+| Tarea 3: Fine-tuning BERT | 12 | **10%** |
+| Tarea 4: Chat con PDF (RAG) | 16 | **10%** |
+| Proyecto Final (Capstone) | 20 | **30%** |
+| **TOTAL** | | **100%** |
+
+---
+
+## Herramientas y Librerías Recomendadas
+
+- **Lenguaje:** Python 3.10+
+- **Librerías principales:**
+  - `NLTK` - Procesamiento de texto clásico
+  - `spaCy` - NLP industrial
+  - `PyTorch` - Framework de deep learning (preferido para investigación)
+  - `Hugging Face` (Transformers, Datasets, PEFT) - Modelos preentrenados
+  - `LangChain` - Aplicaciones con LLMs
+
+---
+
+## Fechas Importantes
+
+| Evento | Semana | Descripción |
+|--------|:------:|-------------|
+| 📝 Tarea 1 | 4 | Analizador de sentimiento TF-IDF |
+| 📝 Tarea 2 | 8 | Generador LSTM de nombres |
+| 🎯 Examen Parcial | 11 | Evaluación teórica (Semanas 1-10) |
+| 📝 Tarea 3 | 12 | Fine-tuning BERT |
+| 📝 Tarea 4 | 16 | Aplicación RAG |
+| 📄 Propuesta Proyecto | 18 | Entrega de propuesta escrita |
+| 🎤 Presentación Propuestas | 19 | Presentaciones grupales |
+| 🎤 Presentaciones Finales | 20 | Demo de proyectos |
+| 📦 Entrega Final | 20 | Código + Documentación |
+
+---

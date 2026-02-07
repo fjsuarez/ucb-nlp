@@ -1,0 +1,686 @@
+---
+title: "Preprocesamiento de Texto"
+subtitle: "S3: Tokenización, Lematización y Stemming"
+author: "Prof. Francisco Suárez"
+institute: "Universidad Católica Boliviana"
+date: today
+format:
+  revealjs:
+    theme: sky
+    transition: slide
+    slide-number: true
+    chalkboard: true
+    code-fold: true
+    code-tools: true
+    highlight-style: github
+    footer: "NLP y Análisis Semántico | Semana 1"
+    logo: ""
+    incremental: false
+    scrollable: true
+execute:
+  echo: true
+  warning: false
+---
+
+## Agenda de Hoy {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+**Primera Parte**
+
+1. 🔤 ¿Qué es la tokenización?
+2. 🛠️ Herramientas: NLTK y spaCy
+3. 📝 Normalización de texto
+
+:::
+::: {.column width="50%"}
+**Segunda Parte**
+
+4. 🌱 Stemming
+5. 📖 Lematización
+6. 🔧 Pipeline completo de preprocesamiento
+
+:::
+:::
+
+# ¿Por qué preprocesar texto? {background-color="#0077b6"}
+
+## El Texto Crudo es Ruidoso {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+**Texto real del mundo:**
+
+```text
+¡¡¡INCREÍBLE oferta!!!  
+Visita https://tienda.com 😍😍
+Envía un msg al +591-71234567
+#Descuento @tienda_bo
+    precio: $99.99 USD
+```
+
+:::
+::: {.column width="50%"}
+
+**Problemas para una máquina:**
+
+- Mayúsculas / minúsculas
+- Puntuación repetida
+- URLs, emails, emojis
+- Hashtags, menciones
+- Espacios irregulares
+- Números en distintos formatos
+
+:::
+:::
+
+. . .
+
+::: {.callout-important}
+## Regla de Oro del NLP
+**Basura entra, basura sale** (*Garbage in, garbage out*). La calidad de cualquier modelo depende directamente de la calidad del preprocesamiento.
+:::
+
+## El Pipeline de Preprocesamiento {.smaller}
+
+```{mermaid}
+%%| fig-width: 10
+flowchart LR
+    A[📄 Texto<br>crudo] --> B[🔤 Tokenización]
+    B --> C[🔡 Normalización]
+    C --> D[🚫 Stopwords]
+    D --> E[🌱 Stemming /<br>📖 Lematización]
+    E --> F[✅ Texto<br>limpio]
+
+    style A fill:#fff3cd,color:#000
+    style B fill:#cfe2ff,color:#000
+    style C fill:#d1e7dd,color:#000
+    style D fill:#f8d7da,color:#000
+    style E fill:#e2d9f3,color:#000
+    style F fill:#d4edda,color:#000
+```
+
+Cada paso transforma el texto para que sea más útil para nuestros modelos.
+
+# Tokenización {background-color="#023e8a"}
+
+## ¿Qué es Tokenizar? {.smaller}
+
+> Dividir un texto en unidades mínimas significativas llamadas **tokens**.
+
+::: {.columns}
+::: {.column width="50%"}
+
+**Tipos de tokenización:**
+
+| Nivel | Ejemplo |
+|:------|:--------|
+| Oración | "Hola. ¿Qué tal?" → 2 oraciones |
+| Palabra | "el gato negro" → 3 tokens |
+| Subpalabra | "jugando" → "jug" + "##ando" |
+| Carácter | "gato" → g, a, t, o |
+
+:::
+::: {.column width="50%"}
+
+**¿Por qué importa?**
+
+- Define la unidad básica de análisis
+- Afecta el vocabulario del modelo
+- Diferente en cada idioma
+- No es trivial: "New York" → ¿1 o 2 tokens?
+
+:::
+:::
+
+## Método 1: `split()` (Naïve) {.smaller}
+
+```{python}
+#| code-fold: false
+
+texto = "El gato, que estaba en el jardín, cazó un ratón."
+
+# split() divide por espacios
+tokens = texto.split()
+print(f"Tokens: {tokens}")
+print(f"Cantidad: {len(tokens)}")
+```
+
+. . .
+
+::: {.callout-warning}
+## Problemas de `split()`
+- "gato," se considera un solo token (incluye la coma)
+- No separa puntuación
+- No maneja contracciones ("del" = "de" + "el")
+- No detecta límites de oración
+:::
+
+## Método 2: Regex (Mejor) {.smaller}
+
+```{python}
+#| code-fold: false
+import re
+
+texto = "El gato, que estaba en el jardín, cazó un ratón."
+
+# Tokenización con regex
+tokens = re.findall(r"\w+|[^\w\s]", texto)
+print(f"Tokens: {tokens}")
+print(f"Cantidad: {len(tokens)}")
+```
+
+. . .
+
+Mejor, pero aún tiene limitaciones con:
+
+- Abreviaturas: "EE.UU." → ¿"EE", ".", "UU", "."?
+- Números decimales: "3.14" → ¿"3", ".", "14"?
+- Contracciones del español: "al" = "a" + "el"
+
+## Método 3: NLTK {.smaller}
+
+```{python}
+#| code-fold: false
+import nltk
+nltk.download('punkt_tab', quiet=True)
+
+from nltk.tokenize import word_tokenize, sent_tokenize
+
+texto = "El Dr. García vive en La Paz. Trabaja en la U.C.B. desde 2019."
+
+# Tokenización por oraciones
+oraciones = sent_tokenize(texto, language='spanish')
+print("Oraciones:")
+for i, sent in enumerate(oraciones):
+    print(f"  {i+1}. {sent}")
+
+# Tokenización por palabras
+tokens = word_tokenize(texto, language='spanish')
+print(f"\nTokens: {tokens}")
+```
+
+## Método 4: spaCy {.smaller}
+
+```{python}
+#| code-fold: false
+import spacy
+
+nlp = spacy.load("es_core_news_sm")
+
+texto = "El Dr. García vive en La Paz. Trabaja en la U.C.B. desde 2019."
+doc = nlp(texto)
+
+# Tokenización por oraciones
+print("Oraciones:")
+for i, sent in enumerate(doc.sents):
+    print(f"  {i+1}. {sent.text}")
+
+# Tokenización por palabras con información adicional
+print("\nTokens con POS tags:")
+for token in doc:
+    print(f"  '{token.text:12s}' → POS: {token.pos_:6s} | Lema: {token.lemma_}")
+```
+
+## Comparación de Tokenizadores {.smaller}
+
+```{python}
+#| code-fold: false
+import re
+import nltk
+import spacy
+from nltk.tokenize import word_tokenize
+
+nlp = spacy.load("es_core_news_sm")
+
+texto = "No puedo creer que cueste $99.99 en EE.UU."
+
+# Comparar los 4 métodos
+metodos = {
+    "split()": texto.split(),
+    "regex": re.findall(r"\w+|[^\w\s]", texto),
+    "NLTK": word_tokenize(texto, language='spanish'),
+    "spaCy": [t.text for t in nlp(texto)]
+}
+
+for nombre, tokens in metodos.items():
+    print(f"{nombre:8s} ({len(tokens):2d} tokens): {tokens}")
+```
+
+::: {.callout-tip}
+## Recomendación
+Para proyectos reales, usa **spaCy** o **NLTK**. Reserva `split()` y regex para prototipos rápidos.
+:::
+
+# Normalización {background-color="#03045e"}
+
+## Técnicas de Normalización {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Técnicas Básicas
+
+1. **Lowercase** - Convertir a minúsculas
+2. **Eliminar puntuación**
+3. **Eliminar números** (o normalizarlos)
+4. **Eliminar espacios extra**
+
+:::
+::: {.column width="50%"}
+
+### Técnicas Avanzadas
+
+5. **Eliminar stopwords**
+6. **Eliminar acentos** (depende del caso)
+7. **Expandir contracciones**
+8. **Normalizar Unicode**
+
+:::
+:::
+
+## Ejemplo: Normalización Paso a Paso {.smaller}
+
+```{python}
+#| code-fold: false
+import re
+import unicodedata
+
+texto = "  ¡¡HOLA Mundo!!  ¿Cómo ESTÁS?   😊  "
+
+# Paso 1: Lowercase
+paso1 = texto.lower()
+print(f"1. Lowercase:    '{paso1}'")
+
+# Paso 2: Normalizar espacios
+paso2 = re.sub(r"\s+", " ", paso1).strip()
+print(f"2. Espacios:     '{paso2}'")
+
+# Paso 3: Eliminar puntuación repetida
+paso3 = re.sub(r"([¿?¡!.])\1+", r"\1", paso2)
+print(f"3. Puntuación:   '{paso3}'")
+
+# Paso 4: Eliminar emojis
+paso4 = re.sub(r"[^\w\s¿?¡!.,áéíóúñü]", "", paso3)
+print(f"4. Sin emojis:   '{paso4}'")
+```
+
+## Stopwords: Palabras Vacías {.smaller}
+
+**Stopwords** = palabras muy frecuentes que aportan poco significado.
+
+```{python}
+#| code-fold: false
+import nltk
+nltk.download('stopwords', quiet=True)
+from nltk.corpus import stopwords
+
+# Stopwords en español
+stops_es = set(stopwords.words('spanish'))
+print(f"Total stopwords en español: {len(stops_es)}")
+print(f"Ejemplos: {sorted(list(stops_es))[:20]}")
+```
+
+## Eliminación de Stopwords {.smaller}
+
+```{python}
+#| code-fold: false
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+
+stops = set(stopwords.words('spanish'))
+
+texto = "El procesamiento de lenguaje natural es una rama de la inteligencia artificial"
+tokens = word_tokenize(texto.lower(), language='spanish')
+
+# Filtrar stopwords
+tokens_limpios = [t for t in tokens if t not in stops and t.isalpha()]
+
+print(f"Original ({len(tokens)} tokens):")
+print(f"  {tokens}")
+print(f"\nSin stopwords ({len(tokens_limpios)} tokens):")
+print(f"  {tokens_limpios}")
+```
+
+::: {.callout-warning}
+## ⚠️ Cuidado con las stopwords
+No siempre hay que eliminarlas. Para **análisis de sentimiento**, "no" es crucial. Para **modelos de lenguaje**, las necesitamos todas.
+:::
+
+# Stemming {background-color="#001219"}
+
+## ¿Qué es Stemming? {.smaller}
+
+> Reducir una palabra a su **raíz** (*stem*) eliminando sufijos morfológicos mediante reglas heurísticas.
+
+::: {.columns}
+::: {.column width="50%"}
+
+**Ejemplo:**
+
+| Palabra | Stem |
+|:--------|:-----|
+| jugando | jug |
+| jugador | jug |
+| juegos | jueg |
+| jugar | jug |
+| jugable | jug |
+
+:::
+::: {.column width="50%"}
+
+**Características:**
+
+- ✅ Rápido y simple
+- ✅ No necesita diccionario
+- ❌ La raíz puede no ser una palabra real
+- ❌ Errores frecuentes
+- ❌ Basado en reglas fijas
+
+:::
+:::
+
+## Snowball Stemmer para Español {.smaller}
+
+```{python}
+#| code-fold: false
+from nltk.stem import SnowballStemmer
+
+stemmer = SnowballStemmer("spanish")
+
+palabras = [
+    "corriendo", "correr", "corrió", "corredor", "corrida",
+    "computadora", "computadoras", "computación", "computar",
+    "universidad", "universitario", "universitaria", "universidades"
+]
+
+print(f"{'Palabra':<18} {'Stem':<12}")
+print("-" * 30)
+for palabra in palabras:
+    stem = stemmer.stem(palabra)
+    print(f"{palabra:<18} {stem:<12}")
+```
+
+## Errores Comunes del Stemming {.smaller}
+
+```{python}
+#| code-fold: false
+from nltk.stem import SnowballStemmer
+
+stemmer = SnowballStemmer("spanish")
+
+# Over-stemming: palabras diferentes → mismo stem
+print("Over-stemming (falsos positivos):")
+pares_over = [("universo", "universidad"), ("general", "generoso")]
+for p1, p2 in pares_over:
+    s1, s2 = stemmer.stem(p1), stemmer.stem(p2)
+    print(f"  '{p1}' → '{s1}' | '{p2}' → '{s2}' | ¿Iguales? {s1 == s2}")
+
+# Under-stemming: palabras relacionadas → stems diferentes
+print("\nUnder-stemming (falsos negativos):")
+pares_under = [("absorber", "absorción"), ("producir", "producto")]
+for p1, p2 in pares_under:
+    s1, s2 = stemmer.stem(p1), stemmer.stem(p2)
+    print(f"  '{p1}' → '{s1}' | '{p2}' → '{s2}' | ¿Iguales? {s1 == s2}")
+```
+
+# Lematización {background-color="#0077b6"}
+
+## ¿Qué es la Lematización? {.smaller}
+
+> Reducir una palabra a su **lema**: la forma canónica que aparecería en un diccionario, considerando el contexto gramatical.
+
+::: {.columns}
+::: {.column width="50%"}
+
+**Ejemplo:**
+
+| Palabra | Lema |
+|:--------|:-----|
+| jugando | jugar |
+| jugador | jugador |
+| juegos | juego |
+| mejores | mejor |
+| fue | ir / ser |
+
+:::
+::: {.column width="50%"}
+
+**Características:**
+
+- ✅ El resultado es una palabra real
+- ✅ Considera el contexto (POS)
+- ✅ Más preciso que stemming
+- ❌ Más lento
+- ❌ Necesita diccionario / modelo
+
+:::
+:::
+
+## Lematización con spaCy {.smaller}
+
+```{python}
+#| code-fold: false
+import spacy
+
+nlp = spacy.load("es_core_news_sm")
+
+texto = "Los estudiantes corrieron rápidamente hacia las mejores universidades del país"
+doc = nlp(texto)
+
+print(f"{'Token':<18} {'Lema':<16} {'POS':<8} {'¿Cambió?'}")
+print("-" * 52)
+for token in doc:
+    cambio = "✅" if token.text.lower() != token.lemma_ else ""
+    print(f"{token.text:<18} {token.lemma_:<16} {token.pos_:<8} {cambio}")
+```
+
+## Stemming vs. Lematización {.smaller}
+
+```{python}
+#| code-fold: false
+from nltk.stem import SnowballStemmer
+import spacy
+
+stemmer = SnowballStemmer("spanish")
+nlp = spacy.load("es_core_news_sm")
+
+palabras = ["corriendo", "mejores", "ciudades", "producción", "dificultades", "haciendo"]
+
+print(f"{'Palabra':<16} {'Stem':<14} {'Lema (spaCy)':<16}")
+print("-" * 46)
+for palabra in palabras:
+    stem = stemmer.stem(palabra)
+    doc = nlp(palabra)
+    lema = doc[0].lemma_
+    print(f"{palabra:<16} {stem:<14} {lema:<16}")
+```
+
+. . .
+
+::: {.callout-tip}
+## ¿Cuándo usar cuál?
+- **Stemming:** Búsqueda de información, indexación, cuando la velocidad importa
+- **Lematización:** Análisis de sentimiento, chatbots, cuando la precisión importa
+:::
+
+# Pipeline Completo {background-color="#023e8a"}
+
+## Función de Preprocesamiento {.smaller}
+
+```{python}
+#| code-fold: false
+import re
+import spacy
+from nltk.corpus import stopwords
+
+nlp = spacy.load("es_core_news_sm")
+stops = set(stopwords.words('spanish'))
+
+def preprocesar(texto, usar_lemas=True, quitar_stops=True):
+    """Pipeline completo de preprocesamiento para NLP en español."""
+    # 1. Lowercase
+    texto = texto.lower()
+    # 2. Eliminar URLs y emails
+    texto = re.sub(r"https?://\S+|www\.\S+", "", texto)
+    texto = re.sub(r"\S+@\S+", "", texto)
+    # 3. Eliminar caracteres especiales (mantener letras y espacios)
+    texto = re.sub(r"[^\w\sáéíóúñü]", " ", texto)
+    # 4. Normalizar espacios
+    texto = re.sub(r"\s+", " ", texto).strip()
+    # 5. Tokenizar y lematizar con spaCy
+    doc = nlp(texto)
+    tokens = []
+    for token in doc:
+        palabra = token.lemma_ if usar_lemas else token.text
+        if quitar_stops and palabra in stops:
+            continue
+        if not palabra.isalpha():
+            continue
+        tokens.append(palabra)
+    return tokens
+```
+
+## Demo del Pipeline {.smaller}
+
+```{python}
+#| code-fold: false
+
+texto_crudo = """
+¡¡Los MEJORES estudiantes de la Universidad Católica están 
+desarrollando proyectos increíbles!! 🎓🚀
+Visita https://ucb.edu.bo para más información.
+Contacto: info@ucb.edu.bo
+"""
+
+print(f"TEXTO ORIGINAL:\n{texto_crudo}")
+
+# Con lemas y sin stopwords
+resultado1 = preprocesar(texto_crudo, usar_lemas=True, quitar_stops=True)
+print(f"Con lemas, sin stops:\n  {resultado1}\n")
+
+# Sin lemas, sin stopwords
+resultado2 = preprocesar(texto_crudo, usar_lemas=False, quitar_stops=True)
+print(f"Sin lemas, sin stops:\n  {resultado2}\n")
+
+# Con lemas, con stopwords
+resultado3 = preprocesar(texto_crudo, usar_lemas=True, quitar_stops=False)
+print(f"Con lemas, con stops:\n  {resultado3}")
+```
+
+## Procesando Múltiples Documentos {.smaller}
+
+```{python}
+#| code-fold: false
+
+documentos = [
+    "El procesamiento de lenguaje natural permite analizar textos automáticamente.",
+    "Las redes neuronales han revolucionado la inteligencia artificial moderna.",
+    "Bolivia tiene una gran diversidad lingüística con más de 30 idiomas nativos.",
+]
+
+print("DOCUMENTOS PREPROCESADOS:\n")
+for i, doc in enumerate(documentos):
+    tokens = preprocesar(doc)
+    print(f"Doc {i+1}: {tokens}")
+```
+
+::: {.callout-note}
+## Siguiente paso
+Con el texto preprocesado, estamos listos para representarlo numéricamente (Semana 2: Bag of Words, TF-IDF...).
+:::
+
+# Ejercicio Práctico {background-color="#03045e"}
+
+## Desafío: Preprocesador de Tweets {.smaller}
+
+Crea una función que preprocese tweets en español:
+
+1. Eliminar menciones (`@usuario`)
+2. Extraer y eliminar hashtags
+3. Eliminar URLs
+4. Lematizar el texto restante
+
+```{python}
+#| code-fold: true
+
+def preprocesar_tweet(tweet):
+    """Preprocesa un tweet en español."""
+    # Extraer hashtags antes de limpiar
+    hashtags = re.findall(r"#\w+", tweet)
+    # Eliminar menciones, hashtags, URLs
+    limpio = re.sub(r"@\w+", "", tweet)
+    limpio = re.sub(r"#\w+", "", limpio)
+    limpio = re.sub(r"https?://\S+", "", limpio)
+    # Preprocesar
+    tokens = preprocesar(limpio)
+    return {"tokens": tokens, "hashtags": hashtags}
+
+# Prueba
+tweet = "Gran clase de @fsuarez sobre #NLP y #MachineLearning 🔥 https://t.co/abc123"
+resultado = preprocesar_tweet(tweet)
+print(f"Tweet: {tweet}")
+print(f"Tokens: {resultado['tokens']}")
+print(f"Hashtags: {resultado['hashtags']}")
+```
+
+# Resumen {background-color="#0077b6"}
+
+## Lo que Aprendimos Hoy ✅ {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+**Tokenización:**
+
+- `split()` — simple pero limitado
+- Regex — más control
+- NLTK — soporte multi-idioma
+- spaCy — info lingüística completa
+
+**Normalización:**
+
+- Lowercase, puntuación
+- Stopwords
+- Limpieza de URLs, emails, emojis
+
+:::
+::: {.column width="50%"}
+
+**Stemming:**
+
+- Reducción heurística a raíz
+- Snowball Stemmer para español
+- Rápido pero impreciso
+
+**Lematización:**
+
+- Reducción a forma de diccionario
+- spaCy para español
+- Más lento pero más preciso
+
+:::
+:::
+
+## Para la Próxima Clase 📚
+
+::: {.callout-note}
+## Semana 2, S1: Bag of Words y One-hot Encoding
+Aprenderemos a representar texto como **vectores numéricos** para que los modelos de machine learning puedan trabajar con ellos.
+:::
+
+**Lectura:**
+
+- Capítulo 2: *Speech and Language Processing* (Jurafsky & Martin)
+- Documentación de [spaCy](https://spacy.io/usage/linguistic-features)
+
+# ¿Preguntas? 🙋 {background-color="#03045e"}
+
+:::{.r-fit-text}
+**¡Gracias!**
+:::
+
+📧 fsuarez@ucb.edu.bo
+
+🔗 Materiales: [github.com/fjsuarez/ucb-nlp](https://github.com/fjsuarez/ucb-nlp)
