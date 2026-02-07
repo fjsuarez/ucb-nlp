@@ -13,4 +13,3 @@ format: html
 
 ## Material
 - [Programa del Curso](programa_nlp_20_semanas.md)
-- [Información General](general.md)
