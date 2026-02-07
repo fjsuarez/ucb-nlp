@@ -11,6 +11,7 @@ env/
 _site/
 *_files/
 *_cache/
+*.html
 
 # User specific
 general.md
