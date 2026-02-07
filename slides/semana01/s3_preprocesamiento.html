@@ -372,7 +372,7 @@ Prof.&nbsp;Francisco Suárez
 </section>
 <section id="método-1-split-naïve" class="slide level2 smaller">
 <h2>Método 1: <code>split()</code> (Naïve)</h2>
-<div id="d7867741" class="cell" data-execution_count="1">
+<div id="a924f8b9" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a></a>texto <span class="op">=</span> <span class="st">"El gato, que estaba en el jardín, cazó un ratón."</span></span>
 <span id="cb3-2"><a></a></span>
 <span id="cb3-3"><a></a><span class="co"># split() divide por espacios</span></span>
@@ -407,7 +407,7 @@ Cantidad: 10</code></pre>
 </section>
 <section id="método-2-regex-mejor" class="slide level2 smaller">
 <h2>Método 2: Regex (Mejor)</h2>
-<div id="8bb72877" class="cell" data-execution_count="2">
+<div id="95a66155" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a></a><span class="im">import</span> re</span>
 <span id="cb5-2"><a></a></span>
 <span id="cb5-3"><a></a>texto <span class="op">=</span> <span class="st">"El gato, que estaba en el jardín, cazó un ratón."</span></span>
@@ -432,7 +432,7 @@ Cantidad: 13</code></pre>
 </section>
 <section id="método-3-nltk" class="slide level2 smaller">
 <h2>Método 3: NLTK</h2>
-<div id="d0e8993b" class="cell" data-execution_count="3">
+<div id="00fec431" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a></a><span class="im">import</span> nltk</span>
 <span id="cb7-2"><a></a>nltk.download(<span class="st">'punkt_tab'</span>, quiet<span class="op">=</span><span class="va">True</span>)</span>
 <span id="cb7-3"><a></a></span>
@@ -461,7 +461,7 @@ Tokens: ['El', 'Dr.', 'García', 'vive', 'en', 'La', 'Paz', '.', 'Trabaja', 'en'
 </section>
 <section id="método-4-spacy" class="slide level2 smaller">
 <h2>Método 4: spaCy</h2>
-<div id="94131ad1" class="cell" data-execution_count="4">
+<div id="e5e45e04" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a></a><span class="im">import</span> spacy</span>
 <span id="cb9-2"><a></a></span>
 <span id="cb9-3"><a></a>nlp <span class="op">=</span> spacy.load(<span class="st">"es_core_news_sm"</span>)</span>
@@ -504,7 +504,7 @@ Tokens con POS tags:
 </section>
 <section id="comparación-de-tokenizadores" class="slide level2 smaller">
 <h2>Comparación de Tokenizadores</h2>
-<div id="bc878fae" class="cell" data-execution_count="5">
+<div id="87f0e771" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a></a><span class="im">import</span> re</span>
 <span id="cb11-2"><a></a><span class="im">import</span> nltk</span>
 <span id="cb11-3"><a></a><span class="im">import</span> spacy</span>
@@ -573,7 +573,7 @@ spaCy    ( 9 tokens): ['No', 'puedo', 'creer', 'que', 'cueste', '$', '99.99', 'e
 </section>
 <section id="ejemplo-normalización-paso-a-paso" class="slide level2 smaller">
 <h2>Ejemplo: Normalización Paso a Paso</h2>
-<div id="e18bbafb" class="cell" data-execution_count="6">
+<div id="2bab9b1a" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a></a><span class="im">import</span> re</span>
 <span id="cb13-2"><a></a><span class="im">import</span> unicodedata</span>
 <span id="cb13-3"><a></a></span>
@@ -605,7 +605,7 @@ spaCy    ( 9 tokens): ['No', 'puedo', 'creer', 'que', 'cueste', '$', '99.99', 'e
 <section id="stopwords-palabras-vacías" class="slide level2 smaller">
 <h2>Stopwords: Palabras Vacías</h2>
 <p><strong>Stopwords</strong> = palabras muy frecuentes que aportan poco significado.</p>
-<div id="78bbef54" class="cell" data-execution_count="7">
+<div id="a9f4ff1b" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb15"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a></a><span class="im">import</span> nltk</span>
 <span id="cb15-2"><a></a>nltk.download(<span class="st">'stopwords'</span>, quiet<span class="op">=</span><span class="va">True</span>)</span>
 <span id="cb15-3"><a></a><span class="im">from</span> nltk.corpus <span class="im">import</span> stopwords</span>
@@ -622,7 +622,7 @@ Ejemplos: ['a', 'al', 'algo', 'algunas', 'algunos', 'ante', 'antes', 'como', 'co
 </section>
 <section id="eliminación-de-stopwords" class="slide level2 smaller">
 <h2>Eliminación de Stopwords</h2>
-<div id="fc0c10c0" class="cell" data-execution_count="8">
+<div id="9dc1cb15" class="cell" data-execution_count="8">
 <div class="sourceCode cell-code" id="cb17"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a></a><span class="im">from</span> nltk.corpus <span class="im">import</span> stopwords</span>
 <span id="cb17-2"><a></a><span class="im">from</span> nltk.tokenize <span class="im">import</span> word_tokenize</span>
 <span id="cb17-3"><a></a></span>
@@ -716,7 +716,7 @@ Sin stopwords (6 tokens):
 </section>
 <section id="snowball-stemmer-para-español" class="slide level2 smaller">
 <h2>Snowball Stemmer para Español</h2>
-<div id="9273ed29" class="cell" data-execution_count="9">
+<div id="01b5cce8" class="cell" data-execution_count="9">
 <div class="sourceCode cell-code" id="cb19"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a></a><span class="im">from</span> nltk.stem <span class="im">import</span> SnowballStemmer</span>
 <span id="cb19-2"><a></a></span>
 <span id="cb19-3"><a></a>stemmer <span class="op">=</span> SnowballStemmer(<span class="st">"spanish"</span>)</span>
@@ -753,7 +753,7 @@ universidades      univers     </code></pre>
 </section>
 <section id="errores-comunes-del-stemming" class="slide level2 smaller">
 <h2>Errores Comunes del Stemming</h2>
-<div id="8bef4865" class="cell" data-execution_count="10">
+<div id="57d874d6" class="cell" data-execution_count="10">
 <div class="sourceCode cell-code" id="cb21"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a></a><span class="im">from</span> nltk.stem <span class="im">import</span> SnowballStemmer</span>
 <span id="cb21-2"><a></a></span>
 <span id="cb21-3"><a></a>stemmer <span class="op">=</span> SnowballStemmer(<span class="st">"spanish"</span>)</span>
@@ -838,7 +838,7 @@ Under-stemming (falsos negativos):
 </section>
 <section id="lematización-con-spacy" class="slide level2 smaller">
 <h2>Lematización con spaCy</h2>
-<div id="e1212c29" class="cell" data-execution_count="11">
+<div id="00730d94" class="cell" data-execution_count="11">
 <div class="sourceCode cell-code" id="cb23"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a></a><span class="im">import</span> spacy</span>
 <span id="cb23-2"><a></a></span>
 <span id="cb23-3"><a></a>nlp <span class="op">=</span> spacy.load(<span class="st">"es_core_news_sm"</span>)</span>
@@ -869,7 +869,7 @@ país               país             NOUN     </code></pre>
 </section>
 <section id="stemming-vs.-lematización" class="slide level2 smaller">
 <h2>Stemming vs.&nbsp;Lematización</h2>
-<div id="6f32070b" class="cell" data-execution_count="12">
+<div id="1512ec99" class="cell" data-execution_count="12">
 <div class="sourceCode cell-code" id="cb25"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a></a><span class="im">from</span> nltk.stem <span class="im">import</span> SnowballStemmer</span>
 <span id="cb25-2"><a></a><span class="im">import</span> spacy</span>
 <span id="cb25-3"><a></a></span>
@@ -922,7 +922,7 @@ haciendo         hac            hacer           </code></pre>
 </section>
 <section id="función-de-preprocesamiento" class="slide level2 smaller">
 <h2>Función de Preprocesamiento</h2>
-<div id="fd55e41f" class="cell" data-execution_count="13">
+<div id="283edd8c" class="cell" data-execution_count="13">
 <div class="sourceCode cell-code" id="cb27"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a></a><span class="im">import</span> re</span>
 <span id="cb27-2"><a></a><span class="im">import</span> spacy</span>
 <span id="cb27-3"><a></a><span class="im">from</span> nltk.corpus <span class="im">import</span> stopwords</span>
@@ -956,7 +956,7 @@ haciendo         hac            hacer           </code></pre>
 </section>
 <section id="demo-del-pipeline" class="slide level2 smaller">
 <h2>Demo del Pipeline</h2>
-<div id="f9126dd9" class="cell" data-execution_count="14">
+<div id="e355e823" class="cell" data-execution_count="14">
 <div class="sourceCode cell-code" id="cb28"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a></a>texto_crudo <span class="op">=</span> <span class="st">"""</span></span>
 <span id="cb28-2"><a></a><span class="st">¡¡Los MEJORES estudiantes de la Universidad Católica están </span></span>
 <span id="cb28-3"><a></a><span class="st">desarrollando proyectos increíbles!! 🎓🚀</span></span>
@@ -998,7 +998,7 @@ Con lemas, con stops:
 </section>
 <section id="procesando-múltiples-documentos" class="slide level2 smaller">
 <h2>Procesando Múltiples Documentos</h2>
-<div id="d57c03a1" class="cell" data-execution_count="15">
+<div id="56bfd2a1" class="cell" data-execution_count="15">
 <div class="sourceCode cell-code" id="cb30"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a></a>documentos <span class="op">=</span> [</span>
 <span id="cb30-2"><a></a>    <span class="st">"El procesamiento de lenguaje natural permite analizar textos automáticamente."</span>,</span>
 <span id="cb30-3"><a></a>    <span class="st">"Las redes neuronales han revolucionado la inteligencia artificial moderna."</span>,</span>
@@ -1045,7 +1045,7 @@ Doc 3: ['bolivia', 'tener', 'gran', 'diversidad', 'lingüístico', 'idioma', 'na
 <li>Eliminar URLs</li>
 <li>Lematizar el texto restante</li>
 </ol>
-<div id="83c8cb93" class="cell" data-execution_count="16">
+<div id="454a7286" class="cell" data-execution_count="16">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb32"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a></a><span class="kw">def</span> preprocesar_tweet(tweet):</span>

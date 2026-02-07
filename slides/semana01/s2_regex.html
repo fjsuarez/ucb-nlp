@@ -338,7 +338,7 @@ Prof.&nbsp;Francisco Suárez
 <section id="caracteres-literales" class="slide level2 smaller">
 <h2>Caracteres Literales</h2>
 <p>El caso más simple: buscar texto exacto.</p>
-<div id="f8ab084f" class="cell" data-execution_count="1">
+<div id="e0bf6fa3" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a></a><span class="im">import</span> re</span>
 <span id="cb2-2"><a></a></span>
 <span id="cb2-3"><a></a>texto <span class="op">=</span> <span class="st">"El gato y el perro juegan en el jardín"</span></span>
@@ -429,7 +429,7 @@ Encontrado: 'gato' en posición 3</code></pre>
 </section>
 <section id="ejemplo-metacaracteres" class="slide level2 smaller">
 <h2>Ejemplo: Metacaracteres</h2>
-<div id="6d56cb3e" class="cell" data-execution_count="2">
+<div id="f85daf11" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a></a><span class="im">import</span> re</span>
 <span id="cb4-2"><a></a></span>
 <span id="cb4-3"><a></a>texto <span class="op">=</span> <span class="st">"Mi teléfono es 591-78945612 y mi código es A123"</span></span>
@@ -455,7 +455,7 @@ Código encontrado: A123</code></pre>
 <section id="clases-de-caracteres" class="slide level2 smaller">
 <h2>Clases de Caracteres <code>[ ]</code></h2>
 <p>Definen un <strong>conjunto</strong> de caracteres válidos para una posición.</p>
-<div id="46025edc" class="cell" data-execution_count="3">
+<div id="ddea2ada" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a></a><span class="im">import</span> re</span>
 <span id="cb6-2"><a></a></span>
 <span id="cb6-3"><a></a>texto <span class="op">=</span> <span class="st">"bag, big, bog, bug, beg, b9g"</span></span>
@@ -579,7 +579,7 @@ b[^aeiou]g → ['b9g']</code></pre>
 </section>
 <section id="ejemplo-cuantificadores" class="slide level2 smaller">
 <h2>Ejemplo: Cuantificadores</h2>
-<div id="c343a653" class="cell" data-execution_count="4">
+<div id="0ccc523f" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a></a><span class="im">import</span> re</span>
 <span id="cb8-2"><a></a></span>
 <span id="cb8-3"><a></a>texto <span class="op">=</span> <span class="st">"Los números son: 1, 12, 123, 1234, 12345"</span></span>
@@ -608,7 +608,7 @@ Uno o más dígitos: ['1', '12', '123', '1234', '12345']</code></pre>
 <div class="column" style="width:50%;">
 <h3 id="greedy-codicioso">Greedy (Codicioso) 🐷</h3>
 <p>Por defecto, los cuantificadores son <strong>greedy</strong>: intentan capturar el máximo posible.</p>
-<div id="f6d1e67d" class="cell" data-execution_count="5">
+<div id="0b87c197" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a></a><span class="im">import</span> re</span>
 <span id="cb10-2"><a></a></span>
 <span id="cb10-3"><a></a>html <span class="op">=</span> <span class="st">"&lt;p&gt;Hola&lt;/p&gt;&lt;p&gt;Mundo&lt;/p&gt;"</span></span>
@@ -623,7 +623,7 @@ Uno o más dígitos: ['1', '12', '123', '1234', '12345']</code></pre>
 </div><div class="column" style="width:50%;">
 <h3 id="lazy-perezoso">Lazy (Perezoso) 🦥</h3>
 <p>Agregando <code>?</code> después del cuantificador, se vuelve <strong>lazy</strong>: captura el mínimo.</p>
-<div id="abf76b0f" class="cell" data-execution_count="6">
+<div id="5adf7294" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a></a><span class="im">import</span> re</span>
 <span id="cb12-2"><a></a></span>
 <span id="cb12-3"><a></a>html <span class="op">=</span> <span class="st">"&lt;p&gt;Hola&lt;/p&gt;&lt;p&gt;Mundo&lt;/p&gt;"</span></span>
@@ -650,7 +650,7 @@ Uno o más dígitos: ['1', '12', '123', '1234', '12345']</code></pre>
 <li>Extraer partes específicas del match</li>
 <li>Reutilizar el contenido capturado</li>
 </ol>
-<div id="2d986598" class="cell" data-execution_count="7">
+<div id="782103f3" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a></a><span class="im">import</span> re</span>
 <span id="cb14-2"><a></a></span>
 <span id="cb14-3"><a></a>texto <span class="op">=</span> <span class="st">"Mi email es juan.perez@ucb.edu.bo y también tengo maria@gmail.com"</span></span>
@@ -670,7 +670,7 @@ Usuario: maria, Dominio: gmail.com</code></pre>
 <section id="grupos-con-nombre" class="slide level2 smaller">
 <h2>Grupos con Nombre</h2>
 <p>Podemos nombrar los grupos para mayor claridad con <code>(?P&lt;nombre&gt;...)</code>:</p>
-<div id="9214ab64" class="cell" data-execution_count="8">
+<div id="f0bb06b6" class="cell" data-execution_count="8">
 <div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a></a><span class="im">import</span> re</span>
 <span id="cb16-2"><a></a></span>
 <span id="cb16-3"><a></a>fecha <span class="op">=</span> <span class="st">"Hoy es 04/02/2026 y mañana será 05/02/2026"</span></span>
@@ -702,7 +702,7 @@ Fecha: 05/02/2026
 <section id="grupos-no-capturadores" class="slide level2 smaller">
 <h2>Grupos No Capturadores</h2>
 <p>A veces necesitamos agrupar sin capturar. Usamos <code>(?:...)</code>:</p>
-<div id="efeb65f9" class="cell" data-execution_count="9">
+<div id="9662327c" class="cell" data-execution_count="9">
 <div class="sourceCode cell-code" id="cb18"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a></a><span class="im">import</span> re</span>
 <span id="cb18-2"><a></a></span>
 <span id="cb18-3"><a></a>texto <span class="op">=</span> <span class="st">"http://ucb.edu.bo y https://google.com"</span></span>
@@ -779,7 +779,7 @@ Fecha: 05/02/2026
 </section>
 <section id="re.search-vs-re.match" class="slide level2 smaller">
 <h2><code>re.search()</code> vs <code>re.match()</code></h2>
-<div id="bcee69fd" class="cell" data-execution_count="10">
+<div id="4bd301f3" class="cell" data-execution_count="10">
 <div class="sourceCode cell-code" id="cb20"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a></a><span class="im">import</span> re</span>
 <span id="cb20-2"><a></a></span>
 <span id="cb20-3"><a></a>texto <span class="op">=</span> <span class="st">"Python es genial"</span></span>
@@ -804,7 +804,7 @@ match('Python'): Python</code></pre>
 </section>
 <section id="re.findall-y-re.finditer" class="slide level2 smaller">
 <h2><code>re.findall()</code> y <code>re.finditer()</code></h2>
-<div id="86c2df98" class="cell" data-execution_count="11">
+<div id="40c4b711" class="cell" data-execution_count="11">
 <div class="sourceCode cell-code" id="cb22"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a></a><span class="im">import</span> re</span>
 <span id="cb22-2"><a></a></span>
 <span id="cb22-3"><a></a>texto <span class="op">=</span> <span class="st">"Precios: $100, $250, $75 y $1000"</span></span>
@@ -830,7 +830,7 @@ finditer():
 </section>
 <section id="re.sub---sustitución" class="slide level2 smaller">
 <h2><code>re.sub()</code> - Sustitución</h2>
-<div id="90a5eaaf" class="cell" data-execution_count="12">
+<div id="ec136f52" class="cell" data-execution_count="12">
 <div class="sourceCode cell-code" id="cb24"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a></a><span class="im">import</span> re</span>
 <span id="cb24-2"><a></a></span>
 <span id="cb24-3"><a></a>texto <span class="op">=</span> <span class="st">"Mi teléfono es 591-78945612 y mi CI es 12345678"</span></span>
@@ -852,7 +852,7 @@ Fecha reformateada: 04/02/2026</code></pre>
 <section id="re.compile---compilación" class="slide level2 smaller">
 <h2><code>re.compile()</code> - Compilación</h2>
 <p>Cuando usamos el mismo patrón múltiples veces, es más eficiente compilarlo:</p>
-<div id="4a6f3cbd" class="cell" data-execution_count="13">
+<div id="514a5306" class="cell" data-execution_count="13">
 <div class="sourceCode cell-code" id="cb26"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a></a><span class="im">import</span> re</span>
 <span id="cb26-2"><a></a></span>
 <span id="cb26-3"><a></a><span class="co"># Compilar el patrón UNA vez</span></span>
@@ -907,7 +907,7 @@ En 'Escribe a soporte@gmail.com o ...': ['soporte@gmail.com', 'ventas@empresa.co
 </tr>
 </tbody>
 </table>
-<div id="85e41f79" class="cell" data-execution_count="14">
+<div id="b86de4fb" class="cell" data-execution_count="14">
 <div class="sourceCode cell-code" id="cb28"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a></a><span class="im">import</span> re</span>
 <span id="cb28-2"><a></a></span>
 <span id="cb28-3"><a></a>texto <span class="op">=</span> <span class="st">"Python</span><span class="ch">\n</span><span class="st">PYTHON</span><span class="ch">\n</span><span class="st">python"</span></span>
@@ -930,7 +930,7 @@ IGNORECASE: ['Python', 'PYTHON', 'python']</code></pre>
 </section>
 <section id="tokenización-con-regex" class="slide level2 smaller">
 <h2>1. Tokenización con Regex</h2>
-<div id="3c3980d1" class="cell" data-execution_count="15">
+<div id="fcd9d274" class="cell" data-execution_count="15">
 <div class="sourceCode cell-code" id="cb30"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a></a><span class="im">import</span> re</span>
 <span id="cb30-2"><a></a></span>
 <span id="cb30-3"><a></a>texto <span class="op">=</span> <span class="st">"¡Hola! ¿Cómo estás? Bien, gracias :) #NLP @usuario"</span></span>
@@ -957,7 +957,7 @@ Social tokens: ['¡', 'Hola', '!', '¿', 'Cómo', 'estás', '?', 'Bien', ',', 'g
 </section>
 <section id="limpieza-de-texto" class="slide level2 smaller">
 <h2>2. Limpieza de Texto</h2>
-<div id="71e344f2" class="cell" data-execution_count="16">
+<div id="52b8811e" class="cell" data-execution_count="16">
 <div class="sourceCode cell-code" id="cb32"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a></a><span class="im">import</span> re</span>
 <span id="cb32-2"><a></a></span>
 <span id="cb32-3"><a></a>texto_sucio <span class="op">=</span> <span class="st">"""</span></span>
@@ -996,7 +996,7 @@ Limpio:
 </section>
 <section id="extracción-de-entidades-simples" class="slide level2 smaller">
 <h2>3. Extracción de Entidades Simples</h2>
-<div id="57ade234" class="cell" data-execution_count="17">
+<div id="e0db3e3a" class="cell" data-execution_count="17">
 <div class="sourceCode cell-code" id="cb34"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a></a><span class="im">import</span> re</span>
 <span id="cb34-2"><a></a></span>
 <span id="cb34-3"><a></a>texto <span class="op">=</span> <span class="st">"""</span></span>
@@ -1030,7 +1030,7 @@ Posibles nombres: ['El', 'Juan Pérez', 'Contactar', 'Dr', 'García', 'Direcció
 </section>
 <section id="validación-de-formatos" class="slide level2 smaller">
 <h2>4. Validación de Formatos</h2>
-<div id="3be53c7a" class="cell" data-execution_count="18">
+<div id="f9c25c2b" class="cell" data-execution_count="18">
 <div class="sourceCode cell-code" id="cb36"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb36-1"><a></a><span class="im">import</span> re</span>
 <span id="cb36-2"><a></a></span>
 <span id="cb36-3"><a></a><span class="kw">def</span> validar_email(email):</span>
@@ -1070,7 +1070,7 @@ Posibles nombres: ['El', 'Juan Pérez', 'Contactar', 'Dr', 'García', 'Direcció
 <section id="desafío-extractor-de-hashtags" class="slide level2 smaller">
 <h2>Desafío: Extractor de Hashtags</h2>
 <p>Escribe una función que extraiga todos los hashtags de un texto de red social.</p>
-<div id="02c8e24f" class="cell" data-execution_count="19">
+<div id="0d06e9a1" class="cell" data-execution_count="19">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb38"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb38-1"><a></a><span class="im">import</span> re</span>
