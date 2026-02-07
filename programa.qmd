@@ -6,9 +6,9 @@
 | Semana | Tema | Entregable / Actividad |
 |:------:|------|------------------------|
 | **1** | **Introducción & Expresiones Regulares** | |
-| | S1: ¿Qué es NLP? Historia (Test de Turing a ChatGPT) | Lectura introductoria |
-| | S2: Expresiones Regulares: La navaja suiza del NLP | Quiz 1 (conceptos básicos) |
-| | S3: Preprocesamiento básico: Tokenización, Lematización y Stemming | Práctica de laboratorio |
+| | [S1: ¿Qué es NLP? Historia (Test de Turing a ChatGPT)](slides/semana01/s1_intro_nlp.qmd) | Lectura introductoria |
+| | [S2: Expresiones Regulares: La navaja suiza del NLP](slides/semana01/s2_regex.qmd) | Quiz 1 (conceptos básicos) |
+| | [S3: Preprocesamiento básico: Tokenización, Lematización y Stemming](slides/semana01/s3_preprocesamiento.qmd) | Práctica de laboratorio |
 | **2** | **Semántica Léxica & Espacio Vectorial** | |
 | | S1: Bolsa de Palabras (BoW) y One-hot encoding | |
 | | S2: TF-IDF: Encontrando lo relevante en un documento | Quiz 2 |
