@@ -10,9 +10,9 @@
 | | [S2: Expresiones Regulares: La navaja suiza del NLP](slides/semana01/s2_regex.qmd) | Quiz 1 (conceptos básicos) |
 | | [S3: Preprocesamiento básico: Tokenización, Lematización y Stemming](slides/semana01/s3_preprocesamiento.qmd) | Práctica de laboratorio |
 | **2** | **Semántica Léxica & Espacio Vectorial** | |
-| | S1: Bolsa de Palabras (BoW) y One-hot encoding | |
-| | S2: TF-IDF: Encontrando lo relevante en un documento | Quiz 2 |
-| | S3: Información Mutua Puntual (PMI) y N-gramas | |
+| | [S1: Bolsa de Palabras (BoW) y One-hot encoding](slides/semana02/s1_bow_one_hot.qmd) | |
+| | [S2: TF-IDF: Encontrando lo relevante en un documento](slides/semana02/s2_tfidf.qmd) | Quiz 2 |
+| | [S3: Información Mutua Puntual (PMI) y N-gramas](slides/semana02/s3_pmi_ngrams.qmd) | |
 | **3** | **Modelado de Lenguaje (Clásico)** | |
 | | S1: Modelos de lenguaje N-gram y Regla de la Cadena | |
 | | S2: Evaluación: Perplejidad y técnicas de Suavizado | Quiz 3 |

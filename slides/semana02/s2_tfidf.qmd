@@ -1,0 +1,918 @@
+---
+title: "Semántica Léxica & Espacio Vectorial"
+subtitle: "S2: TF-IDF — Encontrando lo Relevante en un Documento"
+author: "Prof. Francisco Suárez"
+institute: "Universidad Católica Boliviana"
+date: today
+format:
+  revealjs:
+    theme: sky
+    transition: slide
+    slide-number: true
+    chalkboard: true
+    code-fold: true
+    code-tools: true
+    highlight-style: github
+    footer: "NLP y Análisis Semántico | Semana 2"
+    logo: ""
+    incremental: false
+    scrollable: true
+execute:
+  echo: true
+  warning: false
+---
+
+## Agenda de Hoy {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+**Primera Parte**
+
+1. 📝 Repaso: Bag of Words y sus limitaciones
+2. 📊 Term Frequency (TF)
+3. 📉 Inverse Document Frequency (IDF)
+
+:::
+::: {.column width="50%"}
+**Segunda Parte**
+
+4. ⚡ TF-IDF: La combinación
+5. 🛠️ TF-IDF con scikit-learn
+6. 🔍 Aplicaciones prácticas
+
+:::
+:::
+
+# Bloque 1: Repaso y Motivación {background-color="#0077b6"}
+
+## Repaso: Bag of Words {.smaller}
+
+En la sesión anterior representamos documentos como vectores de frecuencias:
+
+```{python}
+#| code-fold: false
+from sklearn.feature_extraction.text import CountVectorizer
+import pandas as pd
+
+documentos = [
+    "el gato come pescado",
+    "el perro come carne",
+    "el gato y el perro juegan"
+]
+
+vectorizer = CountVectorizer()
+X = vectorizer.fit_transform(documentos)
+
+df = pd.DataFrame(
+    X.toarray(),
+    columns=vectorizer.get_feature_names_out(),
+    index=[f"Doc {i+1}" for i in range(len(documentos))]
+)
+print(df.to_string())
+```
+
+## El Problema de BoW {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Todas las palabras valen igual 🤔
+
+En BoW, "el" y "inteligencia" tienen el **mismo peso** si aparecen la misma cantidad de veces.
+
+```text
+Doc: "El procesamiento de lenguaje 
+      natural es el futuro de la 
+      inteligencia artificial"
+```
+
+| Palabra | Frecuencia |
+|:--------|:----------:|
+| **el** | 2 |
+| **de** | 2 |
+| **inteligencia** | 1 |
+| **artificial** | 1 |
+
+:::
+::: {.column width="50%"}
+
+### ¿Cuáles son más informativas? 💡
+
+- "el", "de", "es", "la" → aparecen en **todos** los documentos
+- "inteligencia", "artificial" → aparecen en **pocos** documentos
+
+. . .
+
+::: {.callout-important}
+## Intuición Clave
+Una palabra que aparece en **muchos documentos** es **menos informativa** que una que aparece en **pocos**.
+:::
+
+:::
+:::
+
+## Demostración del Problema {.smaller}
+
+```{python}
+#| code-fold: false
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
+
+corpus = [
+    "el gato es un animal doméstico y el gato es independiente",
+    "el perro es un animal doméstico y el perro es leal",
+    "la economía del país es compleja y la inflación es alta",
+]
+
+vectorizer = CountVectorizer()
+X = vectorizer.fit_transform(corpus)
+
+sim = cosine_similarity(X)
+print("Similitud Coseno con BoW:")
+print(f"  Gato vs Perro (animales):  {sim[0][1]:.3f}")
+print(f"  Gato vs Economía:          {sim[0][2]:.3f}")
+print(f"  Perro vs Economía:         {sim[1][2]:.3f}")
+```
+
+. . .
+
+Las palabras comunes ("el", "es", "un", "y") inflan la similitud entre documentos que no tienen nada que ver.
+
+::: {.callout-note}
+## Solución: TF-IDF
+Ponderar las palabras por su **importancia relativa** en el corpus.
+:::
+
+# Bloque 2: Term Frequency (TF) {background-color="#023e8a"}
+
+## ¿Qué es Term Frequency? {.smaller}
+
+> La **frecuencia del término** mide qué tan frecuente es una palabra **dentro de un documento específico**.
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Variante 1: Frecuencia bruta
+
+$$\text{TF}(t, d) = f(t, d)$$
+
+Simplemente contar ocurrencias.
+
+### Variante 2: Frecuencia normalizada
+
+$$\text{TF}(t, d) = \frac{f(t, d)}{\max_{t' \in d} f(t', d)}$$
+
+Dividir por la frecuencia máxima del documento.
+
+:::
+::: {.column width="50%"}
+
+### Variante 3: Logarítmica
+
+$$\text{TF}(t, d) = \begin{cases} 1 + \log f(t, d) & \text{si } f(t,d) > 0 \\ 0 & \text{si } f(t,d) = 0 \end{cases}$$
+
+Reducir el impacto de frecuencias muy altas.
+
+### Variante 4: Binaria
+
+$$\text{TF}(t, d) = \begin{cases} 1 & \text{si } t \in d \\ 0 & \text{si } t \notin d \end{cases}$$
+
+Solo presencia o ausencia.
+
+:::
+:::
+
+## TF en la Práctica {.smaller}
+
+```{python}
+#| code-fold: false
+import numpy as np
+
+documento = "el gato el gato el gato come pescado y come carne"
+palabras = documento.split()
+vocabulario = sorted(set(palabras))
+frecuencias = {v: palabras.count(v) for v in vocabulario}
+
+print(f"Documento: '{documento}'")
+print(f"Total palabras: {len(palabras)}\n")
+
+print(f"{'Término':<12} {'Bruta':>8} {'Normalizada':>12} {'Log':>8} {'Binaria':>8}")
+print("-" * 52)
+
+max_freq = max(frecuencias.values())
+for termino in vocabulario:
+    f = frecuencias[termino]
+    tf_bruta = f
+    tf_norm = f / max_freq
+    tf_log = 1 + np.log(f) if f > 0 else 0
+    tf_bin = 1 if f > 0 else 0
+    print(f"{termino:<12} {tf_bruta:>8d} {tf_norm:>12.3f} {tf_log:>8.3f} {tf_bin:>8d}")
+```
+
+. . .
+
+::: {.callout-warning}
+## Problema
+TF por sí solo no resuelve nada: "el" sigue teniendo la frecuencia más alta.
+:::
+
+## Visualización de TF {.smaller}
+
+```{python}
+#| code-fold: true
+#| fig-width: 9
+#| fig-height: 4
+import matplotlib.pyplot as plt
+import numpy as np
+
+terminos = list(frecuencias.keys())
+freqs = list(frecuencias.values())
+max_f = max(freqs)
+
+fig, axes = plt.subplots(1, 3, figsize=(12, 4))
+
+# TF Bruta
+axes[0].barh(terminos, freqs, color='#0077b6')
+axes[0].set_title('TF Bruta', fontsize=12)
+axes[0].set_xlabel('Frecuencia')
+
+# TF Normalizada
+tf_norm = [f / max_f for f in freqs]
+axes[1].barh(terminos, tf_norm, color='#00b4d8')
+axes[1].set_title('TF Normalizada', fontsize=12)
+axes[1].set_xlabel('TF / max(TF)')
+
+# TF Logarítmica
+tf_log = [1 + np.log(f) if f > 0 else 0 for f in freqs]
+axes[2].barh(terminos, tf_log, color='#48cae4')
+axes[2].set_title('TF Logarítmica', fontsize=12)
+axes[2].set_xlabel('1 + log(f)')
+
+plt.tight_layout()
+plt.show()
+```
+
+La TF logarítmica **comprime** las diferencias: "el" (3 veces) ya no domina tanto.
+
+# Bloque 3: Inverse Document Frequency (IDF) {background-color="#03045e"}
+
+## La Intuición detrás de IDF {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Palabras comunes = poco informativas
+
+Si una palabra aparece en **todos** los documentos, no sirve para distinguirlos.
+
+```text
+Corpus de 1000 documentos:
+
+"el"    → aparece en 1000 docs 😴
+"perro" → aparece en 50 docs   🤔
+"quásar" → aparece en 2 docs   🤩
+```
+
+:::
+::: {.column width="50%"}
+
+### Palabras raras = muy informativas
+
+Una palabra que aparece en **pocos** documentos es más útil para identificar de qué trata un documento.
+
+::: {.callout-tip}
+## Principio IDF
+Penalizar las palabras que aparecen en muchos documentos y favorecer las que aparecen en pocos.
+:::
+
+:::
+:::
+
+## Fórmula de IDF {.smaller}
+
+$$\text{IDF}(t) = \log\left(\frac{N}{df(t)}\right)$$
+
+Donde:
+
+- $N$ = número total de documentos en el corpus
+- $df(t)$ = número de documentos que contienen el término $t$
+
+. . .
+
+::: {.columns}
+::: {.column width="50%"}
+
+**Ejemplo con $N = 1000$:**
+
+| Término | $df(t)$ | IDF |
+|:--------|:-------:|:---:|
+| "el" | 1000 | $\log(1000/1000) = 0.0$ |
+| "perro" | 50 | $\log(1000/50) = 3.0$ |
+| "quásar" | 2 | $\log(1000/2) = 6.2$ |
+
+:::
+::: {.column width="50%"}
+
+**Comportamiento:**
+
+- Palabra en **todos** los docs → IDF ≈ **0**
+- Palabra en **pocos** docs → IDF es **alto**
+- Palabra en **un solo** doc → IDF es **máximo**
+
+:::
+:::
+
+## Variante con suavizado {.smaller}
+
+Para evitar divisiones por cero y valores extremos, scikit-learn usa:
+
+$$\text{IDF}(t) = \log\left(\frac{1 + N}{1 + df(t)}\right) + 1$$
+
+```{python}
+#| code-fold: false
+import numpy as np
+
+N = 1000  # Total de documentos
+
+print(f"{'Término':<12} {'df(t)':>6} {'IDF estándar':>14} {'IDF suavizado':>14}")
+print("-" * 50)
+
+for termino, df in [("el", 1000), ("animal", 200), ("perro", 50), ("quásar", 2), ("xyz", 1)]:
+    idf_std = np.log(N / df)
+    idf_smooth = np.log((1 + N) / (1 + df)) + 1
+    print(f"{termino:<12} {df:>6d} {idf_std:>14.3f} {idf_smooth:>14.3f}")
+```
+
+. . .
+
+::: {.callout-note}
+## ¿Por qué el "+1" final?
+Garantiza que incluso las palabras más comunes tengan un peso positivo (nunca cero).
+:::
+
+## IDF: Visualización {.smaller}
+
+```{python}
+#| code-fold: true
+#| fig-width: 9
+#| fig-height: 4
+import matplotlib.pyplot as plt
+import numpy as np
+
+N = 1000
+df_values = np.arange(1, N + 1)
+
+idf_standard = np.log(N / df_values)
+idf_smooth = np.log((1 + N) / (1 + df_values)) + 1
+
+fig, ax = plt.subplots(figsize=(10, 4))
+ax.plot(df_values, idf_standard, label='IDF estándar: log(N/df)', color='#e63946', linewidth=2)
+ax.plot(df_values, idf_smooth, label='IDF suavizado: log((1+N)/(1+df)) + 1', color='#0077b6', linewidth=2)
+
+ax.set_xlabel('df(t) — Documentos que contienen el término', fontsize=11)
+ax.set_ylabel('IDF(t)', fontsize=11)
+ax.set_title(f'IDF en función de df(t) para N={N} documentos', fontsize=13)
+ax.legend(fontsize=10)
+ax.grid(True, alpha=0.3)
+ax.axhline(y=0, color='gray', linestyle='--', alpha=0.5)
+
+# Anotar puntos clave
+ax.annotate('Muy raro\n(informativo)', xy=(5, idf_standard[4]), fontsize=9,
+            xytext=(100, 6), arrowprops=dict(arrowstyle='->', color='#e63946'),
+            color='#e63946', fontweight='bold')
+ax.annotate('Muy común\n(poco informativo)', xy=(950, idf_standard[949]), fontsize=9,
+            xytext=(700, 3), arrowprops=dict(arrowstyle='->', color='#e63946'),
+            color='#e63946', fontweight='bold')
+
+plt.tight_layout()
+plt.show()
+```
+
+# Bloque 4: TF-IDF — La Combinación {background-color="#0077b6"}
+
+## La Fórmula TF-IDF {.smaller}
+
+$$\text{TF-IDF}(t, d) = \text{TF}(t, d) \times \text{IDF}(t)$$
+
+::: {.columns}
+::: {.column width="50%"}
+
+**TF** (Term Frequency):
+
+- Mide la importancia **local** del término
+- ¿Qué tan frecuente es en **este** documento?
+
+:::
+::: {.column width="50%"}
+
+**IDF** (Inverse Document Frequency):
+
+- Mide la importancia **global** del término
+- ¿Qué tan raro es en el **corpus**?
+
+:::
+:::
+
+. . .
+
+::: {.callout-important}
+## Intuición
+Un término tiene TF-IDF **alto** cuando:
+
+- Aparece **muchas veces** en el documento (TF alto)
+- Aparece en **pocos documentos** del corpus (IDF alto)
+
+Un término tiene TF-IDF **bajo** cuando es raro en el doc O común en el corpus.
+:::
+
+## TF-IDF: Diagrama Conceptual {.smaller}
+
+```{mermaid}
+%%| fig-width: 10
+flowchart LR
+    A["📄 Documento d"] --> B["TF(t,d)<br>Frecuencia local"]
+    C["📚 Corpus"] --> D["IDF(t)<br>Rareza global"]
+    B --> E["✖️ Multiplicar"]
+    D --> E
+    E --> F["📊 TF-IDF(t,d)<br>Peso final"]
+
+    style A fill:#cfe2ff,color:#000
+    style C fill:#d1e7dd,color:#000
+    style B fill:#48cae4,color:#000
+    style D fill:#2a9d8f,color:#fff
+    style E fill:#ffd166,color:#000
+    style F fill:#0077b6,color:#fff,stroke:#023e8a,stroke-width:3px
+```
+
+. . .
+
+| Escenario | TF | IDF | TF-IDF | Interpretación |
+|:----------|:--:|:---:|:------:|:---------------|
+| Frecuente en doc, raro en corpus | Alto | Alto | **Muy alto** | Término clave del documento |
+| Frecuente en doc, común en corpus | Alto | Bajo | Medio | Palabra funcional frecuente |
+| Raro en doc, raro en corpus | Bajo | Alto | Medio-bajo | Presente pero no dominante |
+| Raro en doc, común en corpus | Bajo | Bajo | **Muy bajo** | Poco relevante |
+
+: {.striped .hover}
+
+## Cálculo Manual Paso a Paso {.smaller}
+
+```{python}
+#| code-fold: false
+import numpy as np
+
+corpus = [
+    "el gato come pescado",
+    "el perro come carne",
+    "el gato y el perro juegan",
+]
+
+# Tokenizar
+docs_tokenizados = [doc.split() for doc in corpus]
+vocabulario = sorted(set(w for doc in docs_tokenizados for w in doc))
+N = len(corpus)
+
+print(f"Vocabulario: {vocabulario}")
+print(f"N = {N} documentos\n")
+
+# Calcular TF, DF, IDF y TF-IDF
+print(f"{'Término':<10} {'TF(doc1)':>8} {'df(t)':>6} {'IDF':>8} {'TF-IDF(doc1)':>12}")
+print("-" * 48)
+
+for t in vocabulario:
+    tf = docs_tokenizados[0].count(t)  # TF para doc 1
+    df = sum(1 for doc in docs_tokenizados if t in doc)
+    idf = np.log(N / df)
+    tfidf = tf * idf
+    print(f"{t:<10} {tf:>8d} {df:>6d} {idf:>8.3f} {tfidf:>12.3f}")
+```
+
+. . .
+
+"gato" y "pescado" tienen los pesos TF-IDF más altos para el Doc 1. Son los **términos que mejor lo identifican**.
+
+# Bloque 5: TF-IDF con scikit-learn {background-color="#023e8a"}
+
+## TfidfVectorizer {.smaller}
+
+`scikit-learn` ofrece `TfidfVectorizer` que calcula todo automáticamente:
+
+```{python}
+#| code-fold: false
+from sklearn.feature_extraction.text import TfidfVectorizer
+import pandas as pd
+
+corpus = [
+    "el gato come pescado fresco",
+    "el perro come carne roja",
+    "el gato y el perro juegan juntos",
+    "el pescado fresco es delicioso",
+]
+
+tfidf = TfidfVectorizer()
+X = tfidf.fit_transform(corpus)
+
+df = pd.DataFrame(
+    X.toarray().round(3),
+    columns=tfidf.get_feature_names_out(),
+    index=[f"Doc {i+1}" for i in range(len(corpus))]
+)
+print(df.to_string())
+```
+
+::: {.callout-note}
+## Normalización L2
+`TfidfVectorizer` normaliza cada vector de documento para que tenga **norma unitaria** ($||v|| = 1$), lo que facilita la comparación por similitud coseno.
+:::
+
+## BoW vs. TF-IDF: Comparación Directa {.smaller}
+
+```{python}
+#| code-fold: false
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+import pandas as pd
+
+corpus = [
+    "el gato duerme en la casa y el gato ronronea",
+    "el perro juega en el parque y el perro ladra",
+    "la economía global muestra signos de recuperación",
+]
+
+# BoW
+cv = CountVectorizer()
+X_bow = cv.fit_transform(corpus)
+
+# TF-IDF
+tv = TfidfVectorizer()
+X_tfidf = tv.fit_transform(corpus)
+
+print("=== Bag of Words ===")
+df_bow = pd.DataFrame(X_bow.toarray(), columns=cv.get_feature_names_out(),
+                       index=["Gato", "Perro", "Economía"])
+print(df_bow.to_string())
+
+print("\n=== TF-IDF ===")
+df_tfidf = pd.DataFrame(X_tfidf.toarray().round(3), columns=tv.get_feature_names_out(),
+                          index=["Gato", "Perro", "Economía"])
+print(df_tfidf.to_string())
+```
+
+## El Impacto en la Similitud {.smaller}
+
+```{python}
+#| code-fold: false
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
+
+# Similitud con BoW
+sim_bow = cosine_similarity(X_bow)
+
+# Similitud con TF-IDF
+sim_tfidf = cosine_similarity(X_tfidf)
+
+etiquetas = ["Gato", "Perro", "Economía"]
+print("Similitud Coseno — BoW vs TF-IDF:\n")
+print(f"{'Par':<24} {'BoW':>8} {'TF-IDF':>8} {'Diferencia':>10}")
+print("-" * 52)
+
+for i in range(len(etiquetas)):
+    for j in range(i+1, len(etiquetas)):
+        diff = sim_tfidf[i][j] - sim_bow[i][j]
+        signo = "↓" if diff < 0 else "↑"
+        print(f"{etiquetas[i]+' vs '+etiquetas[j]:<24} {sim_bow[i][j]:>8.3f} {sim_tfidf[i][j]:>8.3f} {diff:>+9.3f} {signo}")
+```
+
+. . .
+
+::: {.callout-tip}
+## Resultado Clave
+TF-IDF **reduce** la similitud espuria causada por palabras comunes ("el", "en", "y"), haciendo las comparaciones más significativas.
+:::
+
+## Visualización: BoW vs TF-IDF {.smaller}
+
+```{python}
+#| code-fold: true
+#| fig-width: 10
+#| fig-height: 4
+import matplotlib.pyplot as plt
+import numpy as np
+
+fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+
+etiquetas = ["Gato", "Perro", "Economía"]
+
+for ax, sim, titulo in [(axes[0], sim_bow, "Similitud Coseno — BoW"),
+                         (axes[1], sim_tfidf, "Similitud Coseno — TF-IDF")]:
+    im = ax.imshow(sim, cmap='Blues', vmin=0, vmax=1)
+    ax.set_xticks(range(len(etiquetas)))
+    ax.set_xticklabels(etiquetas, fontsize=10)
+    ax.set_yticks(range(len(etiquetas)))
+    ax.set_yticklabels(etiquetas, fontsize=10)
+    ax.set_title(titulo, fontsize=12)
+
+    for i in range(len(etiquetas)):
+        for j in range(len(etiquetas)):
+            color = 'white' if sim[i][j] > 0.5 else 'black'
+            ax.text(j, i, f'{sim[i][j]:.2f}', ha='center', va='center',
+                    fontsize=12, fontweight='bold', color=color)
+
+plt.colorbar(im, ax=axes, label='Similitud', shrink=0.8)
+plt.tight_layout()
+plt.show()
+```
+
+## Parámetros de TfidfVectorizer {.smaller}
+
+```{python}
+#| code-fold: false
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+corpus = [
+    "El procesamiento de lenguaje natural es apasionante",
+    "El lenguaje natural humano es complejo y fascinante",
+    "La inteligencia artificial procesa el lenguaje de forma eficiente",
+    "El aprendizaje automático usa datos para mejorar modelos",
+    "Los datos son el recurso principal de la inteligencia artificial"
+]
+
+# Parámetros principales
+tfidf = TfidfVectorizer(
+    max_features=15,       # Limitar vocabulario
+    min_df=1,              # Frecuencia mínima de documentos
+    max_df=0.9,            # Frecuencia máxima de documentos (porcentaje)
+    ngram_range=(1, 2),    # Unigramas y bigramas
+    sublinear_tf=True,     # Usar 1 + log(tf) en vez de tf
+    norm='l2',             # Normalización L2 (default)
+    smooth_idf=True,       # Sumar 1 al numerador y denominador del IDF
+)
+
+X = tfidf.fit_transform(corpus)
+print(f"Forma: {X.shape} (documentos × términos)")
+print(f"Vocabulario: {tfidf.get_feature_names_out().tolist()}")
+```
+
+::: {.callout-tip}
+## Parámetro Clave: `sublinear_tf=True`
+Usa $1 + \log(\text{tf})$ en vez de $\text{tf}$ bruto. **Recomendado** en la mayoría de aplicaciones.
+:::
+
+## Encontrar las Palabras más Relevantes {.smaller}
+
+```{python}
+#| code-fold: false
+from sklearn.feature_extraction.text import TfidfVectorizer
+import numpy as np
+
+corpus = [
+    "Bolivia tiene una rica biodiversidad en sus regiones amazónicas",
+    "La economía boliviana depende de la exportación de gas natural",
+    "El fútbol boliviano celebra su liga profesional cada año",
+    "La inteligencia artificial transforma la medicina y la educación",
+    "Las redes neuronales profundas mejoran el reconocimiento de imágenes",
+]
+
+tfidf = TfidfVectorizer()
+X = tfidf.fit_transform(corpus)
+nombres = tfidf.get_feature_names_out()
+
+print("Top 3 términos más relevantes por documento:\n")
+for i, doc in enumerate(corpus):
+    vector = X[i].toarray().flatten()
+    top_indices = vector.argsort()[-3:][::-1]
+    top_palabras = [(nombres[j], vector[j]) for j in top_indices]
+    print(f"Doc {i+1}: {doc[:55]}...")
+    for palabra, peso in top_palabras:
+        barra = "█" * int(peso * 30)
+        print(f"  {palabra:<20} {peso:.3f} {barra}")
+    print()
+```
+
+# Bloque 6: Aplicaciones Prácticas {background-color="#001219"}
+
+## Aplicación 1: Motor de Búsqueda Mejorado 🔍 {.smaller}
+
+Comparemos el buscador de la sesión anterior (BoW) con TF-IDF:
+
+```{python}
+#| code-fold: false
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+
+corpus = [
+    "La inteligencia artificial está transformando la medicina moderna",
+    "Los robots aprenden a cocinar platos gourmet con redes neuronales",
+    "El cambio climático afecta los glaciares de Bolivia",
+    "Python es el lenguaje más popular para ciencia de datos",
+    "Las redes neuronales artificiales imitan el cerebro humano",
+    "La deforestación en la Amazonía alcanza niveles récord",
+    "El aprendizaje automático mejora el diagnóstico médico",
+]
+
+# BoW
+cv = CountVectorizer()
+X_bow = cv.fit_transform(corpus)
+
+# TF-IDF
+tv = TfidfVectorizer()
+X_tfidf = tv.fit_transform(corpus)
+
+def buscar_comparado(consulta, top_n=3):
+    """Compara resultados BoW vs TF-IDF."""
+    # BoW
+    q_bow = cv.transform([consulta])
+    sim_bow = cosine_similarity(q_bow, X_bow).flatten()
+    # TF-IDF
+    q_tfidf = tv.transform([consulta])
+    sim_tfidf = cosine_similarity(q_tfidf, X_tfidf).flatten()
+
+    print(f"🔍 Consulta: '{consulta}'\n")
+    print(f"{'Rank':<5} {'BoW':>6} {'TF-IDF':>8}  Documento")
+    print("-" * 70)
+
+    idx_tfidf = sim_tfidf.argsort()[::-1][:top_n]
+    for rank, idx in enumerate(idx_tfidf, 1):
+        print(f"  {rank}    {sim_bow[idx]:.3f}   {sim_tfidf[idx]:.3f}   {corpus[idx][:55]}")
+
+buscar_comparado("inteligencia artificial medicina")
+```
+
+## Aplicación 2: Clasificación de Texto {.smaller}
+
+```{python}
+#| code-fold: false
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.model_selection import cross_val_score
+import numpy as np
+
+# Dataset: deportes vs. tecnología
+textos = [
+    "el equipo ganó el partido de fútbol",
+    "el gol del delantero fue espectacular",
+    "el campeonato de tenis terminó ayer",
+    "el jugador se lesionó en el entrenamiento",
+    "el maratón de la ciudad fue un éxito deportivo",
+    "la empresa lanzó un nuevo teléfono inteligente",
+    "el procesador del computador es muy rápido",
+    "la inteligencia artificial avanza cada día",
+    "el software tiene un error crítico grave",
+    "la nube permite almacenar datos de forma segura",
+]
+etiquetas = ["deporte"]*5 + ["tecnología"]*5
+
+# Comparar BoW vs TF-IDF
+for nombre, vec in [("BoW", CountVectorizer()), ("TF-IDF", TfidfVectorizer())]:
+    X = vec.fit_transform(textos)
+    clf = MultinomialNB()
+    scores = cross_val_score(clf, X, etiquetas, cv=3)
+    print(f"{nombre:8s} → Accuracy: {scores.mean():.2f} (±{scores.std():.2f})")
+```
+
+. . .
+
+::: {.callout-note}
+## En la práctica
+TF-IDF generalmente supera a BoW en tareas de clasificación porque reduce el ruido de las palabras comunes.
+:::
+
+## Aplicación 3: Extracción de Palabras Clave {.smaller}
+
+```{python}
+#| code-fold: false
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+articulos = [
+    """Bolivia cuenta con una gran diversidad cultural y lingüística. 
+    El país tiene más de 30 idiomas nativos reconocidos oficialmente. 
+    El quechua y el aymara son los idiomas indígenas más hablados en Bolivia.""",
+    
+    """Las redes neuronales convolucionales son fundamentales en visión por computadora.
+    Estas redes procesan imágenes mediante filtros y capas de convolución.
+    Las redes convolucionales detectan patrones como bordes y texturas.""",
+    
+    """El cambio climático provoca el derretimiento de glaciares en los Andes.
+    La temperatura global sigue aumentando cada década.
+    Los glaciares tropicales de Bolivia han perdido más del 40 por ciento de su masa.""",
+]
+
+tfidf = TfidfVectorizer(max_features=50)
+X = tfidf.fit_transform(articulos)
+nombres = tfidf.get_feature_names_out()
+
+titulos = ["🇧🇴 Diversidad Lingüística", "🧠 Redes Neuronales", "🌡️ Cambio Climático"]
+
+print("Palabras clave extraídas con TF-IDF:\n")
+for i, titulo in enumerate(titulos):
+    vector = X[i].toarray().flatten()
+    top_idx = vector.argsort()[-5:][::-1]
+    keywords = [(nombres[j], vector[j]) for j in top_idx]
+    print(f"{titulo}:")
+    for kw, score in keywords:
+        print(f"  • {kw:<20} ({score:.3f})")
+    print()
+```
+
+## Resumen Visual: BoW → TF-IDF {.smaller}
+
+```{mermaid}
+%%| fig-width: 10
+flowchart TD
+    A["📄 Documentos<br>crudos"] --> B["🧹 Preprocesamiento<br>(Semana 1)"]
+    B --> C{"¿Qué representación?"}
+    C -->|Frecuencia simple| D["📊 BoW<br>CountVectorizer"]
+    C -->|Frecuencia ponderada| E["⚡ TF-IDF<br>TfidfVectorizer"]
+    D --> F["🔢 Matriz DTM<br>(frecuencias)"]
+    E --> G["🔢 Matriz TF-IDF<br>(pesos)"]
+    F --> H["🤖 Modelo ML"]
+    G --> H
+    H --> I["📈 Clasificación<br>Búsqueda<br>Clustering"]
+
+    style D fill:#48cae4,color:#000
+    style E fill:#0077b6,color:#fff,stroke:#023e8a,stroke-width:3px
+    style G fill:#2a9d8f,color:#fff
+```
+
+# Resumen {background-color="#0077b6"}
+
+## Lo que Aprendimos Hoy ✅ {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+**Term Frequency (TF):**
+
+- Frecuencia local de un término
+- Variantes: bruta, normalizada, logarítmica
+- Por sí sola no es suficiente
+
+**Inverse Document Frequency (IDF):**
+
+- Penaliza palabras comunes
+- $\text{IDF}(t) = \log\left(\frac{N}{df(t)}\right)$
+- Favorece palabras discriminantes
+
+:::
+::: {.column width="50%"}
+
+**TF-IDF:**
+
+- $\text{TF-IDF} = \text{TF} \times \text{IDF}$
+- Pondera importancia local × global
+- Supera a BoW en casi todas las tareas
+
+**Herramientas:**
+
+- `TfidfVectorizer` de scikit-learn
+- Parámetros: `sublinear_tf`, `min_df`, `max_df`, `ngram_range`
+
+:::
+:::
+
+## Tabla Comparativa Final {.smaller}
+
+| Aspecto | One-hot | BoW | TF-IDF |
+|:--------|:-------:|:---:|:------:|
+| **Nivel** | Palabra | Documento | Documento |
+| **Captura frecuencia** | ❌ | ✅ | ✅ |
+| **Pondera importancia** | ❌ | ❌ | ✅ |
+| **Semántica** | ❌ | ❌ | ❌ |
+| **Orden** | N/A | ❌ | ❌ |
+| **Herramienta** | `OneHotEncoder` | `CountVectorizer` | `TfidfVectorizer` |
+| **Cuándo usar** | Entrada a NN | Baseline rápido | **Clasificación, búsqueda** |
+
+: {.striped .hover}
+
+. . .
+
+::: {.callout-important}
+## Lo que aún falta
+Ninguna de estas técnicas captura **significado**. "auto" y "carro" siguen siendo palabras completamente diferentes. La solución: **embeddings densos** (Semana 4).
+:::
+
+## Para la Próxima Clase 📚
+
+::: {.callout-note}
+## Semana 2, S3: Información Mutua Puntual (PMI) y N-gramas
+Aprenderemos a medir la **asociación estadística** entre pares de palabras: ¿qué palabras tienden a aparecer juntas?
+:::
+
+**Lectura:**
+
+- Capítulo 6 (secciones 6.6-6.7): *Speech and Language Processing* (Jurafsky & Martin)
+- Documentación de [scikit-learn: TfidfVectorizer](https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.TfidfVectorizer.html)
+
+**Preparación:**
+
+- Revisar conceptos de logaritmos y probabilidad básica
+
+# ¿Preguntas? 🙋 {background-color="#03045e"}
+
+:::{.r-fit-text}
+**¡Gracias!**
+:::
+
+📧 fsuarez@ucb.edu.bo
+
+🔗 Materiales: [github.com/fjsuarez/ucb-nlp](https://github.com/fjsuarez/ucb-nlp)

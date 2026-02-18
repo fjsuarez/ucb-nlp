@@ -1,0 +1,1065 @@
+---
+title: "Semántica Léxica & Espacio Vectorial"
+subtitle: "S3: Información Mutua Puntual (PMI) y N-gramas"
+author: "Prof. Francisco Suárez"
+institute: "Universidad Católica Boliviana"
+date: today
+format:
+  revealjs:
+    theme: sky
+    transition: slide
+    slide-number: true
+    chalkboard: true
+    code-fold: true
+    code-tools: true
+    highlight-style: github
+    footer: "NLP y Análisis Semántico | Semana 2"
+    logo: ""
+    incremental: false
+    scrollable: true
+execute:
+  echo: true
+  warning: false
+---
+
+## Agenda de Hoy {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+**Primera Parte**
+
+1. 📝 Repaso: De BoW a TF-IDF
+2. 🔗 Coocurrencia de palabras
+3. 📊 Matrices de coocurrencia
+
+:::
+::: {.column width="50%"}
+**Segunda Parte**
+
+4. 🧮 Información Mutua Puntual (PMI)
+5. 📏 N-gramas a profundidad
+6. 💡 Aplicaciones: Colocaciones y más
+
+:::
+:::
+
+# Bloque 1: Repaso y Motivación {background-color="#0077b6"}
+
+## Recapitulación de la Semana {.smaller}
+
+```{mermaid}
+%%| fig-width: 10
+flowchart LR
+    A["S1: One-hot & BoW<br>✅ Representación básica"] --> B["S2: TF-IDF<br>✅ Pesos inteligentes"]
+    B --> C["S3: PMI & N-gramas<br>🎯 Hoy"]
+    C --> D["Semana 3<br>Modelos de Lenguaje"]
+
+    style A fill:#2a9d8f,color:#fff
+    style B fill:#2a9d8f,color:#fff
+    style C fill:#0077b6,color:#fff,stroke:#023e8a,stroke-width:3px
+    style D fill:#e9c46a,color:#000
+```
+
+. . .
+
+| Sesión | Pregunta que responde |
+|:-------|:---------------------|
+| S1: BoW | ¿Cómo representar un documento como un vector? |
+| S2: TF-IDF | ¿Qué palabras son **importantes** en un documento? |
+| **S3: PMI** | **¿Qué palabras tienden a aparecer *juntas*?** |
+
+: {.striped .hover}
+
+## La Pregunta de Hoy {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### TF-IDF mide importancia individual
+
+TF-IDF nos dice que "inteligencia" es relevante en un documento, pero **no nos dice nada** sobre la relación entre palabras.
+
+:::
+::: {.column width="50%"}
+
+### Queremos medir asociación
+
+¿Qué pares de palabras aparecen juntos **más de lo esperado por azar**?
+
+- "inteligencia" + "artificial" → ¡Mucho más que por azar!
+- "inteligencia" + "zapato" → Independientes
+
+:::
+:::
+
+. . .
+
+::: {.callout-important}
+## Pregunta Central
+Dadas dos palabras $x$ e $y$, ¿su coocurrencia es **sorprendente** o simplemente un producto del azar?
+:::
+
+# Bloque 2: Coocurrencia de Palabras {background-color="#023e8a"}
+
+## ¿Qué es la Coocurrencia? {.smaller}
+
+> Dos palabras **coocurren** cuando aparecen juntas en un contexto definido (oración, ventana de palabras, documento).
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Tipos de contexto
+
+| Contexto | Definición |
+|:---------|:-----------|
+| Documento | Ambas aparecen en el mismo doc |
+| Oración | Ambas en la misma oración |
+| Ventana | A distancia ≤ $k$ palabras |
+
+:::
+::: {.column width="50%"}
+
+### Ejemplo: ventana de tamaño 2
+
+```text
+"El gato negro come pescado fresco"
+```
+
+Ventana alrededor de **"come"**:
+
+```text
+[negro, come, pescado]
+       ^^^^
+```
+
+Coocurrencias de "come": {negro, pescado}
+
+:::
+:::
+
+## Matriz de Coocurrencia {.smaller}
+
+```{python}
+#| code-fold: false
+import numpy as np
+from collections import Counter, defaultdict
+
+corpus = [
+    "el gato come pescado",
+    "el perro come carne",
+    "el gato bebe leche",
+    "el perro bebe agua",
+]
+
+# Construir matriz de coocurrencia (contexto = documento)
+docs_tokenizados = [doc.split() for doc in corpus]
+vocabulario = sorted(set(w for doc in docs_tokenizados for w in doc))
+vocab_idx = {w: i for i, w in enumerate(vocabulario)}
+
+cooc = np.zeros((len(vocabulario), len(vocabulario)), dtype=int)
+
+for doc in docs_tokenizados:
+    palabras_unicas = set(doc)
+    for w1 in palabras_unicas:
+        for w2 in palabras_unicas:
+            if w1 != w2:
+                cooc[vocab_idx[w1]][vocab_idx[w2]] += 1
+
+# Mostrar las primeras filas
+import pandas as pd
+df_cooc = pd.DataFrame(cooc, index=vocabulario, columns=vocabulario)
+print(df_cooc.to_string())
+```
+
+## Visualización de la Coocurrencia {.smaller}
+
+```{python}
+#| code-fold: true
+#| fig-width: 7
+#| fig-height: 5
+import matplotlib.pyplot as plt
+
+fig, ax = plt.subplots(figsize=(7, 5))
+im = ax.imshow(cooc, cmap='YlOrRd', aspect='auto')
+
+ax.set_xticks(range(len(vocabulario)))
+ax.set_xticklabels(vocabulario, rotation=45, ha='right', fontsize=9)
+ax.set_yticks(range(len(vocabulario)))
+ax.set_yticklabels(vocabulario, fontsize=9)
+ax.set_title('Matriz de Coocurrencia (contexto = documento)', fontsize=12)
+
+for i in range(len(vocabulario)):
+    for j in range(len(vocabulario)):
+        color = 'white' if cooc[i][j] > 2 else 'black'
+        ax.text(j, i, str(cooc[i][j]), ha='center', va='center',
+                fontsize=9, fontweight='bold', color=color)
+
+plt.colorbar(im, label='Coocurrencias')
+plt.tight_layout()
+plt.show()
+```
+
+## Coocurrencia con Ventana Deslizante {.smaller}
+
+```{python}
+#| code-fold: false
+import numpy as np
+import pandas as pd
+
+corpus = [
+    "el gato negro come pescado fresco en la cocina",
+    "el perro grande come carne roja en el parque",
+]
+
+# Construir vocabulario
+docs_tokenizados = [doc.split() for doc in corpus]
+vocabulario = sorted(set(w for doc in docs_tokenizados for w in doc))
+vocab_idx = {w: i for i, w in enumerate(vocabulario)}
+V = len(vocabulario)
+
+def construir_coocurrencia(docs, ventana=2):
+    """Construir matriz de coocurrencia con ventana deslizante."""
+    cooc = np.zeros((V, V), dtype=int)
+    for doc in docs:
+        for i, w1 in enumerate(doc):
+            inicio = max(0, i - ventana)
+            fin = min(len(doc), i + ventana + 1)
+            for j in range(inicio, fin):
+                if i != j:
+                    cooc[vocab_idx[w1]][vocab_idx[doc[j]]] += 1
+    return cooc
+
+cooc_v2 = construir_coocurrencia(docs_tokenizados, ventana=2)
+
+# Mostrar solo las filas interesantes
+palabras_interes = ["come", "gato", "perro", "pescado", "carne"]
+indices = [vocab_idx[w] for w in palabras_interes if w in vocab_idx]
+df_sub = pd.DataFrame(cooc_v2[np.ix_(indices, indices)],
+                       index=palabras_interes, columns=palabras_interes)
+print(f"Coocurrencia (ventana=2), submatriz:\n{df_sub.to_string()}")
+```
+
+::: {.callout-note}
+## Observación
+La ventana deslizante captura relaciones **sintácticas** más locales. El contexto de documento captura relaciones **temáticas** más amplias.
+:::
+
+# Bloque 3: Limitaciones de la Frecuencia Bruta {background-color="#03045e"}
+
+## El Problema de Contar Coocurrencias {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Palabras frecuentes dominan
+
+La coocurrencia bruta favorece las **palabras más comunes**:
+
+```text
+cooc("el", "gato")  = 3  ← alto
+cooc("el", "perro") = 3  ← alto
+cooc("el", "come")  = 4  ← ¡más alto!
+```
+
+Pero "el" aparece con **todo**. Que coocurra con "come" no es sorprendente.
+
+:::
+::: {.column width="50%"}
+
+### Lo que queremos saber
+
+¿Es esta coocurrencia **más alta de lo esperado**?
+
+```text
+P("gato", "come") vs P("gato") × P("come")
+```
+
+Si el par ocurre **más** de lo esperado por azar → **asociación positiva**.
+
+::: {.callout-tip}
+## Intuición
+Necesitamos comparar la probabilidad **observada** del par con la probabilidad **esperada** bajo independencia.
+:::
+
+:::
+:::
+
+## Frecuencia Esperada bajo Independencia {.smaller}
+
+Si las palabras $x$ e $y$ fueran **independientes**:
+
+$$P(x, y) = P(x) \times P(y)$$
+
+```{python}
+#| code-fold: false
+import numpy as np
+
+# Corpus simple
+corpus = ["el gato come pescado", "el perro come carne",
+          "el gato bebe leche", "el perro bebe agua"]
+todas_palabras = " ".join(corpus).split()
+N = len(todas_palabras)
+
+# Contar frecuencias
+from collections import Counter
+freq = Counter(todas_palabras)
+
+# Probabilidades individuales
+pares_interes = [("gato", "come"), ("el", "come"), ("gato", "pescado"), ("perro", "carne")]
+
+print(f"Total palabras: {N}\n")
+print(f"{'Par (x,y)':<22} {'P(x)':>8} {'P(y)':>8} {'P(x)·P(y)':>10} {'¿Esperado?'}")
+print("-" * 58)
+
+for x, y in pares_interes:
+    px = freq[x] / N
+    py = freq[y] / N
+    esperado = px * py
+    print(f"({x}, {y}){'':<12} {px:>8.3f} {py:>8.3f} {esperado:>10.4f}")
+```
+
+. . .
+
+Ahora necesitamos comparar la frecuencia **observada** con esta **esperada**. Aquí entra PMI.
+
+# Bloque 4: Información Mutua Puntual (PMI) {background-color="#0077b6"}
+
+## Definición de PMI {.smaller}
+
+$$\text{PMI}(x, y) = \log_2 \frac{P(x, y)}{P(x) \cdot P(y)}$$
+
+::: {.columns}
+::: {.column width="50%"}
+
+**Interpretación:**
+
+| Valor | Significado |
+|:------|:------------|
+| PMI > 0 | $x$ e $y$ coocurren **más** de lo esperado |
+| PMI = 0 | $x$ e $y$ son **independientes** |
+| PMI < 0 | $x$ e $y$ coocurren **menos** de lo esperado |
+
+:::
+::: {.column width="50%"}
+
+**Propiedades:**
+
+- Se basa en **teoría de la información** (Shannon, 1948)
+- Mide "sorpresa" de la coocurrencia
+- Rango: $(-\infty, +\infty)$
+- Simétrica: PMI(x,y) = PMI(y,x)
+
+:::
+:::
+
+. . .
+
+::: {.callout-note}
+## Origen
+PMI proviene del concepto de **información mutua** en teoría de la información. La variante "puntual" se refiere a un par específico de eventos, no a la esperanza sobre todos los pares.
+:::
+
+## PMI: Cálculo Manual {.smaller}
+
+```{python}
+#| code-fold: false
+import numpy as np
+from collections import Counter
+
+corpus = [
+    "el gato come pescado fresco",
+    "el perro come carne roja",
+    "el gato bebe leche fresca",
+    "el perro bebe agua fresca",
+    "el gato come ratón pequeño",
+    "el perro come hueso grande",
+]
+
+# Tokenizar y construir coocurrencias (contexto = documento)
+docs = [doc.split() for doc in corpus]
+N_docs = len(docs)
+
+# P(x): fracción de documentos que contienen x
+def p_word(w):
+    return sum(1 for doc in docs if w in doc) / N_docs
+
+# P(x, y): fracción de documentos que contienen ambas
+def p_pair(w1, w2):
+    return sum(1 for doc in docs if w1 in doc and w2 in doc) / N_docs
+
+# Calcular PMI
+def pmi(w1, w2):
+    px = p_word(w1)
+    py = p_word(w2)
+    pxy = p_pair(w1, w2)
+    if pxy == 0:
+        return float('-inf')
+    return np.log2(pxy / (px * py))
+
+pares = [
+    ("gato", "come"), ("perro", "come"), ("gato", "pescado"),
+    ("gato", "carne"), ("el", "come"), ("gato", "bebe"),
+    ("perro", "hueso"), ("gato", "agua"),
+]
+
+print(f"{'Par (x,y)':<22} {'P(x)':>6} {'P(y)':>6} {'P(x,y)':>7} {'PMI':>8}")
+print("-" * 55)
+for x, y in pares:
+    px, py, pxy = p_word(x), p_word(y), p_pair(x, y)
+    val = pmi(x, y)
+    indicador = "🟢" if val > 0 else ("⚪" if val == 0 else "🔴")
+    print(f"({x}, {y}){'':<12} {px:>6.2f} {py:>6.2f} {pxy:>7.2f} {val:>+8.3f} {indicador}")
+```
+
+## PMI: Visualización {.smaller}
+
+```{python}
+#| code-fold: true
+#| fig-width: 9
+#| fig-height: 5
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Calcular PMI para todas las palabras interesantes
+palabras = ["gato", "perro", "come", "bebe", "pescado", "carne", "leche", "agua"]
+n = len(palabras)
+
+pmi_matrix = np.zeros((n, n))
+for i, w1 in enumerate(palabras):
+    for j, w2 in enumerate(palabras):
+        if w1 != w2:
+            val = pmi(w1, w2)
+            pmi_matrix[i][j] = val if val != float('-inf') else -3
+        else:
+            pmi_matrix[i][j] = 0
+
+fig, ax = plt.subplots(figsize=(8, 6))
+im = ax.imshow(pmi_matrix, cmap='RdYlGn', aspect='auto', vmin=-3, vmax=3)
+
+ax.set_xticks(range(n))
+ax.set_xticklabels(palabras, rotation=45, ha='right', fontsize=10)
+ax.set_yticks(range(n))
+ax.set_yticklabels(palabras, fontsize=10)
+ax.set_title('Matriz PMI (verde = asociación positiva, rojo = negativa)', fontsize=12)
+
+for i in range(n):
+    for j in range(n):
+        val = pmi_matrix[i][j]
+        color = 'white' if abs(val) > 1.5 else 'black'
+        texto = f'{val:.1f}' if val > -3 else '-∞'
+        ax.text(j, i, texto, ha='center', va='center', fontsize=8, color=color)
+
+plt.colorbar(im, label='PMI (bits)')
+plt.tight_layout()
+plt.show()
+```
+
+## Problema de PMI: Sesgo hacia Palabras Raras {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### El problema
+
+PMI tiende a dar valores **muy altos** a pares de palabras **muy raras**:
+
+$$\text{PMI}(x,y) = \log_2 \frac{P(x,y)}{P(x) \cdot P(y)}$$
+
+Si $P(x)$ y $P(y)$ son muy pequeñas pero $P(x,y)$ es cercana a $P(x)$, el cociente explota.
+
+**Ejemplo extremo:**
+
+- "supercalifragilístico" aparece 1 vez
+- "espialidoso" aparece 1 vez
+- Coocurren 1 vez → PMI muy alto
+
+:::
+::: {.column width="50%"}
+
+### La solución: PPMI
+
+**Positive PMI (PPMI):** truncar valores negativos a cero.
+
+$$\text{PPMI}(x, y) = \max(0, \text{PMI}(x, y))$$
+
+**¿Por qué?**
+
+- Los valores negativos de PMI son **poco confiables** con datos escasos
+- La ausencia de coocurrencia puede ser por **falta de datos**, no por repulsión real
+- PPMI es la medida más usada en NLP
+
+:::
+:::
+
+## PPMI en la Práctica {.smaller}
+
+```{python}
+#| code-fold: false
+import numpy as np
+
+def ppmi(w1, w2):
+    """Positive PMI: max(0, PMI)."""
+    return max(0, pmi(w1, w2))
+
+pares = [
+    ("gato", "come"), ("perro", "come"), ("gato", "pescado"),
+    ("gato", "carne"), ("el", "come"), ("gato", "bebe"),
+    ("perro", "hueso"), ("gato", "agua"),
+]
+
+print(f"{'Par (x,y)':<22} {'PMI':>8} {'PPMI':>8}")
+print("-" * 40)
+for x, y in pares:
+    val_pmi = pmi(x, y)
+    val_ppmi = ppmi(x, y)
+    print(f"({x}, {y}){'':<12} {val_pmi:>+8.3f} {val_ppmi:>8.3f}")
+```
+
+. . .
+
+::: {.callout-tip}
+## PPMI como representación
+Si reemplazamos los conteos brutos de una matriz de coocurrencia con sus valores PPMI, obtenemos una **representación vectorial** de cada palabra que captura asociaciones semánticas.
+:::
+
+## Dato Histórico: PPMI ≈ Word2Vec {.smaller}
+
+::: {.columns}
+::: {.column width="60%"}
+
+En 2014, Levy & Goldberg demostraron algo sorprendente:
+
+> *"Word2Vec con Skip-gram y Negative Sampling está implícitamente factorizando una matriz PPMI desplazada"*
+
+$$W_{SG} \approx M_{PPMI} - \log k$$
+
+Donde $k$ es el número de muestras negativas.
+
+. . .
+
+**Implicación:** Las matrices PPMI y Word2Vec capturan la **misma información**, solo difieren en la eficiencia de representación.
+
+:::
+::: {.column width="40%"}
+
+```{mermaid}
+graph TD
+    A["Matriz PPMI<br>(dispersa, alta dim)"] --> C["Capturan la<br>misma información"]
+    B["Word2Vec<br>(densa, baja dim)"] --> C
+    style A fill:#e9c46a,color:#000
+    style B fill:#2a9d8f,color:#fff
+    style C fill:#0077b6,color:#fff
+```
+
+::: {.callout-note}
+## Referencia
+Levy & Goldberg (2014). *"Neural Word Embedding as Implicit Matrix Factorization"*
+:::
+
+:::
+:::
+
+# Bloque 5: N-gramas a Profundidad {background-color="#023e8a"}
+
+## Más Allá de los Unigramas {.smaller}
+
+En S1 vimos N-gramas brevemente con `CountVectorizer`. Ahora profundizamos: N-gramas como base para **modelos de lenguaje**.
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Definición
+
+Un **N-grama** es una secuencia contigua de $N$ elementos de un texto.
+
+| N | Nombre | Ejemplo |
+|:-:|:-------|:--------|
+| 1 | Unigrama | "gato" |
+| 2 | Bigrama | "gato negro" |
+| 3 | Trigrama | "el gato negro" |
+| 4 | 4-grama | "el gato negro come" |
+
+:::
+::: {.column width="50%"}
+
+### ¿Para qué sirven?
+
+- 📊 **Modelos de Lenguaje:** predecir la siguiente palabra
+- 🔍 **Detección de idioma**
+- ✍️ **Corrección ortográfica**
+- 🔐 **Autoría:** ¿quién escribió esto?
+- 📖 **Colocaciones:** frases hechas
+
+:::
+:::
+
+## Extracción de N-gramas {.smaller}
+
+```{python}
+#| code-fold: false
+from nltk import ngrams
+
+texto = "el gato negro come pescado fresco en la cocina"
+tokens = texto.split()
+
+for n in range(1, 5):
+    ngramas = list(ngrams(tokens, n))
+    nombre = ["unigramas", "bigramas", "trigramas", "4-gramas"][n-1]
+    print(f"{nombre.upper()} ({len(ngramas)}):")
+    for ng in ngramas:
+        print(f"  {' '.join(ng)}")
+    print()
+```
+
+## Frecuencia de N-gramas {.smaller}
+
+```{python}
+#| code-fold: false
+from nltk import ngrams
+from collections import Counter
+
+corpus = """
+el gato come pescado fresco. el perro come carne roja.
+el gato bebe leche fresca. el perro bebe agua fresca.
+el gato come ratón pequeño. el perro come hueso grande.
+el gato duerme en la alfombra. el perro duerme en el jardín.
+""".lower()
+
+tokens = corpus.split()
+
+# Contar bigramas más frecuentes
+bigramas = list(ngrams(tokens, 2))
+conteo_bi = Counter(bigramas)
+
+print("Top 10 bigramas más frecuentes:\n")
+print(f"{'Bigrama':<25} {'Frecuencia':>10}")
+print("-" * 37)
+for bigrama, freq in conteo_bi.most_common(10):
+    print(f"{' '.join(bigrama):<25} {freq:>10}")
+```
+
+## Visualización: Top N-gramas {.smaller}
+
+```{python}
+#| code-fold: true
+#| fig-width: 10
+#| fig-height: 4
+import matplotlib.pyplot as plt
+from nltk import ngrams
+from collections import Counter
+
+fig, axes = plt.subplots(1, 3, figsize=(14, 4))
+
+for ax, n, titulo in zip(axes, [1, 2, 3], ["Unigramas", "Bigramas", "Trigramas"]):
+    ngs = list(ngrams(tokens, n))
+    conteo = Counter(ngs)
+    top = conteo.most_common(8)
+    
+    labels = [" ".join(ng) for ng, _ in top]
+    values = [c for _, c in top]
+    
+    ax.barh(labels[::-1], values[::-1], color='#0077b6')
+    ax.set_title(f'Top 8 {titulo}', fontsize=11)
+    ax.set_xlabel('Frecuencia')
+
+plt.tight_layout()
+plt.show()
+```
+
+## N-gramas de Caracteres {.smaller}
+
+Los N-gramas también se aplican a nivel de **caracteres**, lo cual es útil para:
+
+- Detección de idioma
+- Corrección ortográfica
+- Manejo de palabras fuera de vocabulario (OOV)
+
+```{python}
+#| code-fold: false
+from nltk import ngrams
+from collections import Counter
+
+def char_ngrams(texto, n=3):
+    """Extraer N-gramas de caracteres."""
+    return list(ngrams(texto, n))
+
+textos = {
+    "Español": "el gato come pescado",
+    "Inglés": "the cat eats fish",
+    "Francés": "le chat mange du poisson",
+}
+
+for idioma, texto in textos.items():
+    cng = char_ngrams(texto.replace(" ", "_"), n=3)
+    top3 = Counter(cng).most_common(5)
+    top3_str = [f"'{''.join(ng)}'" for ng, _ in top3]
+    print(f"{idioma:10s}: {', '.join(top3_str)}")
+```
+
+. . .
+
+::: {.callout-tip}
+## FastText
+El modelo **FastText** (2016) usa N-gramas de caracteres para crear embeddings de subpalabras, permitiendo manejar palabras nunca vistas.
+:::
+
+# Bloque 6: Colocaciones {background-color="#03045e"}
+
+## ¿Qué es una Colocación? {.smaller}
+
+> Una **colocación** es una combinación de palabras que aparece junta con **frecuencia significativamente mayor** de lo que el azar predeciría.
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Ejemplos en español
+
+- "tomar una **decisión**" (no "hacer una decisión")
+- "lluvia **torrencial**" (no "lluvia fuerte")
+- "error **garrafal**" (no "error grande")
+- "dar un **paseo**" (no "hacer un paseo")
+
+:::
+::: {.column width="50%"}
+
+### ¿Por qué importan?
+
+- 📝 Traducción automática
+- ✅ Generación de texto natural
+- 📖 Enseñanza de idiomas
+- 🔍 Extracción de términos multipalabra
+
+:::
+:::
+
+. . .
+
+::: {.callout-note}
+## PMI + N-gramas = Detección de colocaciones
+Usamos PMI para encontrar bigramas que son **más que la suma de sus partes**.
+:::
+
+## Detección de Colocaciones con PMI {.smaller}
+
+```{python}
+#| code-fold: false
+import numpy as np
+from nltk import ngrams, FreqDist
+from collections import Counter
+
+corpus = """
+la inteligencia artificial transforma la medicina moderna.
+la inteligencia artificial mejora el diagnóstico médico.
+la red neuronal profunda aprende de los datos.
+la red neuronal artificial procesa información compleja.
+el cambio climático afecta los glaciares tropicales.
+el cambio climático genera sequías severas.
+el procesamiento de lenguaje natural analiza textos.
+el procesamiento de lenguaje natural usa modelos estadísticos.
+la base de datos almacena información estructurada.
+la ciencia de datos usa técnicas de inteligencia artificial.
+""".lower()
+
+tokens = corpus.split()
+N = len(tokens)
+
+# Frecuencias de unigramas
+freq_uni = Counter(tokens)
+
+# Frecuencias de bigramas
+bigs = [" ".join(b) for b in ngrams(tokens, 2)]
+freq_bi = Counter(bigs)
+
+# Calcular PMI para cada bigrama
+print(f"{'Bigrama':<30} {'f(x,y)':>7} {'f(x)':>6} {'f(y)':>6} {'PMI':>8}")
+print("-" * 62)
+
+resultados = []
+for bigrama, f_xy in freq_bi.items():
+    w1, w2 = bigrama.split()
+    f_x = freq_uni[w1]
+    f_y = freq_uni[w2]
+    
+    p_xy = f_xy / (N - 1)  # bigramas posibles
+    p_x = f_x / N
+    p_y = f_y / N
+    
+    pmi_val = np.log2(p_xy / (p_x * p_y))
+    resultados.append((bigrama, f_xy, f_x, f_y, pmi_val))
+
+# Ordenar por PMI descendente
+resultados.sort(key=lambda x: x[4], reverse=True)
+for bigrama, fxy, fx, fy, pmi_val in resultados[:12]:
+    print(f"{bigrama:<30} {fxy:>7} {fx:>6} {fy:>6} {pmi_val:>+8.2f}")
+```
+
+## PMI vs Frecuencia: ¿Cuál es Mejor? {.smaller}
+
+```{python}
+#| code-fold: true
+#| fig-width: 10
+#| fig-height: 5
+import matplotlib.pyplot as plt
+
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+# Top por frecuencia
+top_freq = sorted(resultados, key=lambda x: x[1], reverse=True)[:10]
+axes[0].barh([r[0] for r in top_freq][::-1], [r[1] for r in top_freq][::-1], color='#e76f51')
+axes[0].set_title('Top 10 bigramas por FRECUENCIA', fontsize=12)
+axes[0].set_xlabel('Frecuencia')
+
+# Top por PMI (filtrar freq >= 2 para evitar ruido)
+top_pmi = sorted([r for r in resultados if r[1] >= 2], key=lambda x: x[4], reverse=True)[:10]
+axes[1].barh([r[0] for r in top_pmi][::-1], [r[4] for r in top_pmi][::-1], color='#2a9d8f')
+axes[1].set_title('Top 10 bigramas por PMI (freq ≥ 2)', fontsize=12)
+axes[1].set_xlabel('PMI (bits)')
+
+plt.tight_layout()
+plt.show()
+```
+
+. . .
+
+::: {.callout-warning}
+## Observación
+- **Frecuencia** favorece bigramas con palabras comunes ("de la", "el cambio")
+- **PMI** favorece bigramas semánticamente significativos ("inteligencia artificial", "red neuronal")
+:::
+
+## Colocaciones con NLTK {.smaller}
+
+```{python}
+#| code-fold: false
+import nltk
+from nltk.collocations import BigramCollocationFinder, BigramAssocMeasures
+from nltk.tokenize import word_tokenize
+
+nltk.download('punkt_tab', quiet=True)
+
+texto = """
+La inteligencia artificial está transformando el mundo moderno.
+Las redes neuronales profundas procesan grandes cantidades de datos.
+El aprendizaje automático permite crear modelos predictivos potentes.
+La ciencia de datos combina estadística y programación avanzada.
+El procesamiento de lenguaje natural analiza texto automáticamente.
+Las bases de datos almacenan información de manera estructurada.
+La inteligencia artificial y el aprendizaje automático son complementarios.
+Las redes neuronales artificiales imitan el funcionamiento del cerebro.
+El cambio climático es un desafío global que requiere acción inmediata.
+La computación en la nube permite escalar recursos de forma eficiente.
+"""
+
+tokens = word_tokenize(texto.lower(), language='spanish')
+
+# Encontrar colocaciones
+finder = BigramCollocationFinder.from_words(tokens)
+finder.apply_freq_filter(2)  # Filtrar bigramas con frecuencia < 2
+
+# Métricas disponibles
+medidas = BigramAssocMeasures()
+
+print("Top colocaciones por PMI:")
+for bigrama, score in finder.score_ngrams(medidas.pmi)[:8]:
+    print(f"  {bigrama[0]+' '+bigrama[1]:<30} PMI: {score:.2f}")
+```
+
+## PMI vs Otras Medidas de Asociación {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Medidas comunes
+
+| Medida | Fórmula simplificada |
+|:-------|:---------------------|
+| **PMI** | $\log\frac{P(x,y)}{P(x)P(y)}$ |
+| **Chi-cuadrado** | $\frac{(O-E)^2}{E}$ |
+| **Likelihood Ratio** | $2\sum O \log\frac{O}{E}$ |
+| **t-test** | $\frac{\bar{x} - \mu}{s/\sqrt{n}}$ |
+
+:::
+::: {.column width="50%"}
+
+### ¿Cuál usar?
+
+- **PMI:** Buena para vocabularios grandes, sesgo hacia raros
+- **Chi-cuadrado ($\chi^2$):** Robusta, no asume normalidad
+- **Likelihood Ratio:** Mejor con datos escasos
+- **t-test:** Conservadora, pocos falsos positivos
+
+::: {.callout-tip}
+## Recomendación Práctica
+Para corpus pequeños: **Likelihood Ratio**.  
+Para corpus grandes: **PMI** con filtro de frecuencia mínima.
+:::
+
+:::
+:::
+
+# Bloque 7: Aplicación Integradora {background-color="#001219"}
+
+## Análisis Completo de un Corpus {.smaller}
+
+Combinemos todo lo aprendido en la Semana 2:
+
+```{python}
+#| code-fold: false
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+from nltk.collocations import BigramCollocationFinder, BigramAssocMeasures
+from nltk.tokenize import word_tokenize
+import numpy as np
+
+corpus = [
+    "Bolivia tiene una gran diversidad de flora y fauna en sus bosques amazónicos",
+    "La selva amazónica boliviana alberga miles de especies de fauna y flora silvestre",
+    "Las redes neuronales profundas han revolucionado la inteligencia artificial moderna",
+    "La inteligencia artificial usa redes neuronales para procesar información compleja",
+    "El fútbol boliviano tiene una liga profesional con equipos de todo el país",
+    "La liga del fútbol profesional boliviano atrae a miles de aficionados cada semana",
+]
+```
+
+## Paso 1: TF-IDF y Similitud {.smaller}
+
+```{python}
+#| code-fold: false
+
+tfidf = TfidfVectorizer()
+X = tfidf.fit_transform(corpus)
+sim = cosine_similarity(X)
+
+nombres = ["Biodiversidad 1", "Biodiversidad 2", "IA 1", "IA 2", "Fútbol 1", "Fútbol 2"]
+
+print("Similitud Coseno (TF-IDF):\n")
+print(f"{'':18s}", "  ".join(f"{n:>16s}" for n in nombres))
+for i, nombre in enumerate(nombres):
+    fila = "  ".join(f"{sim[i][j]:>16.3f}" for j in range(len(nombres)))
+    print(f"{nombre:18s} {fila}")
+```
+
+## Paso 2: Colocaciones con PMI {.smaller}
+
+```{python}
+#| code-fold: false
+
+# Tokenizar todo el corpus
+todos_tokens = []
+for doc in corpus:
+    todos_tokens.extend(word_tokenize(doc.lower(), language='spanish'))
+
+# Encontrar colocaciones
+finder = BigramCollocationFinder.from_words(todos_tokens)
+finder.apply_freq_filter(2)
+
+medidas = BigramAssocMeasures()
+
+print("Colocaciones detectadas (PMI, freq ≥ 2):\n")
+for bigrama, score in finder.score_ngrams(medidas.pmi)[:10]:
+    freq = finder.ngram_fd[bigrama]
+    print(f"  '{bigrama[0]} {bigrama[1]}'  →  PMI: {score:+.2f}  (freq: {freq})")
+```
+
+## Paso 3: Palabras Clave por Tema {.smaller}
+
+```{python}
+#| code-fold: false
+
+nombres_temas = ["🌿 Biodiversidad", "🤖 Inteligencia Artificial", "⚽ Fútbol"]
+pares = [(0, 1), (2, 3), (4, 5)]
+
+features = tfidf.get_feature_names_out()
+
+print("Palabras clave por tema (TF-IDF promedio):\n")
+for tema, (i, j) in zip(nombres_temas, pares):
+    # Promediar TF-IDF de los 2 documentos del tema
+    vector_promedio = (X[i].toarray() + X[j].toarray()).flatten() / 2
+    top_idx = vector_promedio.argsort()[-5:][::-1]
+    keywords = [(features[k], vector_promedio[k]) for k in top_idx]
+    
+    print(f"{tema}:")
+    for kw, score in keywords:
+        barra = "█" * int(score * 40)
+        print(f"  {kw:<20} {score:.3f} {barra}")
+    print()
+```
+
+# Resumen {background-color="#0077b6"}
+
+## Lo que Aprendimos Hoy ✅ {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+**Coocurrencia:**
+
+- Matrices de coocurrencia
+- Contexto: documento vs. ventana
+- Frecuencia bruta → sesgada
+
+**PMI:**
+
+- $\text{PMI}(x,y) = \log_2 \frac{P(x,y)}{P(x)P(y)}$
+- Mide asociación estadística
+- PPMI = max(0, PMI) — más robusta
+- Conexión teórica con Word2Vec
+
+:::
+::: {.column width="50%"}
+
+**N-gramas:**
+
+- Secuencias de N tokens contiguos
+- A nivel de palabra y carácter
+- Base para modelos de lenguaje
+
+**Colocaciones:**
+
+- Combinaciones que aparecen más de lo esperado
+- PMI como detector de colocaciones
+- Herramientas: NLTK `BigramCollocationFinder`
+
+:::
+:::
+
+## Resumen de la Semana 2 Completa {.smaller}
+
+| Concepto | Pregunta que responde | Herramienta |
+|:---------|:---------------------|:------------|
+| **BoW** | ¿Cómo represento un documento? | `CountVectorizer` |
+| **TF-IDF** | ¿Qué palabras son importantes? | `TfidfVectorizer` |
+| **PMI/PPMI** | ¿Qué palabras van juntas? | Cálculo manual / NLTK |
+| **N-gramas** | ¿Qué secuencias son frecuentes? | `ngrams()` / `CountVectorizer` |
+| **Colocaciones** | ¿Qué frases son significativas? | `BigramCollocationFinder` |
+
+: {.striped .hover}
+
+## Para la Próxima Semana 📚
+
+::: {.callout-note}
+## Semana 3: Modelado de Lenguaje (Clásico)
+- S1: Modelos de lenguaje N-gram y Regla de la Cadena
+- S2: Evaluación: Perplejidad y técnicas de Suavizado
+- S3: Modelos Ocultos de Markov (HMM) para etiquetado POS
+:::
+
+**Lectura:**
+
+- Capítulo 3: *Speech and Language Processing* (Jurafsky & Martin) — Modelos de Lenguaje con N-gramas
+- Levy & Goldberg (2014) — *"Neural Word Embedding as Implicit Matrix Factorization"* (opcional)
+
+**Preparación:**
+
+- Repasar probabilidad condicional: $P(A|B) = \frac{P(A,B)}{P(B)}$
+- Regla de la cadena de probabilidad
+
+# ¿Preguntas? 🙋 {background-color="#03045e"}
+
+:::{.r-fit-text}
+**¡Gracias!**
+:::
+
+📧 fsuarez@ucb.edu.bo
+
+🔗 Materiales: [github.com/fjsuarez/ucb-nlp](https://github.com/fjsuarez/ucb-nlp)

@@ -5,6 +5,11 @@ project:
   type: website
   resources:
     - CNAME
+  render:
+    - "*.qmd"
+    - "slides/**/*.qmd"
+    - "!quizzes/"
+    - "!labs/"
 
 website:
   title: "UCB NLP"
