@@ -11,5 +11,10 @@ format: html
 - [Expresiones Regulares](slides/semana01/s2_regex.qmd)
 - [Preprocesamiento de Texto](slides/semana01/s3_preprocesamiento.qmd)
 
+### Semana 2
+- [Bolsa de Palabras (BoW) y One-hot Encoding](slides/semana02/s1_bow_one_hot.qmd)
+- [TF-IDF: Encontrando lo Relevante](slides/semana02/s2_tfidf.qmd)
+- [Información Mutua Puntual (PMI) y N-gramas](slides/semana02/s3_pmi_ngrams.qmd)
+
 ## Información general
 - [Programa del Curso](programa.qmd)
