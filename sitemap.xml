@@ -1,12 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://fjsuarez.me/slides/semana01/s3_preprocesamiento.html</loc>
-    <lastmod>2026-02-07T13:25:17.923Z</lastmod>
+    <loc>https://fjsuarez.me/slides/semana02/s3_pmi_ngrams.html</loc>
+    <lastmod>2026-02-18T17:04:23.221Z</lastmod>
+  </url>
+  <url>
+    <loc>https://fjsuarez.me/slides/semana02/s1_bow_one_hot.html</loc>
+    <lastmod>2026-02-10T18:20:29.275Z</lastmod>
   </url>
   <url>
     <loc>https://fjsuarez.me/slides/semana01/s2_regex.html</loc>
     <lastmod>2026-02-07T13:25:17.923Z</lastmod>
+  </url>
+  <url>
+    <loc>https://fjsuarez.me/programa.html</loc>
+    <lastmod>2026-02-18T17:04:33.363Z</lastmod>
   </url>
   <url>
     <loc>https://fjsuarez.me/general.html</loc>
@@ -17,11 +25,15 @@
     <lastmod>2026-02-07T13:29:41.465Z</lastmod>
   </url>
   <url>
-    <loc>https://fjsuarez.me/programa.html</loc>
-    <lastmod>2026-02-07T14:15:49.267Z</lastmod>
-  </url>
-  <url>
     <loc>https://fjsuarez.me/slides/semana01/s1_intro_nlp.html</loc>
     <lastmod>2026-02-07T13:25:17.923Z</lastmod>
+  </url>
+  <url>
+    <loc>https://fjsuarez.me/slides/semana01/s3_preprocesamiento.html</loc>
+    <lastmod>2026-02-07T13:25:17.923Z</lastmod>
+  </url>
+  <url>
+    <loc>https://fjsuarez.me/slides/semana02/s2_tfidf.html</loc>
+    <lastmod>2026-02-11T17:35:22.302Z</lastmod>
   </url>
 </urlset>

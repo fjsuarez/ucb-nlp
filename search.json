@@ -1,178 +1,437 @@
 [
   {
-    "objectID": "slides/semana01/s3_preprocesamiento.html#agenda-de-hoy",
-    "href": "slides/semana01/s3_preprocesamiento.html#agenda-de-hoy",
-    "title": "Preprocesamiento de Texto",
+    "objectID": "slides/semana02/s3_pmi_ngrams.html#agenda-de-hoy",
+    "href": "slides/semana02/s3_pmi_ngrams.html#agenda-de-hoy",
+    "title": "Semántica Léxica & Espacio Vectorial",
     "section": "Agenda de Hoy",
-    "text": "Agenda de Hoy\n\n\nPrimera Parte\n\n🔤 ¿Qué es la tokenización?\n🛠️ Herramientas: NLTK y spaCy\n📝 Normalización de texto\n\n\nSegunda Parte\n\n🌱 Stemming\n📖 Lematización\n🔧 Pipeline completo de preprocesamiento"
+    "text": "Agenda de Hoy\n\n\nPrimera Parte\n\n📝 Repaso: De BoW a TF-IDF\n🔗 Coocurrencia de palabras\n📊 Matrices de coocurrencia\n\n\nSegunda Parte\n\n🧮 Información Mutua Puntual (PMI)\n📏 N-gramas a profundidad\n💡 Aplicaciones: Colocaciones y más"
   },
   {
-    "objectID": "slides/semana01/s3_preprocesamiento.html#el-texto-crudo-es-ruidoso",
-    "href": "slides/semana01/s3_preprocesamiento.html#el-texto-crudo-es-ruidoso",
-    "title": "Preprocesamiento de Texto",
-    "section": "El Texto Crudo es Ruidoso",
-    "text": "El Texto Crudo es Ruidoso\n\n\nTexto real del mundo:\n¡¡¡INCREÍBLE oferta!!!  \nVisita https://tienda.com 😍😍\nEnvía un msg al +591-71234567\n#Descuento @tienda_bo\n    precio: $99.99 USD\n\nProblemas para una máquina:\n\nMayúsculas / minúsculas\nPuntuación repetida\nURLs, emails, emojis\nHashtags, menciones\nEspacios irregulares\nNúmeros en distintos formatos\n\n\n\n\n\n\n\n\n\nRegla de Oro del NLP\n\n\nBasura entra, basura sale (Garbage in, garbage out). La calidad de cualquier modelo depende directamente de la calidad del preprocesamiento."
+    "objectID": "slides/semana02/s3_pmi_ngrams.html#recapitulación-de-la-semana",
+    "href": "slides/semana02/s3_pmi_ngrams.html#recapitulación-de-la-semana",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Recapitulación de la Semana",
+    "text": "Recapitulación de la Semana\n\n\nCode\nflowchart LR\n    A[\"S1: One-hot & BoW&lt;br&gt;✅ Representación básica\"] --&gt; B[\"S2: TF-IDF&lt;br&gt;✅ Pesos inteligentes\"]\n    B --&gt; C[\"S3: PMI & N-gramas&lt;br&gt;🎯 Hoy\"]\n    C --&gt; D[\"Semana 3&lt;br&gt;Modelos de Lenguaje\"]\n\n    style A fill:#2a9d8f,color:#fff\n    style B fill:#2a9d8f,color:#fff\n    style C fill:#0077b6,color:#fff,stroke:#023e8a,stroke-width:3px\n    style D fill:#e9c46a,color:#000\n\n\n\n\n\nflowchart LR\n    A[\"S1: One-hot & BoW&lt;br&gt;✅ Representación básica\"] --&gt; B[\"S2: TF-IDF&lt;br&gt;✅ Pesos inteligentes\"]\n    B --&gt; C[\"S3: PMI & N-gramas&lt;br&gt;🎯 Hoy\"]\n    C --&gt; D[\"Semana 3&lt;br&gt;Modelos de Lenguaje\"]\n\n    style A fill:#2a9d8f,color:#fff\n    style B fill:#2a9d8f,color:#fff\n    style C fill:#0077b6,color:#fff,stroke:#023e8a,stroke-width:3px\n    style D fill:#e9c46a,color:#000\n\n\n\n\n\n\n\n\n\n\nSesión\nPregunta que responde\n\n\n\n\nS1: BoW\n¿Cómo representar un documento como un vector?\n\n\nS2: TF-IDF\n¿Qué palabras son importantes en un documento?\n\n\nS3: PMI\n¿Qué palabras tienden a aparecer juntas?"
   },
   {
-    "objectID": "slides/semana01/s3_preprocesamiento.html#el-pipeline-de-preprocesamiento",
-    "href": "slides/semana01/s3_preprocesamiento.html#el-pipeline-de-preprocesamiento",
-    "title": "Preprocesamiento de Texto",
-    "section": "El Pipeline de Preprocesamiento",
-    "text": "El Pipeline de Preprocesamiento\n\n\nCode\nflowchart LR\n    A[📄 Texto&lt;br&gt;crudo] --&gt; B[🔤 Tokenización]\n    B --&gt; C[🔡 Normalización]\n    C --&gt; D[🚫 Stopwords]\n    D --&gt; E[🌱 Stemming /&lt;br&gt;📖 Lematización]\n    E --&gt; F[✅ Texto&lt;br&gt;limpio]\n\n    style A fill:#fff3cd,color:#000\n    style B fill:#cfe2ff,color:#000\n    style C fill:#d1e7dd,color:#000\n    style D fill:#f8d7da,color:#000\n    style E fill:#e2d9f3,color:#000\n    style F fill:#d4edda,color:#000\n\n\n\n\n\nflowchart LR\n    A[📄 Texto&lt;br&gt;crudo] --&gt; B[🔤 Tokenización]\n    B --&gt; C[🔡 Normalización]\n    C --&gt; D[🚫 Stopwords]\n    D --&gt; E[🌱 Stemming /&lt;br&gt;📖 Lematización]\n    E --&gt; F[✅ Texto&lt;br&gt;limpio]\n\n    style A fill:#fff3cd,color:#000\n    style B fill:#cfe2ff,color:#000\n    style C fill:#d1e7dd,color:#000\n    style D fill:#f8d7da,color:#000\n    style E fill:#e2d9f3,color:#000\n    style F fill:#d4edda,color:#000\n\n\n\n\n\n\nCada paso transforma el texto para que sea más útil para nuestros modelos."
+    "objectID": "slides/semana02/s3_pmi_ngrams.html#la-pregunta-de-hoy",
+    "href": "slides/semana02/s3_pmi_ngrams.html#la-pregunta-de-hoy",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "La Pregunta de Hoy",
+    "text": "La Pregunta de Hoy\n\n\nTF-IDF mide importancia individual\nTF-IDF nos dice que “inteligencia” es relevante en un documento, pero no nos dice nada sobre la relación entre palabras.\n\nQueremos medir asociación\n¿Qué pares de palabras aparecen juntos más de lo esperado por azar?\n\n“inteligencia” + “artificial” → ¡Mucho más que por azar!\n“inteligencia” + “zapato” → Independientes\n\n\n\n\n\n\n\n\n\nPregunta Central\n\n\nDadas dos palabras \\(x\\) e \\(y\\), ¿su coocurrencia es sorprendente o simplemente un producto del azar?"
   },
   {
-    "objectID": "slides/semana01/s3_preprocesamiento.html#qué-es-tokenizar",
-    "href": "slides/semana01/s3_preprocesamiento.html#qué-es-tokenizar",
-    "title": "Preprocesamiento de Texto",
-    "section": "¿Qué es Tokenizar?",
-    "text": "¿Qué es Tokenizar?\n\nDividir un texto en unidades mínimas significativas llamadas tokens.\n\n\n\nTipos de tokenización:\n\n\n\nNivel\nEjemplo\n\n\n\n\nOración\n“Hola. ¿Qué tal?” → 2 oraciones\n\n\nPalabra\n“el gato negro” → 3 tokens\n\n\nSubpalabra\n“jugando” → “jug” + “##ando”\n\n\nCarácter\n“gato” → g, a, t, o\n\n\n\n\n¿Por qué importa?\n\nDefine la unidad básica de análisis\nAfecta el vocabulario del modelo\nDiferente en cada idioma\nNo es trivial: “New York” → ¿1 o 2 tokens?"
+    "objectID": "slides/semana02/s3_pmi_ngrams.html#qué-es-la-coocurrencia",
+    "href": "slides/semana02/s3_pmi_ngrams.html#qué-es-la-coocurrencia",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "¿Qué es la Coocurrencia?",
+    "text": "¿Qué es la Coocurrencia?\n\nDos palabras coocurren cuando aparecen juntas en un contexto definido (oración, ventana de palabras, documento).\n\n\n\nTipos de contexto\n\n\n\nContexto\nDefinición\n\n\n\n\nDocumento\nAmbas aparecen en el mismo doc\n\n\nOración\nAmbas en la misma oración\n\n\nVentana\nA distancia ≤ \\(k\\) palabras\n\n\n\n\nEjemplo: ventana de tamaño 2\n\"El gato negro come pescado fresco\"\nVentana alrededor de “come”:\n[negro, come, pescado]\n       ^^^^\nCoocurrencias de “come”: {negro, pescado}"
   },
   {
-    "objectID": "slides/semana01/s3_preprocesamiento.html#método-1-split-naïve",
-    "href": "slides/semana01/s3_preprocesamiento.html#método-1-split-naïve",
-    "title": "Preprocesamiento de Texto",
-    "section": "Método 1: split() (Naïve)",
-    "text": "Método 1: split() (Naïve)\n\ntexto = \"El gato, que estaba en el jardín, cazó un ratón.\"\n\n# split() divide por espacios\ntokens = texto.split()\nprint(f\"Tokens: {tokens}\")\nprint(f\"Cantidad: {len(tokens)}\")\n\nTokens: ['El', 'gato,', 'que', 'estaba', 'en', 'el', 'jardín,', 'cazó', 'un', 'ratón.']\nCantidad: 10\n\n\n\n\n\n\n\n\n\nProblemas de split()\n\n\n\n“gato,” se considera un solo token (incluye la coma)\nNo separa puntuación\nNo maneja contracciones (“del” = “de” + “el”)\nNo detecta límites de oración"
+    "objectID": "slides/semana02/s3_pmi_ngrams.html#matriz-de-coocurrencia",
+    "href": "slides/semana02/s3_pmi_ngrams.html#matriz-de-coocurrencia",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Matriz de Coocurrencia",
+    "text": "Matriz de Coocurrencia\n\nimport numpy as np\nfrom collections import Counter, defaultdict\n\ncorpus = [\n    \"el gato come pescado\",\n    \"el perro come carne\",\n    \"el gato bebe leche\",\n    \"el perro bebe agua\",\n]\n\n# Construir matriz de coocurrencia (contexto = documento)\ndocs_tokenizados = [doc.split() for doc in corpus]\nvocabulario = sorted(set(w for doc in docs_tokenizados for w in doc))\nvocab_idx = {w: i for i, w in enumerate(vocabulario)}\n\ncooc = np.zeros((len(vocabulario), len(vocabulario)), dtype=int)\n\nfor doc in docs_tokenizados:\n    palabras_unicas = set(doc)\n    for w1 in palabras_unicas:\n        for w2 in palabras_unicas:\n            if w1 != w2:\n                cooc[vocab_idx[w1]][vocab_idx[w2]] += 1\n\n# Mostrar las primeras filas\nimport pandas as pd\ndf_cooc = pd.DataFrame(cooc, index=vocabulario, columns=vocabulario)\nprint(df_cooc.to_string())\n\n         agua  bebe  carne  come  el  gato  leche  perro  pescado\nagua        0     1      0     0   1     0      0      1        0\nbebe        1     0      0     0   2     1      1      1        0\ncarne       0     0      0     1   1     0      0      1        0\ncome        0     0      1     0   2     1      0      1        1\nel          1     2      1     2   0     2      1      2        1\ngato        0     1      0     1   2     0      1      0        1\nleche       0     1      0     0   1     1      0      0        0\nperro       1     1      1     1   2     0      0      0        0\npescado     0     0      0     1   1     1      0      0        0"
   },
   {
-    "objectID": "slides/semana01/s3_preprocesamiento.html#método-2-regex-mejor",
-    "href": "slides/semana01/s3_preprocesamiento.html#método-2-regex-mejor",
-    "title": "Preprocesamiento de Texto",
-    "section": "Método 2: Regex (Mejor)",
-    "text": "Método 2: Regex (Mejor)\n\nimport re\n\ntexto = \"El gato, que estaba en el jardín, cazó un ratón.\"\n\n# Tokenización con regex\ntokens = re.findall(r\"\\w+|[^\\w\\s]\", texto)\nprint(f\"Tokens: {tokens}\")\nprint(f\"Cantidad: {len(tokens)}\")\n\nTokens: ['El', 'gato', ',', 'que', 'estaba', 'en', 'el', 'jardín', ',', 'cazó', 'un', 'ratón', '.']\nCantidad: 13\n\n\n\nMejor, pero aún tiene limitaciones con:\n\nAbreviaturas: “EE.UU.” → ¿“EE”, “.”, “UU”, “.”?\nNúmeros decimales: “3.14” → ¿“3”, “.”, “14”?\nContracciones del español: “al” = “a” + “el”"
+    "objectID": "slides/semana02/s3_pmi_ngrams.html#visualización-de-la-coocurrencia",
+    "href": "slides/semana02/s3_pmi_ngrams.html#visualización-de-la-coocurrencia",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Visualización de la Coocurrencia",
+    "text": "Visualización de la Coocurrencia\n\n\nCode\nimport matplotlib.pyplot as plt\n\nfig, ax = plt.subplots(figsize=(7, 5))\nim = ax.imshow(cooc, cmap='YlOrRd', aspect='auto')\n\nax.set_xticks(range(len(vocabulario)))\nax.set_xticklabels(vocabulario, rotation=45, ha='right', fontsize=9)\nax.set_yticks(range(len(vocabulario)))\nax.set_yticklabels(vocabulario, fontsize=9)\nax.set_title('Matriz de Coocurrencia (contexto = documento)', fontsize=12)\n\nfor i in range(len(vocabulario)):\n    for j in range(len(vocabulario)):\n        color = 'white' if cooc[i][j] &gt; 2 else 'black'\n        ax.text(j, i, str(cooc[i][j]), ha='center', va='center',\n                fontsize=9, fontweight='bold', color=color)\n\nplt.colorbar(im, label='Coocurrencias')\nplt.tight_layout()\nplt.show()"
   },
   {
-    "objectID": "slides/semana01/s3_preprocesamiento.html#método-3-nltk",
-    "href": "slides/semana01/s3_preprocesamiento.html#método-3-nltk",
-    "title": "Preprocesamiento de Texto",
-    "section": "Método 3: NLTK",
-    "text": "Método 3: NLTK\n\nimport nltk\nnltk.download('punkt_tab', quiet=True)\n\nfrom nltk.tokenize import word_tokenize, sent_tokenize\n\ntexto = \"El Dr. García vive en La Paz. Trabaja en la U.C.B. desde 2019.\"\n\n# Tokenización por oraciones\noraciones = sent_tokenize(texto, language='spanish')\nprint(\"Oraciones:\")\nfor i, sent in enumerate(oraciones):\n    print(f\"  {i+1}. {sent}\")\n\n# Tokenización por palabras\ntokens = word_tokenize(texto, language='spanish')\nprint(f\"\\nTokens: {tokens}\")\n\nOraciones:\n  1. El Dr. García vive en La Paz.\n  2. Trabaja en la U.C.B.\n  3. desde 2019.\n\nTokens: ['El', 'Dr.', 'García', 'vive', 'en', 'La', 'Paz', '.', 'Trabaja', 'en', 'la', 'U.C.B', '.', 'desde', '2019', '.']"
+    "objectID": "slides/semana02/s3_pmi_ngrams.html#coocurrencia-con-ventana-deslizante",
+    "href": "slides/semana02/s3_pmi_ngrams.html#coocurrencia-con-ventana-deslizante",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Coocurrencia con Ventana Deslizante",
+    "text": "Coocurrencia con Ventana Deslizante\n\nimport numpy as np\nimport pandas as pd\n\ncorpus = [\n    \"el gato negro come pescado fresco en la cocina\",\n    \"el perro grande come carne roja en el parque\",\n]\n\n# Construir vocabulario\ndocs_tokenizados = [doc.split() for doc in corpus]\nvocabulario = sorted(set(w for doc in docs_tokenizados for w in doc))\nvocab_idx = {w: i for i, w in enumerate(vocabulario)}\nV = len(vocabulario)\n\ndef construir_coocurrencia(docs, ventana=2):\n    \"\"\"Construir matriz de coocurrencia con ventana deslizante.\"\"\"\n    cooc = np.zeros((V, V), dtype=int)\n    for doc in docs:\n        for i, w1 in enumerate(doc):\n            inicio = max(0, i - ventana)\n            fin = min(len(doc), i + ventana + 1)\n            for j in range(inicio, fin):\n                if i != j:\n                    cooc[vocab_idx[w1]][vocab_idx[doc[j]]] += 1\n    return cooc\n\ncooc_v2 = construir_coocurrencia(docs_tokenizados, ventana=2)\n\n# Mostrar solo las filas interesantes\npalabras_interes = [\"come\", \"gato\", \"perro\", \"pescado\", \"carne\"]\nindices = [vocab_idx[w] for w in palabras_interes if w in vocab_idx]\ndf_sub = pd.DataFrame(cooc_v2[np.ix_(indices, indices)],\n                       index=palabras_interes, columns=palabras_interes)\nprint(f\"Coocurrencia (ventana=2), submatriz:\\n{df_sub.to_string()}\")\n\nCoocurrencia (ventana=2), submatriz:\n         come  gato  perro  pescado  carne\ncome        0     1      1        1      1\ngato        1     0      0        0      0\nperro       1     0      0        0      0\npescado     1     0      0        0      0\ncarne       1     0      0        0      0\n\n\n\n\n\n\n\n\nObservación\n\n\nLa ventana deslizante captura relaciones sintácticas más locales. El contexto de documento captura relaciones temáticas más amplias."
   },
   {
-    "objectID": "slides/semana01/s3_preprocesamiento.html#método-4-spacy",
-    "href": "slides/semana01/s3_preprocesamiento.html#método-4-spacy",
-    "title": "Preprocesamiento de Texto",
-    "section": "Método 4: spaCy",
-    "text": "Método 4: spaCy\n\nimport spacy\n\nnlp = spacy.load(\"es_core_news_sm\")\n\ntexto = \"El Dr. García vive en La Paz. Trabaja en la U.C.B. desde 2019.\"\ndoc = nlp(texto)\n\n# Tokenización por oraciones\nprint(\"Oraciones:\")\nfor i, sent in enumerate(doc.sents):\n    print(f\"  {i+1}. {sent.text}\")\n\n# Tokenización por palabras con información adicional\nprint(\"\\nTokens con POS tags:\")\nfor token in doc:\n    print(f\"  '{token.text:12s}' → POS: {token.pos_:6s} | Lema: {token.lemma_}\")\n\nOraciones:\n  1. El Dr. García vive en La Paz.\n  2. Trabaja en la U.C.B. desde 2019.\n\nTokens con POS tags:\n  'El          ' → POS: DET    | Lema: el\n  'Dr.         ' → POS: PROPN  | Lema: Dr.\n  'García      ' → POS: PROPN  | Lema: García\n  'vive        ' → POS: VERB   | Lema: vivir\n  'en          ' → POS: ADP    | Lema: en\n  'La          ' → POS: DET    | Lema: el\n  'Paz         ' → POS: PROPN  | Lema: Paz\n  '.           ' → POS: PUNCT  | Lema: .\n  'Trabaja     ' → POS: VERB   | Lema: trabajar\n  'en          ' → POS: ADP    | Lema: en\n  'la          ' → POS: DET    | Lema: el\n  'U.C.B.      ' → POS: PROPN  | Lema: U.C.B.\n  'desde       ' → POS: ADP    | Lema: desde\n  '2019        ' → POS: NOUN   | Lema: 2019\n  '.           ' → POS: PUNCT  | Lema: ."
+    "objectID": "slides/semana02/s3_pmi_ngrams.html#el-problema-de-contar-coocurrencias",
+    "href": "slides/semana02/s3_pmi_ngrams.html#el-problema-de-contar-coocurrencias",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "El Problema de Contar Coocurrencias",
+    "text": "El Problema de Contar Coocurrencias\n\n\nPalabras frecuentes dominan\nLa coocurrencia bruta favorece las palabras más comunes:\ncooc(\"el\", \"gato\")  = 3  ← alto\ncooc(\"el\", \"perro\") = 3  ← alto\ncooc(\"el\", \"come\")  = 4  ← ¡más alto!\nPero “el” aparece con todo. Que coocurra con “come” no es sorprendente.\n\nLo que queremos saber\n¿Es esta coocurrencia más alta de lo esperado?\nP(\"gato\", \"come\") vs P(\"gato\") × P(\"come\")\nSi el par ocurre más de lo esperado por azar → asociación positiva.\n\n\n\n\n\n\nIntuición\n\n\nNecesitamos comparar la probabilidad observada del par con la probabilidad esperada bajo independencia."
   },
   {
-    "objectID": "slides/semana01/s3_preprocesamiento.html#comparación-de-tokenizadores",
-    "href": "slides/semana01/s3_preprocesamiento.html#comparación-de-tokenizadores",
-    "title": "Preprocesamiento de Texto",
-    "section": "Comparación de Tokenizadores",
-    "text": "Comparación de Tokenizadores\n\nimport re\nimport nltk\nimport spacy\nfrom nltk.tokenize import word_tokenize\n\nnlp = spacy.load(\"es_core_news_sm\")\n\ntexto = \"No puedo creer que cueste $99.99 en EE.UU.\"\n\n# Comparar los 4 métodos\nmetodos = {\n    \"split()\": texto.split(),\n    \"regex\": re.findall(r\"\\w+|[^\\w\\s]\", texto),\n    \"NLTK\": word_tokenize(texto, language='spanish'),\n    \"spaCy\": [t.text for t in nlp(texto)]\n}\n\nfor nombre, tokens in metodos.items():\n    print(f\"{nombre:8s} ({len(tokens):2d} tokens): {tokens}\")\n\nsplit()  ( 8 tokens): ['No', 'puedo', 'creer', 'que', 'cueste', '$99.99', 'en', 'EE.UU.']\nregex    (14 tokens): ['No', 'puedo', 'creer', 'que', 'cueste', '$', '99', '.', '99', 'en', 'EE', '.', 'UU', '.']\nNLTK     (10 tokens): ['No', 'puedo', 'creer', 'que', 'cueste', '$', '99.99', 'en', 'EE.UU', '.']\nspaCy    ( 9 tokens): ['No', 'puedo', 'creer', 'que', 'cueste', '$', '99.99', 'en', 'EE.UU.']\n\n\n\n\n\n\n\n\nRecomendación\n\n\nPara proyectos reales, usa spaCy o NLTK. Reserva split() y regex para prototipos rápidos."
+    "objectID": "slides/semana02/s3_pmi_ngrams.html#frecuencia-esperada-bajo-independencia",
+    "href": "slides/semana02/s3_pmi_ngrams.html#frecuencia-esperada-bajo-independencia",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Frecuencia Esperada bajo Independencia",
+    "text": "Frecuencia Esperada bajo Independencia\nSi las palabras \\(x\\) e \\(y\\) fueran independientes:\n\\[P(x, y) = P(x) \\times P(y)\\]\n\nimport numpy as np\n\n# Corpus simple\ncorpus = [\"el gato come pescado\", \"el perro come carne\",\n          \"el gato bebe leche\", \"el perro bebe agua\"]\ntodas_palabras = \" \".join(corpus).split()\nN = len(todas_palabras)\n\n# Contar frecuencias\nfrom collections import Counter\nfreq = Counter(todas_palabras)\n\n# Probabilidades individuales\npares_interes = [(\"gato\", \"come\"), (\"el\", \"come\"), (\"gato\", \"pescado\"), (\"perro\", \"carne\")]\n\nprint(f\"Total palabras: {N}\\n\")\nprint(f\"{'Par (x,y)':&lt;22} {'P(x)':&gt;8} {'P(y)':&gt;8} {'P(x)·P(y)':&gt;10} {'¿Esperado?'}\")\nprint(\"-\" * 58)\n\nfor x, y in pares_interes:\n    px = freq[x] / N\n    py = freq[y] / N\n    esperado = px * py\n    print(f\"({x}, {y}){'':&lt;12} {px:&gt;8.3f} {py:&gt;8.3f} {esperado:&gt;10.4f}\")\n\nTotal palabras: 16\n\nPar (x,y)                  P(x)     P(y)  P(x)·P(y) ¿Esperado?\n----------------------------------------------------------\n(gato, come)                0.125    0.125     0.0156\n(el, come)                0.250    0.125     0.0312\n(gato, pescado)                0.125    0.062     0.0078\n(perro, carne)                0.125    0.062     0.0078\n\n\n\nAhora necesitamos comparar la frecuencia observada con esta esperada. Aquí entra PMI."
   },
   {
-    "objectID": "slides/semana01/s3_preprocesamiento.html#técnicas-de-normalización",
-    "href": "slides/semana01/s3_preprocesamiento.html#técnicas-de-normalización",
-    "title": "Preprocesamiento de Texto",
-    "section": "Técnicas de Normalización",
-    "text": "Técnicas de Normalización\n\n\nTécnicas Básicas\n\nLowercase - Convertir a minúsculas\nEliminar puntuación\nEliminar números (o normalizarlos)\nEliminar espacios extra\n\n\nTécnicas Avanzadas\n\nEliminar stopwords\nEliminar acentos (depende del caso)\nExpandir contracciones\nNormalizar Unicode"
+    "objectID": "slides/semana02/s3_pmi_ngrams.html#definición-de-pmi",
+    "href": "slides/semana02/s3_pmi_ngrams.html#definición-de-pmi",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Definición de PMI",
+    "text": "Definición de PMI\n\\[\\text{PMI}(x, y) = \\log_2 \\frac{P(x, y)}{P(x) \\cdot P(y)}\\]\n\n\nInterpretación:\n\n\n\nValor\nSignificado\n\n\n\n\nPMI &gt; 0\n\\(x\\) e \\(y\\) coocurren más de lo esperado\n\n\nPMI = 0\n\\(x\\) e \\(y\\) son independientes\n\n\nPMI &lt; 0\n\\(x\\) e \\(y\\) coocurren menos de lo esperado\n\n\n\n\nPropiedades:\n\nSe basa en teoría de la información (Shannon, 1948)\nMide “sorpresa” de la coocurrencia\nRango: \\((-\\infty, +\\infty)\\)\nSimétrica: PMI(x,y) = PMI(y,x)\n\n\n\n\n\n\n\n\n\nOrigen\n\n\nPMI proviene del concepto de información mutua en teoría de la información. La variante “puntual” se refiere a un par específico de eventos, no a la esperanza sobre todos los pares."
   },
   {
-    "objectID": "slides/semana01/s3_preprocesamiento.html#ejemplo-normalización-paso-a-paso",
-    "href": "slides/semana01/s3_preprocesamiento.html#ejemplo-normalización-paso-a-paso",
-    "title": "Preprocesamiento de Texto",
-    "section": "Ejemplo: Normalización Paso a Paso",
-    "text": "Ejemplo: Normalización Paso a Paso\n\nimport re\nimport unicodedata\n\ntexto = \"  ¡¡HOLA Mundo!!  ¿Cómo ESTÁS?   😊  \"\n\n# Paso 1: Lowercase\npaso1 = texto.lower()\nprint(f\"1. Lowercase:    '{paso1}'\")\n\n# Paso 2: Normalizar espacios\npaso2 = re.sub(r\"\\s+\", \" \", paso1).strip()\nprint(f\"2. Espacios:     '{paso2}'\")\n\n# Paso 3: Eliminar puntuación repetida\npaso3 = re.sub(r\"([¿?¡!.])\\1+\", r\"\\1\", paso2)\nprint(f\"3. Puntuación:   '{paso3}'\")\n\n# Paso 4: Eliminar emojis\npaso4 = re.sub(r\"[^\\w\\s¿?¡!.,áéíóúñü]\", \"\", paso3)\nprint(f\"4. Sin emojis:   '{paso4}'\")\n\n1. Lowercase:    '  ¡¡hola mundo!!  ¿cómo estás?   😊  '\n2. Espacios:     '¡¡hola mundo!! ¿cómo estás? 😊'\n3. Puntuación:   '¡hola mundo! ¿cómo estás? 😊'\n4. Sin emojis:   '¡hola mundo! ¿cómo estás? '"
+    "objectID": "slides/semana02/s3_pmi_ngrams.html#pmi-cálculo-manual",
+    "href": "slides/semana02/s3_pmi_ngrams.html#pmi-cálculo-manual",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "PMI: Cálculo Manual",
+    "text": "PMI: Cálculo Manual\n\nimport numpy as np\nfrom collections import Counter\n\ncorpus = [\n    \"el gato come pescado fresco\",\n    \"el perro come carne roja\",\n    \"el gato bebe leche fresca\",\n    \"el perro bebe agua fresca\",\n    \"el gato come ratón pequeño\",\n    \"el perro come hueso grande\",\n]\n\n# Tokenizar y construir coocurrencias (contexto = documento)\ndocs = [doc.split() for doc in corpus]\nN_docs = len(docs)\n\n# P(x): fracción de documentos que contienen x\ndef p_word(w):\n    return sum(1 for doc in docs if w in doc) / N_docs\n\n# P(x, y): fracción de documentos que contienen ambas\ndef p_pair(w1, w2):\n    return sum(1 for doc in docs if w1 in doc and w2 in doc) / N_docs\n\n# Calcular PMI\ndef pmi(w1, w2):\n    px = p_word(w1)\n    py = p_word(w2)\n    pxy = p_pair(w1, w2)\n    if pxy == 0:\n        return float('-inf')\n    return np.log2(pxy / (px * py))\n\npares = [\n    (\"gato\", \"come\"), (\"perro\", \"come\"), (\"gato\", \"pescado\"),\n    (\"gato\", \"carne\"), (\"el\", \"come\"), (\"gato\", \"bebe\"),\n    (\"perro\", \"hueso\"), (\"gato\", \"agua\"),\n]\n\nprint(f\"{'Par (x,y)':&lt;22} {'P(x)':&gt;6} {'P(y)':&gt;6} {'P(x,y)':&gt;7} {'PMI':&gt;8}\")\nprint(\"-\" * 55)\nfor x, y in pares:\n    px, py, pxy = p_word(x), p_word(y), p_pair(x, y)\n    val = pmi(x, y)\n    indicador = \"🟢\" if val &gt; 0 else (\"⚪\" if val == 0 else \"🔴\")\n    print(f\"({x}, {y}){'':&lt;12} {px:&gt;6.2f} {py:&gt;6.2f} {pxy:&gt;7.2f} {val:&gt;+8.3f} {indicador}\")\n\nPar (x,y)                P(x)   P(y)  P(x,y)      PMI\n-------------------------------------------------------\n(gato, come)               0.50   0.67    0.33   +0.000 ⚪\n(perro, come)               0.50   0.67    0.33   +0.000 ⚪\n(gato, pescado)               0.50   0.17    0.17   +1.000 🟢\n(gato, carne)               0.50   0.17    0.00     -inf 🔴\n(el, come)               1.00   0.67    0.67   +0.000 ⚪\n(gato, bebe)               0.50   0.33    0.17   +0.000 ⚪\n(perro, hueso)               0.50   0.17    0.17   +1.000 🟢\n(gato, agua)               0.50   0.17    0.00     -inf 🔴"
   },
   {
-    "objectID": "slides/semana01/s3_preprocesamiento.html#stopwords-palabras-vacías",
-    "href": "slides/semana01/s3_preprocesamiento.html#stopwords-palabras-vacías",
-    "title": "Preprocesamiento de Texto",
-    "section": "Stopwords: Palabras Vacías",
-    "text": "Stopwords: Palabras Vacías\nStopwords = palabras muy frecuentes que aportan poco significado.\n\nimport nltk\nnltk.download('stopwords', quiet=True)\nfrom nltk.corpus import stopwords\n\n# Stopwords en español\nstops_es = set(stopwords.words('spanish'))\nprint(f\"Total stopwords en español: {len(stops_es)}\")\nprint(f\"Ejemplos: {sorted(list(stops_es))[:20]}\")\n\nTotal stopwords en español: 313\nEjemplos: ['a', 'al', 'algo', 'algunas', 'algunos', 'ante', 'antes', 'como', 'con', 'contra', 'cual', 'cuando', 'de', 'del', 'desde', 'donde', 'durante', 'e', 'el', 'ella']"
+    "objectID": "slides/semana02/s3_pmi_ngrams.html#pmi-visualización",
+    "href": "slides/semana02/s3_pmi_ngrams.html#pmi-visualización",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "PMI: Visualización",
+    "text": "PMI: Visualización\n\n\nCode\nimport matplotlib.pyplot as plt\nimport numpy as np\n\n# Calcular PMI para todas las palabras interesantes\npalabras = [\"gato\", \"perro\", \"come\", \"bebe\", \"pescado\", \"carne\", \"leche\", \"agua\"]\nn = len(palabras)\n\npmi_matrix = np.zeros((n, n))\nfor i, w1 in enumerate(palabras):\n    for j, w2 in enumerate(palabras):\n        if w1 != w2:\n            val = pmi(w1, w2)\n            pmi_matrix[i][j] = val if val != float('-inf') else -3\n        else:\n            pmi_matrix[i][j] = 0\n\nfig, ax = plt.subplots(figsize=(8, 6))\nim = ax.imshow(pmi_matrix, cmap='RdYlGn', aspect='auto', vmin=-3, vmax=3)\n\nax.set_xticks(range(n))\nax.set_xticklabels(palabras, rotation=45, ha='right', fontsize=10)\nax.set_yticks(range(n))\nax.set_yticklabels(palabras, fontsize=10)\nax.set_title('Matriz PMI (verde = asociación positiva, rojo = negativa)', fontsize=12)\n\nfor i in range(n):\n    for j in range(n):\n        val = pmi_matrix[i][j]\n        color = 'white' if abs(val) &gt; 1.5 else 'black'\n        texto = f'{val:.1f}' if val &gt; -3 else '-∞'\n        ax.text(j, i, texto, ha='center', va='center', fontsize=8, color=color)\n\nplt.colorbar(im, label='PMI (bits)')\nplt.tight_layout()\nplt.show()"
   },
   {
-    "objectID": "slides/semana01/s3_preprocesamiento.html#eliminación-de-stopwords",
-    "href": "slides/semana01/s3_preprocesamiento.html#eliminación-de-stopwords",
-    "title": "Preprocesamiento de Texto",
-    "section": "Eliminación de Stopwords",
-    "text": "Eliminación de Stopwords\n\nfrom nltk.corpus import stopwords\nfrom nltk.tokenize import word_tokenize\n\nstops = set(stopwords.words('spanish'))\n\ntexto = \"El procesamiento de lenguaje natural es una rama de la inteligencia artificial\"\ntokens = word_tokenize(texto.lower(), language='spanish')\n\n# Filtrar stopwords\ntokens_limpios = [t for t in tokens if t not in stops and t.isalpha()]\n\nprint(f\"Original ({len(tokens)} tokens):\")\nprint(f\"  {tokens}\")\nprint(f\"\\nSin stopwords ({len(tokens_limpios)} tokens):\")\nprint(f\"  {tokens_limpios}\")\n\nOriginal (12 tokens):\n  ['el', 'procesamiento', 'de', 'lenguaje', 'natural', 'es', 'una', 'rama', 'de', 'la', 'inteligencia', 'artificial']\n\nSin stopwords (6 tokens):\n  ['procesamiento', 'lenguaje', 'natural', 'rama', 'inteligencia', 'artificial']\n\n\n\n\n\n\n\n\n⚠️ Cuidado con las stopwords\n\n\nNo siempre hay que eliminarlas. Para análisis de sentimiento, “no” es crucial. Para modelos de lenguaje, las necesitamos todas."
+    "objectID": "slides/semana02/s3_pmi_ngrams.html#problema-de-pmi-sesgo-hacia-palabras-raras",
+    "href": "slides/semana02/s3_pmi_ngrams.html#problema-de-pmi-sesgo-hacia-palabras-raras",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Problema de PMI: Sesgo hacia Palabras Raras",
+    "text": "Problema de PMI: Sesgo hacia Palabras Raras\n\n\nEl problema\nPMI tiende a dar valores muy altos a pares de palabras muy raras:\n\\[\\text{PMI}(x,y) = \\log_2 \\frac{P(x,y)}{P(x) \\cdot P(y)}\\]\nSi \\(P(x)\\) y \\(P(y)\\) son muy pequeñas pero \\(P(x,y)\\) es cercana a \\(P(x)\\), el cociente explota.\nEjemplo extremo:\n\n“supercalifragilístico” aparece 1 vez\n“espialidoso” aparece 1 vez\nCoocurren 1 vez → PMI muy alto\n\n\nLa solución: PPMI\nPositive PMI (PPMI): truncar valores negativos a cero.\n\\[\\text{PPMI}(x, y) = \\max(0, \\text{PMI}(x, y))\\]\n¿Por qué?\n\nLos valores negativos de PMI son poco confiables con datos escasos\nLa ausencia de coocurrencia puede ser por falta de datos, no por repulsión real\nPPMI es la medida más usada en NLP"
   },
   {
-    "objectID": "slides/semana01/s3_preprocesamiento.html#qué-es-stemming",
-    "href": "slides/semana01/s3_preprocesamiento.html#qué-es-stemming",
-    "title": "Preprocesamiento de Texto",
-    "section": "¿Qué es Stemming?",
-    "text": "¿Qué es Stemming?\n\nReducir una palabra a su raíz (stem) eliminando sufijos morfológicos mediante reglas heurísticas.\n\n\n\nEjemplo:\n\n\n\nPalabra\nStem\n\n\n\n\njugando\njug\n\n\njugador\njug\n\n\njuegos\njueg\n\n\njugar\njug\n\n\njugable\njug\n\n\n\n\nCaracterísticas:\n\n✅ Rápido y simple\n✅ No necesita diccionario\n❌ La raíz puede no ser una palabra real\n❌ Errores frecuentes\n❌ Basado en reglas fijas"
+    "objectID": "slides/semana02/s3_pmi_ngrams.html#ppmi-en-la-práctica",
+    "href": "slides/semana02/s3_pmi_ngrams.html#ppmi-en-la-práctica",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "PPMI en la Práctica",
+    "text": "PPMI en la Práctica\n\nimport numpy as np\n\ndef ppmi(w1, w2):\n    \"\"\"Positive PMI: max(0, PMI).\"\"\"\n    return max(0, pmi(w1, w2))\n\npares = [\n    (\"gato\", \"come\"), (\"perro\", \"come\"), (\"gato\", \"pescado\"),\n    (\"gato\", \"carne\"), (\"el\", \"come\"), (\"gato\", \"bebe\"),\n    (\"perro\", \"hueso\"), (\"gato\", \"agua\"),\n]\n\nprint(f\"{'Par (x,y)':&lt;22} {'PMI':&gt;8} {'PPMI':&gt;8}\")\nprint(\"-\" * 40)\nfor x, y in pares:\n    val_pmi = pmi(x, y)\n    val_ppmi = ppmi(x, y)\n    print(f\"({x}, {y}){'':&lt;12} {val_pmi:&gt;+8.3f} {val_ppmi:&gt;8.3f}\")\n\nPar (x,y)                   PMI     PPMI\n----------------------------------------\n(gato, come)               +0.000    0.000\n(perro, come)               +0.000    0.000\n(gato, pescado)               +1.000    1.000\n(gato, carne)                 -inf    0.000\n(el, come)               +0.000    0.000\n(gato, bebe)               +0.000    0.000\n(perro, hueso)               +1.000    1.000\n(gato, agua)                 -inf    0.000\n\n\n\n\n\n\n\n\n\nPPMI como representación\n\n\nSi reemplazamos los conteos brutos de una matriz de coocurrencia con sus valores PPMI, obtenemos una representación vectorial de cada palabra que captura asociaciones semánticas."
   },
   {
-    "objectID": "slides/semana01/s3_preprocesamiento.html#snowball-stemmer-para-español",
-    "href": "slides/semana01/s3_preprocesamiento.html#snowball-stemmer-para-español",
-    "title": "Preprocesamiento de Texto",
-    "section": "Snowball Stemmer para Español",
-    "text": "Snowball Stemmer para Español\n\nfrom nltk.stem import SnowballStemmer\n\nstemmer = SnowballStemmer(\"spanish\")\n\npalabras = [\n    \"corriendo\", \"correr\", \"corrió\", \"corredor\", \"corrida\",\n    \"computadora\", \"computadoras\", \"computación\", \"computar\",\n    \"universidad\", \"universitario\", \"universitaria\", \"universidades\"\n]\n\nprint(f\"{'Palabra':&lt;18} {'Stem':&lt;12}\")\nprint(\"-\" * 30)\nfor palabra in palabras:\n    stem = stemmer.stem(palabra)\n    print(f\"{palabra:&lt;18} {stem:&lt;12}\")\n\nPalabra            Stem        \n------------------------------\ncorriendo          corr        \ncorrer             corr        \ncorrió             corr        \ncorredor           corredor    \ncorrida            corr        \ncomputadora        comput      \ncomputadoras       comput      \ncomputación        comput      \ncomputar           comput      \nuniversidad        univers     \nuniversitario      universitari\nuniversitaria      universitari\nuniversidades      univers"
+    "objectID": "slides/semana02/s3_pmi_ngrams.html#dato-histórico-ppmi-word2vec",
+    "href": "slides/semana02/s3_pmi_ngrams.html#dato-histórico-ppmi-word2vec",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Dato Histórico: PPMI ≈ Word2Vec",
+    "text": "Dato Histórico: PPMI ≈ Word2Vec\n\n\nEn 2014, Levy & Goldberg demostraron algo sorprendente:\n\n“Word2Vec con Skip-gram y Negative Sampling está implícitamente factorizando una matriz PPMI desplazada”\n\n\\[W_{SG} \\approx M_{PPMI} - \\log k\\]\nDonde \\(k\\) es el número de muestras negativas.\n. . .\nImplicación: Las matrices PPMI y Word2Vec capturan la misma información, solo difieren en la eficiencia de representación.\n\n\n\nCode\ngraph TD\n    A[\"Matriz PPMI&lt;br&gt;(dispersa, alta dim)\"] --&gt; C[\"Capturan la&lt;br&gt;misma información\"]\n    B[\"Word2Vec&lt;br&gt;(densa, baja dim)\"] --&gt; C\n    style A fill:#e9c46a,color:#000\n    style B fill:#2a9d8f,color:#fff\n    style C fill:#0077b6,color:#fff\n\n\n\n\n\ngraph TD\n    A[\"Matriz PPMI&lt;br&gt;(dispersa, alta dim)\"] --&gt; C[\"Capturan la&lt;br&gt;misma información\"]\n    B[\"Word2Vec&lt;br&gt;(densa, baja dim)\"] --&gt; C\n    style A fill:#e9c46a,color:#000\n    style B fill:#2a9d8f,color:#fff\n    style C fill:#0077b6,color:#fff\n\n\n\n\n\n\n\n\n\n\n\n\nReferencia\n\n\nLevy & Goldberg (2014). “Neural Word Embedding as Implicit Matrix Factorization”"
   },
   {
-    "objectID": "slides/semana01/s3_preprocesamiento.html#errores-comunes-del-stemming",
-    "href": "slides/semana01/s3_preprocesamiento.html#errores-comunes-del-stemming",
-    "title": "Preprocesamiento de Texto",
-    "section": "Errores Comunes del Stemming",
-    "text": "Errores Comunes del Stemming\n\nfrom nltk.stem import SnowballStemmer\n\nstemmer = SnowballStemmer(\"spanish\")\n\n# Over-stemming: palabras diferentes → mismo stem\nprint(\"Over-stemming (falsos positivos):\")\npares_over = [(\"universo\", \"universidad\"), (\"general\", \"generoso\")]\nfor p1, p2 in pares_over:\n    s1, s2 = stemmer.stem(p1), stemmer.stem(p2)\n    print(f\"  '{p1}' → '{s1}' | '{p2}' → '{s2}' | ¿Iguales? {s1 == s2}\")\n\n# Under-stemming: palabras relacionadas → stems diferentes\nprint(\"\\nUnder-stemming (falsos negativos):\")\npares_under = [(\"absorber\", \"absorción\"), (\"producir\", \"producto\")]\nfor p1, p2 in pares_under:\n    s1, s2 = stemmer.stem(p1), stemmer.stem(p2)\n    print(f\"  '{p1}' → '{s1}' | '{p2}' → '{s2}' | ¿Iguales? {s1 == s2}\")\n\nOver-stemming (falsos positivos):\n  'universo' → 'univers' | 'universidad' → 'univers' | ¿Iguales? True\n  'general' → 'general' | 'generoso' → 'gener' | ¿Iguales? False\n\nUnder-stemming (falsos negativos):\n  'absorber' → 'absorb' | 'absorción' → 'absorcion' | ¿Iguales? False\n  'producir' → 'produc' | 'producto' → 'product' | ¿Iguales? False"
+    "objectID": "slides/semana02/s3_pmi_ngrams.html#más-allá-de-los-unigramas",
+    "href": "slides/semana02/s3_pmi_ngrams.html#más-allá-de-los-unigramas",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Más Allá de los Unigramas",
+    "text": "Más Allá de los Unigramas\nEn S1 vimos N-gramas brevemente con CountVectorizer. Ahora profundizamos: N-gramas como base para modelos de lenguaje.\n\n\nDefinición\nUn N-grama es una secuencia contigua de \\(N\\) elementos de un texto.\n\n\n\nN\nNombre\nEjemplo\n\n\n\n\n1\nUnigrama\n“gato”\n\n\n2\nBigrama\n“gato negro”\n\n\n3\nTrigrama\n“el gato negro”\n\n\n4\n4-grama\n“el gato negro come”\n\n\n\n\n¿Para qué sirven?\n\n📊 Modelos de Lenguaje: predecir la siguiente palabra\n🔍 Detección de idioma\n✍️ Corrección ortográfica\n🔐 Autoría: ¿quién escribió esto?\n📖 Colocaciones: frases hechas"
   },
   {
-    "objectID": "slides/semana01/s3_preprocesamiento.html#qué-es-la-lematización",
-    "href": "slides/semana01/s3_preprocesamiento.html#qué-es-la-lematización",
-    "title": "Preprocesamiento de Texto",
-    "section": "¿Qué es la Lematización?",
-    "text": "¿Qué es la Lematización?\n\nReducir una palabra a su lema: la forma canónica que aparecería en un diccionario, considerando el contexto gramatical.\n\n\n\nEjemplo:\n\n\n\nPalabra\nLema\n\n\n\n\njugando\njugar\n\n\njugador\njugador\n\n\njuegos\njuego\n\n\nmejores\nmejor\n\n\nfue\nir / ser\n\n\n\n\nCaracterísticas:\n\n✅ El resultado es una palabra real\n✅ Considera el contexto (POS)\n✅ Más preciso que stemming\n❌ Más lento\n❌ Necesita diccionario / modelo"
+    "objectID": "slides/semana02/s3_pmi_ngrams.html#extracción-de-n-gramas",
+    "href": "slides/semana02/s3_pmi_ngrams.html#extracción-de-n-gramas",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Extracción de N-gramas",
+    "text": "Extracción de N-gramas\n\nfrom nltk import ngrams\n\ntexto = \"el gato negro come pescado fresco en la cocina\"\ntokens = texto.split()\n\nfor n in range(1, 5):\n    ngramas = list(ngrams(tokens, n))\n    nombre = [\"unigramas\", \"bigramas\", \"trigramas\", \"4-gramas\"][n-1]\n    print(f\"{nombre.upper()} ({len(ngramas)}):\")\n    for ng in ngramas:\n        print(f\"  {' '.join(ng)}\")\n    print()\n\nUNIGRAMAS (9):\n  el\n  gato\n  negro\n  come\n  pescado\n  fresco\n  en\n  la\n  cocina\n\nBIGRAMAS (8):\n  el gato\n  gato negro\n  negro come\n  come pescado\n  pescado fresco\n  fresco en\n  en la\n  la cocina\n\nTRIGRAMAS (7):\n  el gato negro\n  gato negro come\n  negro come pescado\n  come pescado fresco\n  pescado fresco en\n  fresco en la\n  en la cocina\n\n4-GRAMAS (6):\n  el gato negro come\n  gato negro come pescado\n  negro come pescado fresco\n  come pescado fresco en\n  pescado fresco en la\n  fresco en la cocina"
   },
   {
-    "objectID": "slides/semana01/s3_preprocesamiento.html#lematización-con-spacy",
-    "href": "slides/semana01/s3_preprocesamiento.html#lematización-con-spacy",
-    "title": "Preprocesamiento de Texto",
-    "section": "Lematización con spaCy",
-    "text": "Lematización con spaCy\n\nimport spacy\n\nnlp = spacy.load(\"es_core_news_sm\")\n\ntexto = \"Los estudiantes corrieron rápidamente hacia las mejores universidades del país\"\ndoc = nlp(texto)\n\nprint(f\"{'Token':&lt;18} {'Lema':&lt;16} {'POS':&lt;8} {'¿Cambió?'}\")\nprint(\"-\" * 52)\nfor token in doc:\n    cambio = \"✅\" if token.text.lower() != token.lemma_ else \"\"\n    print(f\"{token.text:&lt;18} {token.lemma_:&lt;16} {token.pos_:&lt;8} {cambio}\")\n\nToken              Lema             POS      ¿Cambió?\n----------------------------------------------------\nLos                el               DET      ✅\nestudiantes        estudiante       NOUN     ✅\ncorrieron          correr           VERB     ✅\nrápidamente        rápidamente      ADV      \nhacia              hacia            ADP      \nlas                el               DET      ✅\nmejores            mejor            ADJ      ✅\nuniversidades      universidad      NOUN     ✅\ndel                del              ADP      \npaís               país             NOUN"
+    "objectID": "slides/semana02/s3_pmi_ngrams.html#frecuencia-de-n-gramas",
+    "href": "slides/semana02/s3_pmi_ngrams.html#frecuencia-de-n-gramas",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Frecuencia de N-gramas",
+    "text": "Frecuencia de N-gramas\n\nfrom nltk import ngrams\nfrom collections import Counter\n\ncorpus = \"\"\"\nel gato come pescado fresco. el perro come carne roja.\nel gato bebe leche fresca. el perro bebe agua fresca.\nel gato come ratón pequeño. el perro come hueso grande.\nel gato duerme en la alfombra. el perro duerme en el jardín.\n\"\"\".lower()\n\ntokens = corpus.split()\n\n# Contar bigramas más frecuentes\nbigramas = list(ngrams(tokens, 2))\nconteo_bi = Counter(bigramas)\n\nprint(\"Top 10 bigramas más frecuentes:\\n\")\nprint(f\"{'Bigrama':&lt;25} {'Frecuencia':&gt;10}\")\nprint(\"-\" * 37)\nfor bigrama, freq in conteo_bi.most_common(10):\n    print(f\"{' '.join(bigrama):&lt;25} {freq:&gt;10}\")\n\nTop 10 bigramas más frecuentes:\n\nBigrama                   Frecuencia\n-------------------------------------\nel gato                            4\nel perro                           4\ngato come                          2\nperro come                         2\nfresca. el                         2\nduerme en                          2\ncome pescado                       1\npescado fresco.                    1\nfresco. el                         1\ncome carne                         1"
   },
   {
-    "objectID": "slides/semana01/s3_preprocesamiento.html#stemming-vs.-lematización",
-    "href": "slides/semana01/s3_preprocesamiento.html#stemming-vs.-lematización",
-    "title": "Preprocesamiento de Texto",
-    "section": "Stemming vs. Lematización",
-    "text": "Stemming vs. Lematización\n\nfrom nltk.stem import SnowballStemmer\nimport spacy\n\nstemmer = SnowballStemmer(\"spanish\")\nnlp = spacy.load(\"es_core_news_sm\")\n\npalabras = [\"corriendo\", \"mejores\", \"ciudades\", \"producción\", \"dificultades\", \"haciendo\"]\n\nprint(f\"{'Palabra':&lt;16} {'Stem':&lt;14} {'Lema (spaCy)':&lt;16}\")\nprint(\"-\" * 46)\nfor palabra in palabras:\n    stem = stemmer.stem(palabra)\n    doc = nlp(palabra)\n    lema = doc[0].lemma_\n    print(f\"{palabra:&lt;16} {stem:&lt;14} {lema:&lt;16}\")\n\nPalabra          Stem           Lema (spaCy)    \n----------------------------------------------\ncorriendo        corr           correr          \nmejores          mejor          mejor           \nciudades         ciudad         ciudad          \nproducción       produccion     producción      \ndificultades     dificultad     dificultad      \nhaciendo         hac            hacer           \n\n\n\n\n\n\n\n\n\n¿Cuándo usar cuál?\n\n\n\nStemming: Búsqueda de información, indexación, cuando la velocidad importa\nLematización: Análisis de sentimiento, chatbots, cuando la precisión importa"
+    "objectID": "slides/semana02/s3_pmi_ngrams.html#visualización-top-n-gramas",
+    "href": "slides/semana02/s3_pmi_ngrams.html#visualización-top-n-gramas",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Visualización: Top N-gramas",
+    "text": "Visualización: Top N-gramas\n\n\nCode\nimport matplotlib.pyplot as plt\nfrom nltk import ngrams\nfrom collections import Counter\n\nfig, axes = plt.subplots(1, 3, figsize=(14, 4))\n\nfor ax, n, titulo in zip(axes, [1, 2, 3], [\"Unigramas\", \"Bigramas\", \"Trigramas\"]):\n    ngs = list(ngrams(tokens, n))\n    conteo = Counter(ngs)\n    top = conteo.most_common(8)\n    \n    labels = [\" \".join(ng) for ng, _ in top]\n    values = [c for _, c in top]\n    \n    ax.barh(labels[::-1], values[::-1], color='#0077b6')\n    ax.set_title(f'Top 8 {titulo}', fontsize=11)\n    ax.set_xlabel('Frecuencia')\n\nplt.tight_layout()\nplt.show()"
   },
   {
-    "objectID": "slides/semana01/s3_preprocesamiento.html#función-de-preprocesamiento",
-    "href": "slides/semana01/s3_preprocesamiento.html#función-de-preprocesamiento",
-    "title": "Preprocesamiento de Texto",
-    "section": "Función de Preprocesamiento",
-    "text": "Función de Preprocesamiento\n\nimport re\nimport spacy\nfrom nltk.corpus import stopwords\n\nnlp = spacy.load(\"es_core_news_sm\")\nstops = set(stopwords.words('spanish'))\n\ndef preprocesar(texto, usar_lemas=True, quitar_stops=True):\n    \"\"\"Pipeline completo de preprocesamiento para NLP en español.\"\"\"\n    # 1. Lowercase\n    texto = texto.lower()\n    # 2. Eliminar URLs y emails\n    texto = re.sub(r\"https?://\\S+|www\\.\\S+\", \"\", texto)\n    texto = re.sub(r\"\\S+@\\S+\", \"\", texto)\n    # 3. Eliminar caracteres especiales (mantener letras y espacios)\n    texto = re.sub(r\"[^\\w\\sáéíóúñü]\", \" \", texto)\n    # 4. Normalizar espacios\n    texto = re.sub(r\"\\s+\", \" \", texto).strip()\n    # 5. Tokenizar y lematizar con spaCy\n    doc = nlp(texto)\n    tokens = []\n    for token in doc:\n        palabra = token.lemma_ if usar_lemas else token.text\n        if quitar_stops and palabra in stops:\n            continue\n        if not palabra.isalpha():\n            continue\n        tokens.append(palabra)\n    return tokens"
+    "objectID": "slides/semana02/s3_pmi_ngrams.html#n-gramas-de-caracteres",
+    "href": "slides/semana02/s3_pmi_ngrams.html#n-gramas-de-caracteres",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "N-gramas de Caracteres",
+    "text": "N-gramas de Caracteres\nLos N-gramas también se aplican a nivel de caracteres, lo cual es útil para:\n\nDetección de idioma\nCorrección ortográfica\nManejo de palabras fuera de vocabulario (OOV)\n\n\nfrom nltk import ngrams\nfrom collections import Counter\n\ndef char_ngrams(texto, n=3):\n    \"\"\"Extraer N-gramas de caracteres.\"\"\"\n    return list(ngrams(texto, n))\n\ntextos = {\n    \"Español\": \"el gato come pescado\",\n    \"Inglés\": \"the cat eats fish\",\n    \"Francés\": \"le chat mange du poisson\",\n}\n\nfor idioma, texto in textos.items():\n    cng = char_ngrams(texto.replace(\" \", \"_\"), n=3)\n    top3 = Counter(cng).most_common(5)\n    top3_str = [f\"'{''.join(ng)}'\" for ng, _ in top3]\n    print(f\"{idioma:10s}: {', '.join(top3_str)}\")\n\nEspañol   : 'el_', 'l_g', '_ga', 'gat', 'ato'\nInglés    : 'the', 'he_', 'e_c', '_ca', 'cat'\nFrancés   : 'le_', 'e_c', '_ch', 'cha', 'hat'\n\n\n\n\n\n\n\n\n\nFastText\n\n\nEl modelo FastText (2016) usa N-gramas de caracteres para crear embeddings de subpalabras, permitiendo manejar palabras nunca vistas."
   },
   {
-    "objectID": "slides/semana01/s3_preprocesamiento.html#demo-del-pipeline",
-    "href": "slides/semana01/s3_preprocesamiento.html#demo-del-pipeline",
-    "title": "Preprocesamiento de Texto",
-    "section": "Demo del Pipeline",
-    "text": "Demo del Pipeline\n\ntexto_crudo = \"\"\"\n¡¡Los MEJORES estudiantes de la Universidad Católica están \ndesarrollando proyectos increíbles!! 🎓🚀\nVisita https://ucb.edu.bo para más información.\nContacto: info@ucb.edu.bo\n\"\"\"\n\nprint(f\"TEXTO ORIGINAL:\\n{texto_crudo}\")\n\n# Con lemas y sin stopwords\nresultado1 = preprocesar(texto_crudo, usar_lemas=True, quitar_stops=True)\nprint(f\"Con lemas, sin stops:\\n  {resultado1}\\n\")\n\n# Sin lemas, sin stopwords\nresultado2 = preprocesar(texto_crudo, usar_lemas=False, quitar_stops=True)\nprint(f\"Sin lemas, sin stops:\\n  {resultado2}\\n\")\n\n# Con lemas, con stopwords\nresultado3 = preprocesar(texto_crudo, usar_lemas=True, quitar_stops=False)\nprint(f\"Con lemas, con stops:\\n  {resultado3}\")\n\nTEXTO ORIGINAL:\n\n¡¡Los MEJORES estudiantes de la Universidad Católica están \ndesarrollando proyectos increíbles!! 🎓🚀\nVisita https://ucb.edu.bo para más información.\nContacto: info@ucb.edu.bo\n\nCon lemas, sin stops:\n  ['mejor', 'estudiante', 'universidad', 'católico', 'desarrollar', 'proyecto', 'increíble', 'visitar', 'información', 'contacto']\n\nSin lemas, sin stops:\n  ['mejores', 'estudiantes', 'universidad', 'católica', 'desarrollando', 'proyectos', 'increíbles', 'visita', 'información', 'contacto']\n\nCon lemas, con stops:\n  ['el', 'mejor', 'estudiante', 'de', 'el', 'universidad', 'católico', 'estar', 'desarrollar', 'proyecto', 'increíble', 'visitar', 'para', 'más', 'información', 'contacto']"
+    "objectID": "slides/semana02/s3_pmi_ngrams.html#qué-es-una-colocación",
+    "href": "slides/semana02/s3_pmi_ngrams.html#qué-es-una-colocación",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "¿Qué es una Colocación?",
+    "text": "¿Qué es una Colocación?\n\nUna colocación es una combinación de palabras que aparece junta con frecuencia significativamente mayor de lo que el azar predeciría.\n\n\n\nEjemplos en español\n\n“tomar una decisión” (no “hacer una decisión”)\n“lluvia torrencial” (no “lluvia fuerte”)\n“error garrafal” (no “error grande”)\n“dar un paseo” (no “hacer un paseo”)\n\n\n¿Por qué importan?\n\n📝 Traducción automática\n✅ Generación de texto natural\n📖 Enseñanza de idiomas\n🔍 Extracción de términos multipalabra\n\n\n\n\n\n\n\n\n\nPMI + N-gramas = Detección de colocaciones\n\n\nUsamos PMI para encontrar bigramas que son más que la suma de sus partes."
   },
   {
-    "objectID": "slides/semana01/s3_preprocesamiento.html#procesando-múltiples-documentos",
-    "href": "slides/semana01/s3_preprocesamiento.html#procesando-múltiples-documentos",
-    "title": "Preprocesamiento de Texto",
-    "section": "Procesando Múltiples Documentos",
-    "text": "Procesando Múltiples Documentos\n\ndocumentos = [\n    \"El procesamiento de lenguaje natural permite analizar textos automáticamente.\",\n    \"Las redes neuronales han revolucionado la inteligencia artificial moderna.\",\n    \"Bolivia tiene una gran diversidad lingüística con más de 30 idiomas nativos.\",\n]\n\nprint(\"DOCUMENTOS PREPROCESADOS:\\n\")\nfor i, doc in enumerate(documentos):\n    tokens = preprocesar(doc)\n    print(f\"Doc {i+1}: {tokens}\")\n\nDOCUMENTOS PREPROCESADOS:\n\nDoc 1: ['procesamiento', 'lenguaje', 'natural', 'permitir', 'analizar', 'texto', 'automáticamente']\nDoc 2: ['red', 'neuronal', 'haber', 'revolucionar', 'inteligencia', 'artificial', 'moderno']\nDoc 3: ['bolivia', 'tener', 'gran', 'diversidad', 'lingüístico', 'idioma', 'nativo']\n\n\n\n\n\n\n\n\nSiguiente paso\n\n\nCon el texto preprocesado, estamos listos para representarlo numéricamente (Semana 2: Bag of Words, TF-IDF…)."
+    "objectID": "slides/semana02/s3_pmi_ngrams.html#detección-de-colocaciones-con-pmi",
+    "href": "slides/semana02/s3_pmi_ngrams.html#detección-de-colocaciones-con-pmi",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Detección de Colocaciones con PMI",
+    "text": "Detección de Colocaciones con PMI\n\nimport numpy as np\nfrom nltk import ngrams, FreqDist\nfrom collections import Counter\n\ncorpus = \"\"\"\nla inteligencia artificial transforma la medicina moderna.\nla inteligencia artificial mejora el diagnóstico médico.\nla red neuronal profunda aprende de los datos.\nla red neuronal artificial procesa información compleja.\nel cambio climático afecta los glaciares tropicales.\nel cambio climático genera sequías severas.\nel procesamiento de lenguaje natural analiza textos.\nel procesamiento de lenguaje natural usa modelos estadísticos.\nla base de datos almacena información estructurada.\nla ciencia de datos usa técnicas de inteligencia artificial.\n\"\"\".lower()\n\ntokens = corpus.split()\nN = len(tokens)\n\n# Frecuencias de unigramas\nfreq_uni = Counter(tokens)\n\n# Frecuencias de bigramas\nbigs = [\" \".join(b) for b in ngrams(tokens, 2)]\nfreq_bi = Counter(bigs)\n\n# Calcular PMI para cada bigrama\nprint(f\"{'Bigrama':&lt;30} {'f(x,y)':&gt;7} {'f(x)':&gt;6} {'f(y)':&gt;6} {'PMI':&gt;8}\")\nprint(\"-\" * 62)\n\nresultados = []\nfor bigrama, f_xy in freq_bi.items():\n    w1, w2 = bigrama.split()\n    f_x = freq_uni[w1]\n    f_y = freq_uni[w2]\n    \n    p_xy = f_xy / (N - 1)  # bigramas posibles\n    p_x = f_x / N\n    p_y = f_y / N\n    \n    pmi_val = np.log2(p_xy / (p_x * p_y))\n    resultados.append((bigrama, f_xy, f_x, f_y, pmi_val))\n\n# Ordenar por PMI descendente\nresultados.sort(key=lambda x: x[4], reverse=True)\nfor bigrama, fxy, fx, fy, pmi_val in resultados[:12]:\n    print(f\"{bigrama:&lt;30} {fxy:&gt;7} {fx:&gt;6} {fy:&gt;6} {pmi_val:&gt;+8.2f}\")\n\nBigrama                         f(x,y)   f(x)   f(y)      PMI\n--------------------------------------------------------------\nmedicina moderna.                    1      1      1    +6.21\ndiagnóstico médico.                  1      1      1    +6.21\nprofunda aprende                     1      1      1    +6.21\nglaciares tropicales.                1      1      1    +6.21\ngenera sequías                       1      1      1    +6.21\nsequías severas.                     1      1      1    +6.21\nanaliza textos.                      1      1      1    +6.21\nmodelos estadísticos.                1      1      1    +6.21\nred neuronal                         2      2      2    +5.21\nneuronal profunda                    1      2      1    +5.21\nlos datos.                           1      2      1    +5.21\nprocesa información                  1      1      2    +5.21"
   },
   {
-    "objectID": "slides/semana01/s3_preprocesamiento.html#desafío-preprocesador-de-tweets",
-    "href": "slides/semana01/s3_preprocesamiento.html#desafío-preprocesador-de-tweets",
-    "title": "Preprocesamiento de Texto",
-    "section": "Desafío: Preprocesador de Tweets",
-    "text": "Desafío: Preprocesador de Tweets\nCrea una función que preprocese tweets en español:\n\nEliminar menciones (@usuario)\nExtraer y eliminar hashtags\nEliminar URLs\nLematizar el texto restante\n\n\n\nCode\ndef preprocesar_tweet(tweet):\n    \"\"\"Preprocesa un tweet en español.\"\"\"\n    # Extraer hashtags antes de limpiar\n    hashtags = re.findall(r\"#\\w+\", tweet)\n    # Eliminar menciones, hashtags, URLs\n    limpio = re.sub(r\"@\\w+\", \"\", tweet)\n    limpio = re.sub(r\"#\\w+\", \"\", limpio)\n    limpio = re.sub(r\"https?://\\S+\", \"\", limpio)\n    # Preprocesar\n    tokens = preprocesar(limpio)\n    return {\"tokens\": tokens, \"hashtags\": hashtags}\n\n# Prueba\ntweet = \"Gran clase de @fsuarez sobre #NLP y #MachineLearning 🔥 https://t.co/abc123\"\nresultado = preprocesar_tweet(tweet)\nprint(f\"Tweet: {tweet}\")\nprint(f\"Tokens: {resultado['tokens']}\")\nprint(f\"Hashtags: {resultado['hashtags']}\")\n\n\nTweet: Gran clase de @fsuarez sobre #NLP y #MachineLearning 🔥 https://t.co/abc123\nTokens: ['gran', 'clase']\nHashtags: ['#NLP', '#MachineLearning']"
+    "objectID": "slides/semana02/s3_pmi_ngrams.html#pmi-vs-frecuencia-cuál-es-mejor",
+    "href": "slides/semana02/s3_pmi_ngrams.html#pmi-vs-frecuencia-cuál-es-mejor",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "PMI vs Frecuencia: ¿Cuál es Mejor?",
+    "text": "PMI vs Frecuencia: ¿Cuál es Mejor?\n\n\nCode\nimport matplotlib.pyplot as plt\n\nfig, axes = plt.subplots(1, 2, figsize=(14, 5))\n\n# Top por frecuencia\ntop_freq = sorted(resultados, key=lambda x: x[1], reverse=True)[:10]\naxes[0].barh([r[0] for r in top_freq][::-1], [r[1] for r in top_freq][::-1], color='#e76f51')\naxes[0].set_title('Top 10 bigramas por FRECUENCIA', fontsize=12)\naxes[0].set_xlabel('Frecuencia')\n\n# Top por PMI (filtrar freq &gt;= 2 para evitar ruido)\ntop_pmi = sorted([r for r in resultados if r[1] &gt;= 2], key=lambda x: x[4], reverse=True)[:10]\naxes[1].barh([r[0] for r in top_pmi][::-1], [r[4] for r in top_pmi][::-1], color='#2a9d8f')\naxes[1].set_title('Top 10 bigramas por PMI (freq ≥ 2)', fontsize=12)\naxes[1].set_xlabel('PMI (bits)')\n\nplt.tight_layout()\nplt.show()\n\n\n\n\n\n\n\n\n\n\nObservación\n\n\n\nFrecuencia favorece bigramas con palabras comunes (“de la”, “el cambio”)\nPMI favorece bigramas semánticamente significativos (“inteligencia artificial”, “red neuronal”)"
   },
   {
-    "objectID": "slides/semana01/s3_preprocesamiento.html#lo-que-aprendimos-hoy",
-    "href": "slides/semana01/s3_preprocesamiento.html#lo-que-aprendimos-hoy",
-    "title": "Preprocesamiento de Texto",
+    "objectID": "slides/semana02/s3_pmi_ngrams.html#colocaciones-con-nltk",
+    "href": "slides/semana02/s3_pmi_ngrams.html#colocaciones-con-nltk",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Colocaciones con NLTK",
+    "text": "Colocaciones con NLTK\n\nimport nltk\nfrom nltk.collocations import BigramCollocationFinder, BigramAssocMeasures\nfrom nltk.tokenize import word_tokenize\n\nnltk.download('punkt_tab', quiet=True)\n\ntexto = \"\"\"\nLa inteligencia artificial está transformando el mundo moderno.\nLas redes neuronales profundas procesan grandes cantidades de datos.\nEl aprendizaje automático permite crear modelos predictivos potentes.\nLa ciencia de datos combina estadística y programación avanzada.\nEl procesamiento de lenguaje natural analiza texto automáticamente.\nLas bases de datos almacenan información de manera estructurada.\nLa inteligencia artificial y el aprendizaje automático son complementarios.\nLas redes neuronales artificiales imitan el funcionamiento del cerebro.\nEl cambio climático es un desafío global que requiere acción inmediata.\nLa computación en la nube permite escalar recursos de forma eficiente.\n\"\"\"\n\ntokens = word_tokenize(texto.lower(), language='spanish')\n\n# Encontrar colocaciones\nfinder = BigramCollocationFinder.from_words(tokens)\nfinder.apply_freq_filter(2)  # Filtrar bigramas con frecuencia &lt; 2\n\n# Métricas disponibles\nmedidas = BigramAssocMeasures()\n\nprint(\"Top colocaciones por PMI:\")\nfor bigrama, score in finder.score_ngrams(medidas.pmi)[:8]:\n    print(f\"  {bigrama[0]+' '+bigrama[1]:&lt;30} PMI: {score:.2f}\")\n\nTop colocaciones por PMI:\n  aprendizaje automático         PMI: 5.66\n  inteligencia artificial        PMI: 5.66\n  redes neuronales               PMI: 5.66\n  las redes                      PMI: 5.07\n  la inteligencia                PMI: 4.34\n  de datos                       PMI: 4.07\n  el aprendizaje                 PMI: 4.07\n  . las                          PMI: 3.34"
+  },
+  {
+    "objectID": "slides/semana02/s3_pmi_ngrams.html#pmi-vs-otras-medidas-de-asociación",
+    "href": "slides/semana02/s3_pmi_ngrams.html#pmi-vs-otras-medidas-de-asociación",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "PMI vs Otras Medidas de Asociación",
+    "text": "PMI vs Otras Medidas de Asociación\n\n\nMedidas comunes\n\n\n\nMedida\nFórmula simplificada\n\n\n\n\nPMI\n\\(\\log\\frac{P(x,y)}{P(x)P(y)}\\)\n\n\nChi-cuadrado\n\\(\\frac{(O-E)^2}{E}\\)\n\n\nLikelihood Ratio\n\\(2\\sum O \\log\\frac{O}{E}\\)\n\n\nt-test\n\\(\\frac{\\bar{x} - \\mu}{s/\\sqrt{n}}\\)\n\n\n\n\n¿Cuál usar?\n\nPMI: Buena para vocabularios grandes, sesgo hacia raros\nChi-cuadrado (\\(\\chi^2\\)): Robusta, no asume normalidad\nLikelihood Ratio: Mejor con datos escasos\nt-test: Conservadora, pocos falsos positivos\n\n\n\n\n\n\n\nRecomendación Práctica\n\n\nPara corpus pequeños: Likelihood Ratio.\nPara corpus grandes: PMI con filtro de frecuencia mínima."
+  },
+  {
+    "objectID": "slides/semana02/s3_pmi_ngrams.html#análisis-completo-de-un-corpus",
+    "href": "slides/semana02/s3_pmi_ngrams.html#análisis-completo-de-un-corpus",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Análisis Completo de un Corpus",
+    "text": "Análisis Completo de un Corpus\nCombinemos todo lo aprendido en la Semana 2:\n\nfrom sklearn.feature_extraction.text import TfidfVectorizer\nfrom sklearn.metrics.pairwise import cosine_similarity\nfrom nltk.collocations import BigramCollocationFinder, BigramAssocMeasures\nfrom nltk.tokenize import word_tokenize\nimport numpy as np\n\ncorpus = [\n    \"Bolivia tiene una gran diversidad de flora y fauna en sus bosques amazónicos\",\n    \"La selva amazónica boliviana alberga miles de especies de fauna y flora silvestre\",\n    \"Las redes neuronales profundas han revolucionado la inteligencia artificial moderna\",\n    \"La inteligencia artificial usa redes neuronales para procesar información compleja\",\n    \"El fútbol boliviano tiene una liga profesional con equipos de todo el país\",\n    \"La liga del fútbol profesional boliviano atrae a miles de aficionados cada semana\",\n]"
+  },
+  {
+    "objectID": "slides/semana02/s3_pmi_ngrams.html#paso-1-tf-idf-y-similitud",
+    "href": "slides/semana02/s3_pmi_ngrams.html#paso-1-tf-idf-y-similitud",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Paso 1: TF-IDF y Similitud",
+    "text": "Paso 1: TF-IDF y Similitud\n\ntfidf = TfidfVectorizer()\nX = tfidf.fit_transform(corpus)\nsim = cosine_similarity(X)\n\nnombres = [\"Biodiversidad 1\", \"Biodiversidad 2\", \"IA 1\", \"IA 2\", \"Fútbol 1\", \"Fútbol 2\"]\n\nprint(\"Similitud Coseno (TF-IDF):\\n\")\nprint(f\"{'':18s}\", \"  \".join(f\"{n:&gt;16s}\" for n in nombres))\nfor i, nombre in enumerate(nombres):\n    fila = \"  \".join(f\"{sim[i][j]:&gt;16.3f}\" for j in range(len(nombres)))\n    print(f\"{nombre:18s} {fila}\")\n\nSimilitud Coseno (TF-IDF):\n\n                    Biodiversidad 1   Biodiversidad 2              IA 1              IA 2          Fútbol 1          Fútbol 2\nBiodiversidad 1               1.000             0.207             0.000             0.000             0.152             0.037\nBiodiversidad 2               0.207             1.000             0.040             0.040             0.064             0.184\nIA 1                          0.000             0.040             1.000             0.378             0.000             0.041\nIA 2                          0.000             0.040             0.378             1.000             0.000             0.041\nFútbol 1                      0.152             0.064             0.000             0.000             1.000             0.287\nFútbol 2                      0.037             0.184             0.041             0.041             0.287             1.000"
+  },
+  {
+    "objectID": "slides/semana02/s3_pmi_ngrams.html#paso-2-colocaciones-con-pmi",
+    "href": "slides/semana02/s3_pmi_ngrams.html#paso-2-colocaciones-con-pmi",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Paso 2: Colocaciones con PMI",
+    "text": "Paso 2: Colocaciones con PMI\n\n# Tokenizar todo el corpus\ntodos_tokens = []\nfor doc in corpus:\n    todos_tokens.extend(word_tokenize(doc.lower(), language='spanish'))\n\n# Encontrar colocaciones\nfinder = BigramCollocationFinder.from_words(todos_tokens)\nfinder.apply_freq_filter(2)\n\nmedidas = BigramAssocMeasures()\n\nprint(\"Colocaciones detectadas (PMI, freq ≥ 2):\\n\")\nfor bigrama, score in finder.score_ngrams(medidas.pmi)[:10]:\n    freq = finder.ngram_fd[bigrama]\n    print(f\"  '{bigrama[0]} {bigrama[1]}'  →  PMI: {score:+.2f}  (freq: {freq})\")\n\nColocaciones detectadas (PMI, freq ≥ 2):\n\n  'inteligencia artificial'  →  PMI: +5.17  (freq: 2)\n  'redes neuronales'  →  PMI: +5.17  (freq: 2)\n  'tiene una'  →  PMI: +5.17  (freq: 2)\n  'la inteligencia'  →  PMI: +4.17  (freq: 2)\n  'miles de'  →  PMI: +3.85  (freq: 2)"
+  },
+  {
+    "objectID": "slides/semana02/s3_pmi_ngrams.html#paso-3-palabras-clave-por-tema",
+    "href": "slides/semana02/s3_pmi_ngrams.html#paso-3-palabras-clave-por-tema",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Paso 3: Palabras Clave por Tema",
+    "text": "Paso 3: Palabras Clave por Tema\n\nnombres_temas = [\"🌿 Biodiversidad\", \"🤖 Inteligencia Artificial\", \"⚽ Fútbol\"]\npares = [(0, 1), (2, 3), (4, 5)]\n\nfeatures = tfidf.get_feature_names_out()\n\nprint(\"Palabras clave por tema (TF-IDF promedio):\\n\")\nfor tema, (i, j) in zip(nombres_temas, pares):\n    # Promediar TF-IDF de los 2 documentos del tema\n    vector_promedio = (X[i].toarray() + X[j].toarray()).flatten() / 2\n    top_idx = vector_promedio.argsort()[-5:][::-1]\n    keywords = [(features[k], vector_promedio[k]) for k in top_idx]\n    \n    print(f\"{tema}:\")\n    for kw, score in keywords:\n        barra = \"█\" * int(score * 40)\n        print(f\"  {kw:&lt;20} {score:.3f} {barra}\")\n    print()\n\nPalabras clave por tema (TF-IDF promedio):\n\n🌿 Biodiversidad:\n  de                   0.283 ███████████\n  flora                0.261 ██████████\n  fauna                0.261 ██████████\n  selva                0.160 ██████\n  especies             0.160 ██████\n\n🤖 Inteligencia Artificial:\n  neuronales           0.289 ███████████\n  redes                0.289 ███████████\n  artificial           0.289 ███████████\n  inteligencia         0.289 ███████████\n  la                   0.209 ████████\n\n⚽ Fútbol:\n  el                   0.284 ███████████\n  profesional          0.253 ██████████\n  liga                 0.253 ██████████\n  fútbol               0.253 ██████████\n  boliviano            0.253 ██████████"
+  },
+  {
+    "objectID": "slides/semana02/s3_pmi_ngrams.html#lo-que-aprendimos-hoy",
+    "href": "slides/semana02/s3_pmi_ngrams.html#lo-que-aprendimos-hoy",
+    "title": "Semántica Léxica & Espacio Vectorial",
     "section": "Lo que Aprendimos Hoy ✅",
-    "text": "Lo que Aprendimos Hoy ✅\n\n\nTokenización:\n\nsplit() — simple pero limitado\nRegex — más control\nNLTK — soporte multi-idioma\nspaCy — info lingüística completa\n\nNormalización:\n\nLowercase, puntuación\nStopwords\nLimpieza de URLs, emails, emojis\n\n\nStemming:\n\nReducción heurística a raíz\nSnowball Stemmer para español\nRápido pero impreciso\n\nLematización:\n\nReducción a forma de diccionario\nspaCy para español\nMás lento pero más preciso"
+    "text": "Lo que Aprendimos Hoy ✅\n\n\nCoocurrencia:\n\nMatrices de coocurrencia\nContexto: documento vs. ventana\nFrecuencia bruta → sesgada\n\nPMI:\n\n\\(\\text{PMI}(x,y) = \\log_2 \\frac{P(x,y)}{P(x)P(y)}\\)\nMide asociación estadística\nPPMI = max(0, PMI) — más robusta\nConexión teórica con Word2Vec\n\n\nN-gramas:\n\nSecuencias de N tokens contiguos\nA nivel de palabra y carácter\nBase para modelos de lenguaje\n\nColocaciones:\n\nCombinaciones que aparecen más de lo esperado\nPMI como detector de colocaciones\nHerramientas: NLTK BigramCollocationFinder"
   },
   {
-    "objectID": "slides/semana01/s3_preprocesamiento.html#para-la-próxima-clase",
-    "href": "slides/semana01/s3_preprocesamiento.html#para-la-próxima-clase",
-    "title": "Preprocesamiento de Texto",
+    "objectID": "slides/semana02/s3_pmi_ngrams.html#resumen-de-la-semana-2-completa",
+    "href": "slides/semana02/s3_pmi_ngrams.html#resumen-de-la-semana-2-completa",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Resumen de la Semana 2 Completa",
+    "text": "Resumen de la Semana 2 Completa\n\n\n\n\n\n\n\n\nConcepto\nPregunta que responde\nHerramienta\n\n\n\n\nBoW\n¿Cómo represento un documento?\nCountVectorizer\n\n\nTF-IDF\n¿Qué palabras son importantes?\nTfidfVectorizer\n\n\nPMI/PPMI\n¿Qué palabras van juntas?\nCálculo manual / NLTK\n\n\nN-gramas\n¿Qué secuencias son frecuentes?\nngrams() / CountVectorizer\n\n\nColocaciones\n¿Qué frases son significativas?\nBigramCollocationFinder"
+  },
+  {
+    "objectID": "slides/semana02/s3_pmi_ngrams.html#para-la-próxima-semana",
+    "href": "slides/semana02/s3_pmi_ngrams.html#para-la-próxima-semana",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Para la Próxima Semana 📚",
+    "text": "Para la Próxima Semana 📚\n\n\n\n\n\n\nSemana 3: Modelado de Lenguaje (Clásico)\n\n\n\nS1: Modelos de lenguaje N-gram y Regla de la Cadena\nS2: Evaluación: Perplejidad y técnicas de Suavizado\nS3: Modelos Ocultos de Markov (HMM) para etiquetado POS\n\n\n\n\nLectura:\n\nCapítulo 3: Speech and Language Processing (Jurafsky & Martin) — Modelos de Lenguaje con N-gramas\nLevy & Goldberg (2014) — “Neural Word Embedding as Implicit Matrix Factorization” (opcional)\n\nPreparación:\n\nRepasar probabilidad condicional: \\(P(A|B) = \\frac{P(A,B)}{P(B)}\\)\nRegla de la cadena de probabilidad"
+  },
+  {
+    "objectID": "slides/semana02/s1_bow_one_hot.html#agenda-de-hoy",
+    "href": "slides/semana02/s1_bow_one_hot.html#agenda-de-hoy",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Agenda de Hoy",
+    "text": "Agenda de Hoy\n\n\nPrimera Parte\n\n🔢 ¿Por qué representar texto como números?\n🎯 One-hot Encoding\n📐 Vectores y Espacio Vectorial\n\n\nSegunda Parte\n\n🎒 Modelo Bag of Words (BoW)\n📊 Matriz Documento-Término\n🔍 Similitud entre documentos"
+  },
+  {
+    "objectID": "slides/semana02/s1_bow_one_hot.html#recordemos-preprocesamiento",
+    "href": "slides/semana02/s1_bow_one_hot.html#recordemos-preprocesamiento",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Recordemos: Preprocesamiento",
+    "text": "Recordemos: Preprocesamiento\nLa semana pasada aprendimos a limpiar y tokenizar texto:\n\nimport re\nimport spacy\nfrom nltk.corpus import stopwords\nimport nltk\nnltk.download('stopwords', quiet=True)\n\nnlp = spacy.load(\"es_core_news_sm\")\nstops = set(stopwords.words('spanish'))\n\ndef preprocesar(texto, usar_lemas=True, quitar_stops=True):\n    \"\"\"Pipeline de preprocesamiento (Semana 1).\"\"\"\n    texto = texto.lower()\n    texto = re.sub(r\"[^\\w\\sáéíóúñü]\", \" \", texto)\n    texto = re.sub(r\"\\s+\", \" \", texto).strip()\n    doc = nlp(texto)\n    tokens = []\n    for token in doc:\n        palabra = token.lemma_ if usar_lemas else token.text\n        if quitar_stops and palabra in stops:\n            continue\n        if not palabra.isalpha():\n            continue\n        tokens.append(palabra)\n    return tokens"
+  },
+  {
+    "objectID": "slides/semana02/s1_bow_one_hot.html#el-problema-fundamental",
+    "href": "slides/semana02/s1_bow_one_hot.html#el-problema-fundamental",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "El Problema Fundamental",
+    "text": "El Problema Fundamental\n\n\nLo que nosotros vemos 👀\n\"El gato duerme en la alfombra\"\n\"El perro juega en el jardín\"\nEntendemos que ambos hablan de animales domésticos haciendo actividades cotidianas.\n\nLo que la máquina necesita 🖥️\n[0.2, 0.8, -0.1, 0.5, ...]\n[0.3, 0.7, -0.2, 0.4, ...]\nLas máquinas solo entienden números. Los algoritmos de ML requieren entradas numéricas.\n\n\n\n\n\n\n\n\nPregunta Clave\n\n\n¿Cómo convertimos texto en representaciones numéricas que capturen su significado?"
+  },
+  {
+    "objectID": "slides/semana02/s1_bow_one_hot.html#representación-vectorial-del-texto",
+    "href": "slides/semana02/s1_bow_one_hot.html#representación-vectorial-del-texto",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Representación Vectorial del Texto",
+    "text": "Representación Vectorial del Texto\n\n\nCode\nflowchart LR\n    A[📄 Texto&lt;br&gt;crudo] --&gt; B[🧹 Pre-&lt;br&gt;procesamiento]\n    B --&gt; C[🔢 Representación&lt;br&gt;Numérica]\n    C --&gt; D[🤖 Modelo&lt;br&gt;ML/DL]\n    D --&gt; E[📈 Predicción]\n    \n    style A fill:#fff3cd,color:#000\n    style B fill:#cfe2ff,color:#000\n    style C fill:#d4edda,color:#000,stroke:#28a745,stroke-width:3px\n    style D fill:#e2d9f3,color:#000\n    style E fill:#f8d7da,color:#000\n\n\n\n\n\nflowchart LR\n    A[📄 Texto&lt;br&gt;crudo] --&gt; B[🧹 Pre-&lt;br&gt;procesamiento]\n    B --&gt; C[🔢 Representación&lt;br&gt;Numérica]\n    C --&gt; D[🤖 Modelo&lt;br&gt;ML/DL]\n    D --&gt; E[📈 Predicción]\n    \n    style A fill:#fff3cd,color:#000\n    style B fill:#cfe2ff,color:#000\n    style C fill:#d4edda,color:#000,stroke:#28a745,stroke-width:3px\n    style D fill:#e2d9f3,color:#000\n    style E fill:#f8d7da,color:#000\n\n\n\n\n\n\n\nHoy aprenderemos las primeras técnicas para el paso Representación Numérica:\n\n\n\nTécnica\nNivel\nCaptura\n\n\n\n\nOne-hot Encoding\nPalabra\nIdentidad\n\n\nBag of Words\nDocumento\nFrecuencia"
+  },
+  {
+    "objectID": "slides/semana02/s1_bow_one_hot.html#qué-es-one-hot-encoding",
+    "href": "slides/semana02/s1_bow_one_hot.html#qué-es-one-hot-encoding",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "¿Qué es One-hot Encoding?",
+    "text": "¿Qué es One-hot Encoding?\n\nRepresentar cada palabra como un vector binario donde una sola posición es 1 y el resto son 0.\n\n\n\nVocabulario:\nV = {gato, perro, pez, ave}\n|V| = 4\nVectores:\n\n\n\nPalabra\nVector\n\n\n\n\ngato\n[1, 0, 0, 0]\n\n\nperro\n[0, 1, 0, 0]\n\n\npez\n[0, 0, 1, 0]\n\n\nave\n[0, 0, 0, 1]\n\n\n\n\nPropiedades:\n\nDimensión = tamaño del vocabulario \\(|V|\\)\nExactamente un 1 por vector\nTodos los demás son 0\nCada palabra es equidistante de las demás"
+  },
+  {
+    "objectID": "slides/semana02/s1_bow_one_hot.html#implementación-manual",
+    "href": "slides/semana02/s1_bow_one_hot.html#implementación-manual",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Implementación Manual",
+    "text": "Implementación Manual\n\nimport numpy as np\n\n# Definir vocabulario\noracion = \"el gato come pescado y el perro come carne\"\npalabras = oracion.split()\nvocabulario = sorted(set(palabras))\n\nprint(f\"Vocabulario ({len(vocabulario)} palabras): {vocabulario}\")\n\n# Crear mapeo palabra → índice\npalabra_a_idx = {palabra: i for i, palabra in enumerate(vocabulario)}\nprint(f\"\\nMapeo: {palabra_a_idx}\")\n\n# Crear vectores one-hot\nprint(f\"\\nVectores One-hot:\")\nfor palabra in vocabulario:\n    vector = np.zeros(len(vocabulario), dtype=int)\n    vector[palabra_a_idx[palabra]] = 1\n    print(f\"  '{palabra:10s}' → {vector}\")\n\nVocabulario (7 palabras): ['carne', 'come', 'el', 'gato', 'perro', 'pescado', 'y']\n\nMapeo: {'carne': 0, 'come': 1, 'el': 2, 'gato': 3, 'perro': 4, 'pescado': 5, 'y': 6}\n\nVectores One-hot:\n  'carne     ' → [1 0 0 0 0 0 0]\n  'come      ' → [0 1 0 0 0 0 0]\n  'el        ' → [0 0 1 0 0 0 0]\n  'gato      ' → [0 0 0 1 0 0 0]\n  'perro     ' → [0 0 0 0 1 0 0]\n  'pescado   ' → [0 0 0 0 0 1 0]\n  'y         ' → [0 0 0 0 0 0 1]"
+  },
+  {
+    "objectID": "slides/semana02/s1_bow_one_hot.html#implementación-con-scikit-learn",
+    "href": "slides/semana02/s1_bow_one_hot.html#implementación-con-scikit-learn",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Implementación con scikit-learn",
+    "text": "Implementación con scikit-learn\n\nfrom sklearn.preprocessing import LabelEncoder, OneHotEncoder\nimport numpy as np\n\n# Vocabulario\npalabras = [\"gato\", \"perro\", \"pez\", \"ave\", \"gato\", \"perro\"]\n\n# Paso 1: Etiquetar con enteros\nlabel_enc = LabelEncoder()\nenteros = label_enc.fit_transform(palabras)\nprint(f\"Palabras: {palabras}\")\nprint(f\"Enteros:  {list(enteros)}\")\n\n# Paso 2: One-hot encoding\nonehot_enc = OneHotEncoder(sparse_output=False)\nonehot = onehot_enc.fit_transform(enteros.reshape(-1, 1))\n\nprint(f\"\\nOne-hot encoding:\")\nfor palabra, vector in zip(palabras, onehot):\n    print(f\"  '{palabra}' → {vector.astype(int)}\")\n\nPalabras: ['gato', 'perro', 'pez', 'ave', 'gato', 'perro']\nEnteros:  [np.int64(1), np.int64(2), np.int64(3), np.int64(0), np.int64(1), np.int64(2)]\n\nOne-hot encoding:\n  'gato' → [0 1 0 0]\n  'perro' → [0 0 1 0]\n  'pez' → [0 0 0 1]\n  'ave' → [1 0 0 0]\n  'gato' → [0 1 0 0]\n  'perro' → [0 0 1 0]"
+  },
+  {
+    "objectID": "slides/semana02/s1_bow_one_hot.html#visualización-espacio-one-hot",
+    "href": "slides/semana02/s1_bow_one_hot.html#visualización-espacio-one-hot",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Visualización: Espacio One-hot",
+    "text": "Visualización: Espacio One-hot\n\n\nCode\nimport matplotlib.pyplot as plt\nfrom mpl_toolkits.mplot3d import Axes3D\nimport numpy as np\n\nfig = plt.figure(figsize=(7, 5))\nax = fig.add_subplot(111, projection='3d')\n\n# Vectores one-hot en 3D (simplificado)\npalabras = [\"gato\", \"perro\", \"pez\"]\nvectores = np.eye(3)\ncolores = ['#e63946', '#457b9d', '#2a9d8f']\n\nfor palabra, v, color in zip(palabras, vectores, colores):\n    ax.quiver(0, 0, 0, v[0], v[1], v[2], color=color, arrow_length_ratio=0.1, linewidth=2.5)\n    ax.text(v[0]*1.1, v[1]*1.1, v[2]*1.1, f' {palabra}', fontsize=13, fontweight='bold', color=color)\n\nax.set_xlim([0, 1.3])\nax.set_ylim([0, 1.3])\nax.set_zlim([0, 1.3])\nax.set_xlabel('Dim 1', fontsize=10)\nax.set_ylabel('Dim 2', fontsize=10)\nax.set_zlabel('Dim 3', fontsize=10)\nax.set_title('Espacio One-hot (3 palabras)', fontsize=13)\nplt.tight_layout()\nplt.show()\n\n\n\nCada palabra vive en su propio eje: son ortogonales entre sí."
+  },
+  {
+    "objectID": "slides/semana02/s1_bow_one_hot.html#distancias-en-one-hot",
+    "href": "slides/semana02/s1_bow_one_hot.html#distancias-en-one-hot",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Distancias en One-hot",
+    "text": "Distancias en One-hot\n\nimport numpy as np\nfrom scipy.spatial.distance import cosine, euclidean\n\n# Vectores one-hot\ngato =  np.array([1, 0, 0, 0, 0])\nperro = np.array([0, 1, 0, 0, 0])\nmesa =  np.array([0, 0, 1, 0, 0])\nsilla = np.array([0, 0, 0, 1, 0])\nfelino = np.array([0, 0, 0, 0, 1])\n\npares = [\n    (\"gato\", \"perro\", gato, perro),\n    (\"gato\", \"felino\", gato, felino),\n    (\"gato\", \"mesa\", gato, mesa),\n    (\"mesa\", \"silla\", mesa, silla),\n]\n\nprint(f\"{'Par':&lt;20} {'Dist. Euclídea':&lt;18} {'Dist. Coseno'}\")\nprint(\"-\" * 55)\nfor n1, n2, v1, v2 in pares:\n    d_euc = euclidean(v1, v2)\n    d_cos = cosine(v1, v2)\n    print(f\"{n1+' - '+n2:&lt;20} {d_euc:&lt;18.4f} {d_cos:.4f}\")\n\nPar                  Dist. Euclídea     Dist. Coseno\n-------------------------------------------------------\ngato - perro         1.4142             1.0000\ngato - felino        1.4142             1.0000\ngato - mesa          1.4142             1.0000\nmesa - silla         1.4142             1.0000\n\n\n\n\n\n\n\n\n\nProblema Fundamental\n\n\n“gato” está igual de lejos de “felino” que de “mesa”. One-hot encoding no captura similitud semántica."
+  },
+  {
+    "objectID": "slides/semana02/s1_bow_one_hot.html#limitaciones-de-one-hot-encoding",
+    "href": "slides/semana02/s1_bow_one_hot.html#limitaciones-de-one-hot-encoding",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Limitaciones de One-hot Encoding",
+    "text": "Limitaciones de One-hot Encoding\n\n\n❌ Problemas\n\nAlta dimensionalidad\n\nVocabulario de 100K palabras = vectores de 100K dimensiones\nMuy disperso (sparse)\n\nSin similitud semántica\n\nTodas las palabras son equidistantes\n“perro” y “gato” tan lejos como “perro” y “galaxia”\n\nSin contexto\n\n“banco” (financiero) = “banco” (sentarse)\n\n\n\n✅ Ventajas\n\nSimple y determinístico\nNo necesita entrenamiento\nÚtil como entrada para redes neuronales (embedding layer)\nBueno para variables categóricas no textuales\n\n\n\n\n\n\n\n¿Cuándo usar?\n\n\nOne-hot es el punto de partida. En la práctica, se usa como capa de entrada que luego se transforma en embeddings densos."
+  },
+  {
+    "objectID": "slides/semana02/s1_bow_one_hot.html#del-palabra-al-documento",
+    "href": "slides/semana02/s1_bow_one_hot.html#del-palabra-al-documento",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Del Palabra al Documento",
+    "text": "Del Palabra al Documento\nOne-hot codifica palabras individuales. Pero necesitamos representar documentos completos.\n\n\nPregunta:\n¿Cómo representamos numéricamente un documento entero?\n\"El gato come pescado. \n El perro come carne.\"\n\nIdea intuitiva:\nContar cuántas veces aparece cada palabra del vocabulario en el documento.\ngato: 1, perro: 1\ncome: 2, pescado: 1\ncarne: 1, el: 2\n\n\n\n\n\n\n\n\nBag of Words (Bolsa de Palabras)\n\n\nRepresentar un documento como un vector de frecuencias de palabras, ignorando el orden y la gramática."
+  },
+  {
+    "objectID": "slides/semana02/s1_bow_one_hot.html#la-metáfora-de-la-bolsa",
+    "href": "slides/semana02/s1_bow_one_hot.html#la-metáfora-de-la-bolsa",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "La Metáfora de la Bolsa 🎒",
+    "text": "La Metáfora de la Bolsa 🎒\n\n\nCode\nflowchart LR\n    A[\"📄 'El gato come&lt;br&gt;y el perro come'\"] --&gt; B[\"🔤 Tokenizar\"]\n    B --&gt; C[\"🎒 Meter en&lt;br&gt;la bolsa\"]\n    C --&gt; D[\"🔢 Contar&lt;br&gt;frecuencias\"]\n    D --&gt; E[\"📊 Vector&lt;br&gt;[2,1,1,2,1]\"]\n    \n    style A fill:#fff3cd,color:#000\n    style B fill:#cfe2ff,color:#000\n    style C fill:#d1e7dd,color:#000\n    style D fill:#e2d9f3,color:#000\n    style E fill:#d4edda,color:#000\n\n\n\n\n\nflowchart LR\n    A[\"📄 'El gato come&lt;br&gt;y el perro come'\"] --&gt; B[\"🔤 Tokenizar\"]\n    B --&gt; C[\"🎒 Meter en&lt;br&gt;la bolsa\"]\n    C --&gt; D[\"🔢 Contar&lt;br&gt;frecuencias\"]\n    D --&gt; E[\"📊 Vector&lt;br&gt;[2,1,1,2,1]\"]\n    \n    style A fill:#fff3cd,color:#000\n    style B fill:#cfe2ff,color:#000\n    style C fill:#d1e7dd,color:#000\n    style D fill:#e2d9f3,color:#000\n    style E fill:#d4edda,color:#000\n\n\n\n\n\n\n\nSe pierde el orden:\n\n✅ “El gato come pescado” → {el:1, gato:1, come:1, pescado:1}\n✅ “Come pescado el gato” → {el:1, gato:1, come:1, pescado:1}\n\nAmbas oraciones tienen la misma representación aunque el orden sea diferente."
+  },
+  {
+    "objectID": "slides/semana02/s1_bow_one_hot.html#ejemplo-paso-a-paso",
+    "href": "slides/semana02/s1_bow_one_hot.html#ejemplo-paso-a-paso",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Ejemplo Paso a Paso",
+    "text": "Ejemplo Paso a Paso\n\n# Corpus de ejemplo\ndocumentos = [\n    \"el gato come pescado\",\n    \"el perro come carne\",\n    \"el gato y el perro juegan\"\n]\n\n# Paso 1: Construir vocabulario\nvocabulario = sorted(set(\n    palabra for doc in documentos for palabra in doc.split()\n))\nprint(f\"Vocabulario ({len(vocabulario)}): {vocabulario}\")\n\n# Paso 2: Crear vectores BoW\nprint(f\"\\nVectores Bag of Words:\")\nprint(f\"{'Documento':&lt;32} {' '.join(f'{v:&gt;8s}' for v in vocabulario)}\")\nprint(\"-\" * (32 + 9 * len(vocabulario)))\n\nfor doc in documentos:\n    palabras = doc.split()\n    vector = [palabras.count(v) for v in vocabulario]\n    print(f\"'{doc:&lt;30s}' {' '.join(f'{c:&gt;8d}' for c in vector)}\")\n\nVocabulario (8): ['carne', 'come', 'el', 'gato', 'juegan', 'perro', 'pescado', 'y']\n\nVectores Bag of Words:\nDocumento                           carne     come       el     gato   juegan    perro  pescado        y\n--------------------------------------------------------------------------------------------------------\n'el gato come pescado          '        0        1        1        1        0        0        1        0\n'el perro come carne           '        1        1        1        0        0        1        0        0\n'el gato y el perro juegan     '        0        0        2        1        1        1        0        1"
+  },
+  {
+    "objectID": "slides/semana02/s1_bow_one_hot.html#implementación-con-scikit-learn-1",
+    "href": "slides/semana02/s1_bow_one_hot.html#implementación-con-scikit-learn-1",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Implementación con scikit-learn",
+    "text": "Implementación con scikit-learn\n\nfrom sklearn.feature_extraction.text import CountVectorizer\nimport pandas as pd\n\ndocumentos = [\n    \"El gato come pescado fresco\",\n    \"El perro come carne roja\",\n    \"El gato y el perro juegan juntos\",\n    \"El pescado es fresco y rojo\"\n]\n\n# CountVectorizer crea la representación BoW automáticamente\nvectorizer = CountVectorizer()\nX = vectorizer.fit_transform(documentos)\n\n# Mostrar como DataFrame\ndf = pd.DataFrame(\n    X.toarray(),\n    columns=vectorizer.get_feature_names_out(),\n    index=[f\"Doc {i+1}\" for i in range(len(documentos))]\n)\nprint(df.to_string())\n\n       carne  come  el  es  fresco  gato  juegan  juntos  perro  pescado  roja  rojo\nDoc 1      0     1   1   0       1     1       0       0      0        1     0     0\nDoc 2      1     1   1   0       0     0       0       0      1        0     1     0\nDoc 3      0     0   2   0       0     1       1       1      1        0     0     0\nDoc 4      0     0   1   1       1     0       0       0      0        1     0     1"
+  },
+  {
+    "objectID": "slides/semana02/s1_bow_one_hot.html#la-matriz-documento-término",
+    "href": "slides/semana02/s1_bow_one_hot.html#la-matriz-documento-término",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "La Matriz Documento-Término",
+    "text": "La Matriz Documento-Término\n\n\nLa Matriz Documento-Término (DTM) organiza toda la información BoW:\n\nFilas: documentos\nColumnas: términos del vocabulario\nValores: frecuencia del término en el documento\n\n\\[\nM_{ij} = \\text{freq}(\\text{término}_j, \\text{doc}_i)\n\\]\n\n\n\nCode\ngraph TD\n    A[Corpus&lt;br&gt;N documentos] --&gt; B[Vocabulario&lt;br&gt;V términos]\n    B --&gt; C[\"Matriz N × V\"]\n    C --&gt; D[Cada fila =&lt;br&gt;un documento]\n    C --&gt; E[Cada columna =&lt;br&gt;un término]\n    style C fill:#0077b6,stroke:#023e8a,color:#fff\n\n\n\n\n\ngraph TD\n    A[Corpus&lt;br&gt;N documentos] --&gt; B[Vocabulario&lt;br&gt;V términos]\n    B --&gt; C[\"Matriz N × V\"]\n    C --&gt; D[Cada fila =&lt;br&gt;un documento]\n    C --&gt; E[Cada columna =&lt;br&gt;un término]\n    style C fill:#0077b6,stroke:#023e8a,color:#fff\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nPropiedad Importante\n\n\nLa DTM es típicamente muy dispersa (sparse): la mayoría de los valores son 0, porque cada documento usa solo una fracción del vocabulario total."
+  },
+  {
+    "objectID": "slides/semana02/s1_bow_one_hot.html#visualización-de-la-dtm",
+    "href": "slides/semana02/s1_bow_one_hot.html#visualización-de-la-dtm",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Visualización de la DTM",
+    "text": "Visualización de la DTM\n\n\nCode\nimport matplotlib.pyplot as plt\nimport numpy as np\n\nfig, axes = plt.subplots(1, 2, figsize=(12, 4))\n\n# Heatmap de la DTM\nim = axes[0].imshow(df.values, cmap='YlOrRd', aspect='auto')\naxes[0].set_xticks(range(len(df.columns)))\naxes[0].set_xticklabels(df.columns, rotation=45, ha='right', fontsize=9)\naxes[0].set_yticks(range(len(df.index)))\naxes[0].set_yticklabels(df.index, fontsize=10)\naxes[0].set_title('Matriz Documento-Término (DTM)', fontsize=12)\n\n# Anotar valores\nfor i in range(len(df.index)):\n    for j in range(len(df.columns)):\n        axes[0].text(j, i, str(df.values[i, j]), ha='center', va='center', fontsize=10,\n                     color='white' if df.values[i, j] &gt; 0.5 else 'black')\n\nplt.colorbar(im, ax=axes[0], label='Frecuencia')\n\n# Dispersión (sparsity)\ntotal = df.values.size\nceros = (df.values == 0).sum()\nno_ceros = total - ceros\n\naxes[1].bar(['Ceros', 'No ceros'], [ceros, no_ceros], color=['#adb5bd', '#0077b6'])\naxes[1].set_title(f'Dispersión: {ceros/total*100:.1f}% ceros', fontsize=12)\naxes[1].set_ylabel('Cantidad de celdas', fontsize=10)\n\nfor i, v in enumerate([ceros, no_ceros]):\n    axes[1].text(i, v + 0.3, str(v), ha='center', fontsize=12, fontweight='bold')\n\nplt.tight_layout()\nplt.show()"
+  },
+  {
+    "objectID": "slides/semana02/s1_bow_one_hot.html#variantes-del-modelo-bow",
+    "href": "slides/semana02/s1_bow_one_hot.html#variantes-del-modelo-bow",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Variantes del Modelo BoW",
+    "text": "Variantes del Modelo BoW\n\n\n1. Frecuencia Bruta (Raw Count)\n\\[\\text{BoW}(t, d) = f(t, d)\\]\nContar cuántas veces aparece el término \\(t\\) en el documento \\(d\\).\n2. Binario (Presencia/Ausencia)\n\\[\\text{BoW}(t, d) = \\begin{cases} 1 & \\text{si } t \\in d \\\\ 0 & \\text{si } t \\notin d \\end{cases}\\]\nSolo indicar si el término aparece o no.\n\n3. Frecuencia Normalizada\n\\[\\text{BoW}(t, d) = \\frac{f(t, d)}{\\sum_{t' \\in d} f(t', d)}\\]\nDividir por el total de palabras del documento.\n4. Frecuencia Logarítmica\n\\[\\text{BoW}(t, d) = \\log(1 + f(t, d))\\]\nReducir el impacto de palabras muy frecuentes."
+  },
+  {
+    "objectID": "slides/semana02/s1_bow_one_hot.html#variantes-en-código",
+    "href": "slides/semana02/s1_bow_one_hot.html#variantes-en-código",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Variantes en código",
+    "text": "Variantes en código\n\nfrom sklearn.feature_extraction.text import CountVectorizer\nimport numpy as np\n\ndocumentos = [\n    \"el gato el gato el gato come pescado\",\n    \"el perro come carne\"\n]\n\n# Raw count\ncv_raw = CountVectorizer()\nX_raw = cv_raw.fit_transform(documentos).toarray()\n\n# Binario\ncv_bin = CountVectorizer(binary=True)\nX_bin = cv_bin.fit_transform(documentos).toarray()\n\n# Normalizado\nX_norm = X_raw / X_raw.sum(axis=1, keepdims=True)\n\n# Logarítmico\nX_log = np.log1p(X_raw)\n\nvocabs = cv_raw.get_feature_names_out()\nprint(f\"Vocabulario: {list(vocabs)}\\n\")\nprint(f\"{'Variante':&lt;14} Doc 1{' '*len(vocabs)*6}  Doc 2\")\nprint(f\"{'Raw':14s} {X_raw[0]}  {X_raw[1]}\")\nprint(f\"{'Binario':14s} {X_bin[0]}  {X_bin[1]}\")\nprint(f\"{'Normalizado':14s} {np.round(X_norm[0], 3)}  {np.round(X_norm[1], 3)}\")\nprint(f\"{'Logarítmico':14s} {np.round(X_log[0], 3)}  {np.round(X_log[1], 3)}\")\n\nVocabulario: ['carne', 'come', 'el', 'gato', 'perro', 'pescado']\n\nVariante       Doc 1                                      Doc 2\nRaw            [0 1 3 3 0 1]  [1 1 1 0 1 0]\nBinario        [0 1 1 1 0 1]  [1 1 1 0 1 0]\nNormalizado    [0.    0.125 0.375 0.375 0.    0.125]  [0.25 0.25 0.25 0.   0.25 0.  ]\nLogarítmico    [0.    0.693 1.386 1.386 0.    0.693]  [0.693 0.693 0.693 0.    0.693 0.   ]"
+  },
+  {
+    "objectID": "slides/semana02/s1_bow_one_hot.html#qué-tan-parecidos-son-dos-documentos",
+    "href": "slides/semana02/s1_bow_one_hot.html#qué-tan-parecidos-son-dos-documentos",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "¿Qué tan parecidos son dos documentos?",
+    "text": "¿Qué tan parecidos son dos documentos?\nCon BoW, cada documento es un vector en un espacio de alta dimensión. Podemos medir la similitud entre ellos.\n\n\nSimilitud Coseno\n\\[\\text{cos}(\\vec{a}, \\vec{b}) = \\frac{\\vec{a} \\cdot \\vec{b}}{||\\vec{a}|| \\cdot ||\\vec{b}||}\\]\n\nMide el ángulo entre vectores\nRango: [-1, 1] (en BoW: [0, 1])\n1 = idénticos, 0 = sin relación\n\n\nDistancia Euclídea\n\\[d(\\vec{a}, \\vec{b}) = \\sqrt{\\sum_i (a_i - b_i)^2}\\]\n\nMide la distancia entre puntos\nRango: \\([0, \\infty)\\)\n0 = idénticos\nSensible a la magnitud\n\n\n\n\n\n\n\n\n\n¿Cuál usar?\n\n\nPara comparar documentos de diferente longitud, la similitud coseno es preferible porque normaliza por la magnitud."
+  },
+  {
+    "objectID": "slides/semana02/s1_bow_one_hot.html#ejemplo-similitud-entre-documentos",
+    "href": "slides/semana02/s1_bow_one_hot.html#ejemplo-similitud-entre-documentos",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Ejemplo: Similitud entre Documentos",
+    "text": "Ejemplo: Similitud entre Documentos\n\nfrom sklearn.feature_extraction.text import CountVectorizer\nfrom sklearn.metrics.pairwise import cosine_similarity\nimport numpy as np\n\ndocumentos = [\n    \"el gato duerme en la alfombra\",        # Doc 1\n    \"el perro duerme en la cama\",           # Doc 2\n    \"la economía del país crece rápido\",    # Doc 3\n    \"el gato juega con la pelota\",          # Doc 4\n]\n\nvectorizer = CountVectorizer()\nX = vectorizer.fit_transform(documentos)\n\n# Calcular similitud coseno\nsim_matrix = cosine_similarity(X)\n\nprint(\"Matriz de Similitud Coseno:\\n\")\netiquetas = [f\"Doc {i+1}\" for i in range(len(documentos))]\nprint(f\"{'':8s}\", \"  \".join(f\"{e:&gt;6s}\" for e in etiquetas))\nfor i, etiqueta in enumerate(etiquetas):\n    fila = \"  \".join(f\"{sim_matrix[i][j]:&gt;6.3f}\" for j in range(len(documentos)))\n    print(f\"{etiqueta:8s} {fila}\")\n\nMatriz de Similitud Coseno:\n\n          Doc 1   Doc 2   Doc 3   Doc 4\nDoc 1     1.000   0.667   0.167   0.500\nDoc 2     0.667   1.000   0.167   0.333\nDoc 3     0.167   0.167   1.000   0.167\nDoc 4     0.500   0.333   0.167   1.000"
+  },
+  {
+    "objectID": "slides/semana02/s1_bow_one_hot.html#visualización-de-similitud",
+    "href": "slides/semana02/s1_bow_one_hot.html#visualización-de-similitud",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Visualización de Similitud",
+    "text": "Visualización de Similitud\n\n\nCode\nimport matplotlib.pyplot as plt\nimport numpy as np\n\nfig, ax = plt.subplots(figsize=(6, 5))\n\netiquetas_cortas = [\n    \"D1: gato duerme\",\n    \"D2: perro duerme\",\n    \"D3: economía\",\n    \"D4: gato juega\"\n]\n\nim = ax.imshow(sim_matrix, cmap='Blues', vmin=0, vmax=1)\nax.set_xticks(range(len(etiquetas_cortas)))\nax.set_xticklabels(etiquetas_cortas, rotation=30, ha='right', fontsize=9)\nax.set_yticks(range(len(etiquetas_cortas)))\nax.set_yticklabels(etiquetas_cortas, fontsize=9)\nax.set_title('Similitud Coseno entre Documentos (BoW)', fontsize=12)\n\nfor i in range(len(documentos)):\n    for j in range(len(documentos)):\n        color = 'white' if sim_matrix[i][j] &gt; 0.6 else 'black'\n        ax.text(j, i, f'{sim_matrix[i][j]:.2f}', ha='center', va='center',\n                fontsize=11, fontweight='bold', color=color)\n\nplt.colorbar(im, label='Similitud')\nplt.tight_layout()\nplt.show()"
+  },
+  {
+    "objectID": "slides/semana02/s1_bow_one_hot.html#aplicación-clasificación-simple",
+    "href": "slides/semana02/s1_bow_one_hot.html#aplicación-clasificación-simple",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Aplicación: Clasificación Simple",
+    "text": "Aplicación: Clasificación Simple\n\nfrom sklearn.feature_extraction.text import CountVectorizer\nfrom sklearn.naive_bayes import MultinomialNB\nfrom sklearn.model_selection import cross_val_score\n\n# Dataset de ejemplo: clasificar deportes vs. tecnología\ntextos = [\n    \"el equipo ganó el partido de fútbol\",\n    \"el gol del delantero fue espectacular\",\n    \"el campeonato de tenis terminó ayer\",\n    \"el jugador se lesionó en el entrenamiento\",\n    \"la empresa lanzó un nuevo teléfono\",\n    \"el procesador del computador es rápido\",\n    \"la inteligencia artificial avanza rápido\",\n    \"el software tiene un error crítico\",\n]\netiquetas = [\"deporte\", \"deporte\", \"deporte\", \"deporte\",\n             \"tecnología\", \"tecnología\", \"tecnología\", \"tecnología\"]\n\n# Crear representación BoW\nvectorizer = CountVectorizer()\nX = vectorizer.fit_transform(textos)\n\n# Entrenar clasificador Naive Bayes\nclf = MultinomialNB()\nclf.fit(X, etiquetas)\n\n# Predecir nuevos textos\nnuevos = [\n    \"el delantero marcó un gol increíble\",\n    \"el nuevo chip es más eficiente\"\n]\nX_nuevo = vectorizer.transform(nuevos)\npredicciones = clf.predict(X_nuevo)\n\nfor texto, pred in zip(nuevos, predicciones):\n    print(f\"'{texto}' → {pred}\")\n\n'el delantero marcó un gol increíble' → deporte\n'el nuevo chip es más eficiente' → tecnología"
+  },
+  {
+    "objectID": "slides/semana02/s1_bow_one_hot.html#n-gramas-más-allá-de-palabras-sueltas",
+    "href": "slides/semana02/s1_bow_one_hot.html#n-gramas-más-allá-de-palabras-sueltas",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "N-gramas: Más Allá de Palabras Sueltas",
+    "text": "N-gramas: Más Allá de Palabras Sueltas\nBoW pierde el orden. Los N-gramas capturan algo de contexto al considerar secuencias de N palabras consecutivas.\n\nfrom sklearn.feature_extraction.text import CountVectorizer\n\ntexto = [\"el gato negro come pescado fresco\"]\n\n# Unigramas (BoW clásico)\ncv1 = CountVectorizer(ngram_range=(1, 1))\nX1 = cv1.fit_transform(texto)\nprint(f\"Unigramas: {cv1.get_feature_names_out().tolist()}\")\n\n# Bigramas\ncv2 = CountVectorizer(ngram_range=(2, 2))\nX2 = cv2.fit_transform(texto)\nprint(f\"Bigramas:  {cv2.get_feature_names_out().tolist()}\")\n\n# Unigramas + Bigramas\ncv12 = CountVectorizer(ngram_range=(1, 2))\nX12 = cv12.fit_transform(texto)\nprint(f\"Uni+Bi:    {cv12.get_feature_names_out().tolist()}\")\n\nUnigramas: ['come', 'el', 'fresco', 'gato', 'negro', 'pescado']\nBigramas:  ['come pescado', 'el gato', 'gato negro', 'negro come', 'pescado fresco']\nUni+Bi:    ['come', 'come pescado', 'el', 'el gato', 'fresco', 'gato', 'gato negro', 'negro', 'negro come', 'pescado', 'pescado fresco']\n\n\n\n\n\n\n\n\n\nExplosión Combinatoria\n\n\nCon bigramas, el vocabulario crece dramáticamente. Para un vocabulario de \\(V\\) palabras, hay hasta \\(V^2\\) bigramas posibles."
+  },
+  {
+    "objectID": "slides/semana02/s1_bow_one_hot.html#parámetros-útiles-de-countvectorizer",
+    "href": "slides/semana02/s1_bow_one_hot.html#parámetros-útiles-de-countvectorizer",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Parámetros Útiles de CountVectorizer",
+    "text": "Parámetros Útiles de CountVectorizer\n\nfrom sklearn.feature_extraction.text import CountVectorizer\n\ndocumentos = [\n    \"El procesamiento de lenguaje natural es increíble\",\n    \"El lenguaje natural humano es complejo\",\n    \"La inteligencia artificial procesa el lenguaje\",\n    \"El aprendizaje automático usa datos naturales\",\n    \"Los datos son el combustible de la inteligencia artificial\"\n]\n\n# Parámetros avanzados\nvectorizer = CountVectorizer(\n    max_features=10,     # Solo las 10 palabras más frecuentes\n    min_df=2,            # Aparece en al menos 2 documentos\n    max_df=0.9,          # Aparece en máximo 90% de documentos\n    ngram_range=(1, 2),  # Unigramas y bigramas\n    stop_words=None      # Podemos pasar lista custom\n)\n\nX = vectorizer.fit_transform(documentos)\nprint(f\"Vocabulario filtrado: {vectorizer.get_feature_names_out().tolist()}\")\nprint(f\"Forma de la matriz: {X.shape} (documentos × términos)\")\n\nVocabulario filtrado: ['artificial', 'datos', 'de', 'el lenguaje', 'es', 'inteligencia', 'inteligencia artificial', 'la', 'la inteligencia', 'lenguaje']\nForma de la matriz: (5, 10) (documentos × términos)\n\n\n\n\n\n\n\n\nTip Práctico\n\n\n\nmin_df=2 elimina palabras muy raras (posibles errores)\nmax_df=0.8 elimina palabras demasiado comunes (como stopwords)\nmax_features=N limita la dimensionalidad"
+  },
+  {
+    "objectID": "slides/semana02/s1_bow_one_hot.html#limitaciones-de-bag-of-words",
+    "href": "slides/semana02/s1_bow_one_hot.html#limitaciones-de-bag-of-words",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Limitaciones de Bag of Words",
+    "text": "Limitaciones de Bag of Words\n\n\n1. Pierde el Orden 📝\n\"el perro mordió al hombre\"\n\"el hombre mordió al perro\"\nMisma representación BoW, significado opuesto.\n2. Alta Dimensionalidad 📏\n\nVocabularios reales: 50K–500K palabras\nMatrices enormes y dispersas\nCostoso en memoria y cómputo\n\n\n3. No Captura Semántica 🧠\n\"El automóvil es veloz\"\n\"El carro es rápido\"\nSimilitud BoW = 0, significado idéntico.\n4. Tratamiento Igualitario 📊\nTodas las palabras tienen el mismo peso. “el” y “revolución” valen lo mismo.\n\n\n\n\n\n\n\n\nSolución: TF-IDF (Próxima Sesión)\n\n\nAsignaremos pesos diferentes a cada término según su importancia relativa en el corpus."
+  },
+  {
+    "objectID": "slides/semana02/s1_bow_one_hot.html#one-hot-vs.-bow-comparación",
+    "href": "slides/semana02/s1_bow_one_hot.html#one-hot-vs.-bow-comparación",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "One-hot vs. BoW: Comparación",
+    "text": "One-hot vs. BoW: Comparación\n\n\n\n\n\n\n\n\nAspecto\nOne-hot Encoding\nBag of Words\n\n\n\n\nNivel\nPalabra\nDocumento\n\n\nRepresenta\nIdentidad\nFrecuencia\n\n\nDimensión\n\\(\\|V\\|\\)\n\\(\\|V\\|\\)\n\n\nCaptura semántica\n❌ No\n❌ No\n\n\nCaptura frecuencia\n❌ No\n✅ Sí\n\n\nOrden\nN/A\n❌ Perdido\n\n\nUso típico\nEntrada de redes neuronales\nClasificación, clustering"
+  },
+  {
+    "objectID": "slides/semana02/s1_bow_one_hot.html#mapa-de-representaciones-de-texto",
+    "href": "slides/semana02/s1_bow_one_hot.html#mapa-de-representaciones-de-texto",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Mapa de Representaciones de Texto",
+    "text": "Mapa de Representaciones de Texto\n\n\nCode\nflowchart TD\n    A[\"🔢 Representaciones de Texto\"] --&gt; B[\"📊 Dispersas (Sparse)\"]\n    A --&gt; C[\"🧠 Densas (Dense)\"]\n    B --&gt; D[\"One-hot&lt;br&gt;✅ Hoy\"]\n    B --&gt; E[\"Bag of Words&lt;br&gt;✅ Hoy\"]\n    B --&gt; F[\"TF-IDF&lt;br&gt;📅 S2\"]\n    C --&gt; G[\"Word2Vec&lt;br&gt;📅 Semana 4\"]\n    C --&gt; H[\"GloVe&lt;br&gt;📅 Semana 4\"]\n    C --&gt; I[\"Embeddings&lt;br&gt;contextuales&lt;br&gt;📅 Semanas 9-10\"]\n\n    style A fill:#0077b6,color:#fff\n    style D fill:#2a9d8f,color:#fff\n    style E fill:#2a9d8f,color:#fff\n    style F fill:#e9c46a,color:#000\n    style G fill:#f4a261,color:#000\n    style H fill:#f4a261,color:#000\n    style I fill:#e76f51,color:#fff\n\n\n\n\n\nflowchart TD\n    A[\"🔢 Representaciones de Texto\"] --&gt; B[\"📊 Dispersas (Sparse)\"]\n    A --&gt; C[\"🧠 Densas (Dense)\"]\n    B --&gt; D[\"One-hot&lt;br&gt;✅ Hoy\"]\n    B --&gt; E[\"Bag of Words&lt;br&gt;✅ Hoy\"]\n    B --&gt; F[\"TF-IDF&lt;br&gt;📅 S2\"]\n    C --&gt; G[\"Word2Vec&lt;br&gt;📅 Semana 4\"]\n    C --&gt; H[\"GloVe&lt;br&gt;📅 Semana 4\"]\n    C --&gt; I[\"Embeddings&lt;br&gt;contextuales&lt;br&gt;📅 Semanas 9-10\"]\n\n    style A fill:#0077b6,color:#fff\n    style D fill:#2a9d8f,color:#fff\n    style E fill:#2a9d8f,color:#fff\n    style F fill:#e9c46a,color:#000\n    style G fill:#f4a261,color:#000\n    style H fill:#f4a261,color:#000\n    style I fill:#e76f51,color:#fff"
+  },
+  {
+    "objectID": "slides/semana02/s1_bow_one_hot.html#mini-proyecto-motor-de-búsqueda-simple",
+    "href": "slides/semana02/s1_bow_one_hot.html#mini-proyecto-motor-de-búsqueda-simple",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Mini Proyecto: Motor de Búsqueda Simple 🔍",
+    "text": "Mini Proyecto: Motor de Búsqueda Simple 🔍\nUsando BoW + similitud coseno, creamos un buscador:\n\n\nCode\nfrom sklearn.feature_extraction.text import CountVectorizer\nfrom sklearn.metrics.pairwise import cosine_similarity\n\n# Corpus de \"artículos\"\ncorpus = [\n    \"La inteligencia artificial está transformando la medicina moderna\",\n    \"Los robots aprenden a cocinar platos gourmet con redes neuronales\",\n    \"El cambio climático afecta los glaciares de Bolivia\",\n    \"Python es el lenguaje más popular para ciencia de datos\",\n    \"Las redes neuronales artificiales imitan el cerebro humano\",\n    \"La deforestación en la Amazonía alcanza niveles récord\",\n    \"El aprendizaje automático mejora el diagnóstico médico\",\n]\n\nvectorizer = CountVectorizer()\nX = vectorizer.fit_transform(corpus)\n\ndef buscar(consulta, top_n=3):\n    \"\"\"Buscar documentos similares a la consulta.\"\"\"\n    q_vec = vectorizer.transform([consulta])\n    similitudes = cosine_similarity(q_vec, X).flatten()\n    indices = similitudes.argsort()[::-1][:top_n]\n    \n    print(f\"🔍 Consulta: '{consulta}'\\n\")\n    for rank, idx in enumerate(indices, 1):\n        if similitudes[idx] &gt; 0:\n            print(f\"  {rank}. (sim={similitudes[idx]:.3f}) {corpus[idx]}\")\n        else:\n            print(f\"  {rank}. (sim=0.000) Sin resultados relevantes\")\n\nbuscar(\"inteligencia artificial y medicina\")\nprint()\nbuscar(\"medio ambiente y bosques\")\n\n\n🔍 Consulta: 'inteligencia artificial y medicina'\n\n  1. (sim=0.548) La inteligencia artificial está transformando la medicina moderna\n  2. (sim=0.000) Sin resultados relevantes\n  3. (sim=0.000) Sin resultados relevantes\n\n🔍 Consulta: 'medio ambiente y bosques'\n\n  1. (sim=0.000) Sin resultados relevantes\n  2. (sim=0.000) Sin resultados relevantes\n  3. (sim=0.000) Sin resultados relevantes"
+  },
+  {
+    "objectID": "slides/semana02/s1_bow_one_hot.html#lo-que-aprendimos-hoy",
+    "href": "slides/semana02/s1_bow_one_hot.html#lo-que-aprendimos-hoy",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Lo que Aprendimos Hoy ✅",
+    "text": "Lo que Aprendimos Hoy ✅\n\n\nOne-hot Encoding:\n\nUn 1 por palabra, resto 0\nDimensión = tamaño del vocabulario\nSin similitud semántica\nBase para embeddings\n\nBag of Words:\n\nVector de frecuencias por documento\nMatriz Documento-Término\nVariantes: binaria, normalizada, log\n\n\nSimilitud:\n\nSimilitud coseno para comparar documentos\nIndependiente de la longitud\n\nHerramientas:\n\nCountVectorizer de scikit-learn\nParámetros: min_df, max_df, max_features, ngram_range"
+  },
+  {
+    "objectID": "slides/semana02/s1_bow_one_hot.html#para-la-próxima-clase",
+    "href": "slides/semana02/s1_bow_one_hot.html#para-la-próxima-clase",
+    "title": "Semántica Léxica & Espacio Vectorial",
     "section": "Para la Próxima Clase 📚",
-    "text": "Para la Próxima Clase 📚\n\n\n\n\n\n\nSemana 2, S1: Bag of Words y One-hot Encoding\n\n\nAprenderemos a representar texto como vectores numéricos para que los modelos de machine learning puedan trabajar con ellos.\n\n\n\nLectura:\n\nCapítulo 2: Speech and Language Processing (Jurafsky & Martin)\nDocumentación de spaCy"
+    "text": "Para la Próxima Clase 📚\n\n\n\n\n\n\nSemana 2, S2: TF-IDF — Encontrando lo relevante en un documento\n\n\nAprenderemos a asignar pesos inteligentes a las palabras según su importancia, no solo su frecuencia.\n\n\n\nLectura:\n\nCapítulo 6 (secciones 6.1-6.5): Speech and Language Processing (Jurafsky & Martin)\nDocumentación de scikit-learn: CountVectorizer\n\nPreparación:\n\nRevisar conceptos de álgebra lineal: vectores, producto punto, norma"
   },
   {
     "objectID": "slides/semana01/s2_regex.html#agenda-de-hoy",
@@ -378,62 +637,6 @@
     "text": "Próxima Sesión: Preprocesamiento 🔧\n\n\n\n\n\n\nS3: Tokenización, Lematización y Stemming\n\n\n\nTokenización avanzada con NLTK y spaCy\nDiferencia entre stemming y lematización\nNormalización de texto para NLP\n\n\n\n\nPreparación:\npip install nltk spacy\npython -m spacy download es_core_news_sm"
   },
   {
-    "objectID": "general.html",
-    "href": "general.html",
-    "title": "Course Syllabus: Natural Language Processing (NLP)",
-    "section": "",
-    "text": "This schedule merges the 5 Modules from your course documents with a deep dive into modern LLM applications.\n\n\n\n\n\n\n\n\nPhase\nWeeks\nFocus Topics\n\n\n\n\nI: Foundations\n1–4\nNLP History, Regex, Pipeline (Segmentation, Tokenization), Lemmatization vs. Stemming.\n\n\nII: Machine Learning\n5–8\nText Statistics, Naïve Bayes, Sentiment Analysis, Logistic Regression, and Vector Space Models.\n\n\nIII: Neural NLP\n9–12\nWord Embeddings (Word2Vec/GloVe), Feedforward Networks, RNNs, and LSTMs.\n\n\nIV: The LLM Era\n13–16\nAttention, Transformers (BERT/GPT), Pre-trained Models, and Question Answering.\n\n\nV: Mastery\n17–20\nRAG Pipelines, Ethics & Bias, Cutting-edge Trends, and Capstone Project Presentations."
-  },
-  {
-    "objectID": "general.html#course-schedule-20-weeks",
-    "href": "general.html#course-schedule-20-weeks",
-    "title": "Course Syllabus: Natural Language Processing (NLP)",
-    "section": "",
-    "text": "This schedule merges the 5 Modules from your course documents with a deep dive into modern LLM applications.\n\n\n\n\n\n\n\n\nPhase\nWeeks\nFocus Topics\n\n\n\n\nI: Foundations\n1–4\nNLP History, Regex, Pipeline (Segmentation, Tokenization), Lemmatization vs. Stemming.\n\n\nII: Machine Learning\n5–8\nText Statistics, Naïve Bayes, Sentiment Analysis, Logistic Regression, and Vector Space Models.\n\n\nIII: Neural NLP\n9–12\nWord Embeddings (Word2Vec/GloVe), Feedforward Networks, RNNs, and LSTMs.\n\n\nIV: The LLM Era\n13–16\nAttention, Transformers (BERT/GPT), Pre-trained Models, and Question Answering.\n\n\nV: Mastery\n17–20\nRAG Pipelines, Ethics & Bias, Cutting-edge Trends, and Capstone Project Presentations."
-  },
-  {
-    "objectID": "general.html#evaluation-grading",
-    "href": "general.html#evaluation-grading",
-    "title": "Course Syllabus: Natural Language Processing (NLP)",
-    "section": "2. Evaluation & Grading",
-    "text": "2. Evaluation & Grading\nWeights are based on the SST University Evaluation Criteria.\n\nFinal Exam (30%): Comprehensive assessment of theory and math.\nExercises (20%): Hands-on Python coding assignments.\nGroup Project (30%): Building a functional NLP application (e.g., Sentiment Analyzer or Chatbot).\nQuizzes (10%): Bi-weekly knowledge checks.\nClass Participation (10%): Engagement in discussions and remote sessions."
-  },
-  {
-    "objectID": "general.html#generative-ai-academic-integrity-policy",
-    "href": "general.html#generative-ai-academic-integrity-policy",
-    "title": "Course Syllabus: Natural Language Processing (NLP)",
-    "section": "3. Generative AI & Academic Integrity Policy",
-    "text": "3. Generative AI & Academic Integrity Policy\nAs this is an NLP course, use of AI is permitted under strict transparency rules.\n\nTransparency: Any code or text generated by AI must be disclosed with a Conversation Share Link (e.g., ChatGPT or Claude shared link).\nThe “Human-in-the-loop” Rule: You may use AI to debug or brainstorm, but you must be able to explain the “how” and “why” during random oral spot-checks.\nProhibited Use: Using AI to generate direct answers for quizzes or the final exam without critical engagement is considered academic misconduct."
-  },
-  {
-    "objectID": "general.html#automation-building-slides-with-quarto",
-    "href": "general.html#automation-building-slides-with-quarto",
-    "title": "Course Syllabus: Natural Language Processing (NLP)",
-    "section": "4. Automation: Building Slides with Quarto",
-    "text": "4. Automation: Building Slides with Quarto\nQuarto allows you to create interactive Reveal.js slides using simple Markdown and Python.\n\nA. Your Slide Template (presentation.qmd)\nCopy this into a text file to start.\n---\ntitle: \"Week 1: Introduction to NLP\"\nsubtitle: \"Natural Language Processing & Semantic Analysis\"\nauthor: \"Francisco Suárez\"\nformat: \n  revealjs:\n    theme: sky\n    transition: slide\n    incremental: true \n    chalkboard: true\n    code-fold: true\n---\n\n## What is NLP?\n- Intersection of Computer Science, AI, and Linguistics.\n- Goal: Enable machines to understand and derive meaning from text/speech.\n\n## The NLP Pipeline\n::: {.columns}\n::: {.column width=\"50%\"}\n1. Data Collection\n2. Text Cleaning\n3. Pre-processing.\n:::\n\n::: {.column width=\"50%\"}\n\n\n::: {#4503042c .cell execution_count=1}\n``` {.python .cell-code}\n# Example of simple tokenization in Python\ntext = \"The sky is clear.\"\ntokens = text.split()\nprint(tokens)\n```\n\n::: {.cell-output .cell-output-stdout}\n```\n['The', 'sky', 'is', 'clear.']\n```\n:::\n:::\n\n\n:::\n:::\n\n## Semantic Analysis\n\n&gt; Semantic analysis is the process of drawing meaning from text.\n\n$$ Meaning = f(Grammar, Context, Relationship) $$\n\n\nB. Prompt for Automating Content\nWhen you want an AI to write the code for the next 19 weeks of slides, use this specific prompt:\n\n“Act as a college professor. Generate the Quarto Markdown (.qmd) code for a 15-slide presentation on [Insert Topic, e.g., Transformers].\nUse the Reveal.js format. Include: 1. A YAML header with the ‘sky’ theme. 2. At least two slides with executable Python code blocks ({python}). 3. One slide with a LaTeX equation for the math. 4. Use ::: {.incremental} for bullet points. 5. Base the content on the standard NLP pipeline (Tokenization \\(\\rightarrow\\) Embedding \\(\\rightarrow\\) Model).”\n\n\nQuarto Tutorial: Markdown to Slideshow\nThis video provides a complete walkthrough on setting up Quarto to transform your Markdown files into professional, code-ready presentations.\nhttp://googleusercontent.com/youtube_content/0\n```"
-  },
-  {
-    "objectID": "index.html",
-    "href": "index.html",
-    "title": "NLP y Análisis Semántico",
-    "section": "",
-    "text": "Introducción a NLP\nExpresiones Regulares\nPreprocesamiento de Texto"
-  },
-  {
-    "objectID": "index.html#diapositivas",
-    "href": "index.html#diapositivas",
-    "title": "NLP y Análisis Semántico",
-    "section": "",
-    "text": "Introducción a NLP\nExpresiones Regulares\nPreprocesamiento de Texto"
-  },
-  {
-    "objectID": "index.html#información-general",
-    "href": "index.html#información-general",
-    "title": "NLP y Análisis Semántico",
-    "section": "Información general",
-    "text": "Información general\n\nPrograma del Curso"
-  },
-  {
     "objectID": "programa.html",
     "href": "programa.html",
     "title": "Programa de Procesamiento de Lenguaje Natural (NLP)",
@@ -467,6 +670,62 @@
     "title": "Programa de Procesamiento de Lenguaje Natural (NLP)",
     "section": "",
     "text": "Evento\nSemana\nDescripción\n\n\n\n\n📝 Tarea 1\n4\nAnalizador de sentimiento TF-IDF\n\n\n📝 Tarea 2\n8\nGenerador LSTM de nombres\n\n\n🎯 Examen Parcial\n11\nEvaluación teórica (Semanas 1-10)\n\n\n📝 Tarea 3\n12\nFine-tuning BERT\n\n\n📝 Tarea 4\n16\nAplicación RAG\n\n\n📄 Propuesta Proyecto\n18\nEntrega de propuesta escrita\n\n\n🎤 Presentación Propuestas\n19\nPresentaciones grupales\n\n\n🎤 Presentaciones Finales\n20\nDemo de proyectos\n\n\n📦 Entrega Final\n20\nCódigo + Documentación"
+  },
+  {
+    "objectID": "general.html",
+    "href": "general.html",
+    "title": "Course Syllabus: Natural Language Processing (NLP)",
+    "section": "",
+    "text": "This schedule merges the 5 Modules from your course documents with a deep dive into modern LLM applications.\n\n\n\n\n\n\n\n\nPhase\nWeeks\nFocus Topics\n\n\n\n\nI: Foundations\n1–4\nNLP History, Regex, Pipeline (Segmentation, Tokenization), Lemmatization vs. Stemming.\n\n\nII: Machine Learning\n5–8\nText Statistics, Naïve Bayes, Sentiment Analysis, Logistic Regression, and Vector Space Models.\n\n\nIII: Neural NLP\n9–12\nWord Embeddings (Word2Vec/GloVe), Feedforward Networks, RNNs, and LSTMs.\n\n\nIV: The LLM Era\n13–16\nAttention, Transformers (BERT/GPT), Pre-trained Models, and Question Answering.\n\n\nV: Mastery\n17–20\nRAG Pipelines, Ethics & Bias, Cutting-edge Trends, and Capstone Project Presentations."
+  },
+  {
+    "objectID": "general.html#course-schedule-20-weeks",
+    "href": "general.html#course-schedule-20-weeks",
+    "title": "Course Syllabus: Natural Language Processing (NLP)",
+    "section": "",
+    "text": "This schedule merges the 5 Modules from your course documents with a deep dive into modern LLM applications.\n\n\n\n\n\n\n\n\nPhase\nWeeks\nFocus Topics\n\n\n\n\nI: Foundations\n1–4\nNLP History, Regex, Pipeline (Segmentation, Tokenization), Lemmatization vs. Stemming.\n\n\nII: Machine Learning\n5–8\nText Statistics, Naïve Bayes, Sentiment Analysis, Logistic Regression, and Vector Space Models.\n\n\nIII: Neural NLP\n9–12\nWord Embeddings (Word2Vec/GloVe), Feedforward Networks, RNNs, and LSTMs.\n\n\nIV: The LLM Era\n13–16\nAttention, Transformers (BERT/GPT), Pre-trained Models, and Question Answering.\n\n\nV: Mastery\n17–20\nRAG Pipelines, Ethics & Bias, Cutting-edge Trends, and Capstone Project Presentations."
+  },
+  {
+    "objectID": "general.html#evaluation-grading",
+    "href": "general.html#evaluation-grading",
+    "title": "Course Syllabus: Natural Language Processing (NLP)",
+    "section": "2. Evaluation & Grading",
+    "text": "2. Evaluation & Grading\nWeights are based on the SST University Evaluation Criteria.\n\nFinal Exam (30%): Comprehensive assessment of theory and math.\nExercises (20%): Hands-on Python coding assignments.\nGroup Project (30%): Building a functional NLP application (e.g., Sentiment Analyzer or Chatbot).\nQuizzes (10%): Bi-weekly knowledge checks.\nClass Participation (10%): Engagement in discussions and remote sessions."
+  },
+  {
+    "objectID": "general.html#generative-ai-academic-integrity-policy",
+    "href": "general.html#generative-ai-academic-integrity-policy",
+    "title": "Course Syllabus: Natural Language Processing (NLP)",
+    "section": "3. Generative AI & Academic Integrity Policy",
+    "text": "3. Generative AI & Academic Integrity Policy\nAs this is an NLP course, use of AI is permitted under strict transparency rules.\n\nTransparency: Any code or text generated by AI must be disclosed with a Conversation Share Link (e.g., ChatGPT or Claude shared link).\nThe “Human-in-the-loop” Rule: You may use AI to debug or brainstorm, but you must be able to explain the “how” and “why” during random oral spot-checks.\nProhibited Use: Using AI to generate direct answers for quizzes or the final exam without critical engagement is considered academic misconduct."
+  },
+  {
+    "objectID": "general.html#automation-building-slides-with-quarto",
+    "href": "general.html#automation-building-slides-with-quarto",
+    "title": "Course Syllabus: Natural Language Processing (NLP)",
+    "section": "4. Automation: Building Slides with Quarto",
+    "text": "4. Automation: Building Slides with Quarto\nQuarto allows you to create interactive Reveal.js slides using simple Markdown and Python.\n\nA. Your Slide Template (presentation.qmd)\nCopy this into a text file to start.\n---\ntitle: \"Week 1: Introduction to NLP\"\nsubtitle: \"Natural Language Processing & Semantic Analysis\"\nauthor: \"Francisco Suárez\"\nformat: \n  revealjs:\n    theme: sky\n    transition: slide\n    incremental: true \n    chalkboard: true\n    code-fold: true\n---\n\n## What is NLP?\n- Intersection of Computer Science, AI, and Linguistics.\n- Goal: Enable machines to understand and derive meaning from text/speech.\n\n## The NLP Pipeline\n::: {.columns}\n::: {.column width=\"50%\"}\n1. Data Collection\n2. Text Cleaning\n3. Pre-processing.\n:::\n\n::: {.column width=\"50%\"}\n\n\n::: {#0ce97621 .cell execution_count=1}\n``` {.python .cell-code}\n# Example of simple tokenization in Python\ntext = \"The sky is clear.\"\ntokens = text.split()\nprint(tokens)\n```\n\n::: {.cell-output .cell-output-stdout}\n```\n['The', 'sky', 'is', 'clear.']\n```\n:::\n:::\n\n\n:::\n:::\n\n## Semantic Analysis\n\n&gt; Semantic analysis is the process of drawing meaning from text.\n\n$$ Meaning = f(Grammar, Context, Relationship) $$\n\n\nB. Prompt for Automating Content\nWhen you want an AI to write the code for the next 19 weeks of slides, use this specific prompt:\n\n“Act as a college professor. Generate the Quarto Markdown (.qmd) code for a 15-slide presentation on [Insert Topic, e.g., Transformers].\nUse the Reveal.js format. Include: 1. A YAML header with the ‘sky’ theme. 2. At least two slides with executable Python code blocks ({python}). 3. One slide with a LaTeX equation for the math. 4. Use ::: {.incremental} for bullet points. 5. Base the content on the standard NLP pipeline (Tokenization \\(\\rightarrow\\) Embedding \\(\\rightarrow\\) Model).”\n\n\nQuarto Tutorial: Markdown to Slideshow\nThis video provides a complete walkthrough on setting up Quarto to transform your Markdown files into professional, code-ready presentations.\nhttp://googleusercontent.com/youtube_content/0\n```"
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "NLP y Análisis Semántico",
+    "section": "",
+    "text": "Introducción a NLP\nExpresiones Regulares\nPreprocesamiento de Texto"
+  },
+  {
+    "objectID": "index.html#diapositivas",
+    "href": "index.html#diapositivas",
+    "title": "NLP y Análisis Semántico",
+    "section": "",
+    "text": "Introducción a NLP\nExpresiones Regulares\nPreprocesamiento de Texto"
+  },
+  {
+    "objectID": "index.html#información-general",
+    "href": "index.html#información-general",
+    "title": "NLP y Análisis Semántico",
+    "section": "Información general",
+    "text": "Información general\n\nPrograma del Curso"
   },
   {
     "objectID": "slides/semana01/s1_intro_nlp.html#agenda-de-hoy",
@@ -642,5 +901,369 @@
     "title": "Introducción al Procesamiento de Lenguaje Natural",
     "section": "Próxima Sesión: Expresiones Regulares 🔧",
     "text": "Próxima Sesión: Expresiones Regulares 🔧\n\n“Algunas personas, cuando se enfrentan a un problema, piensan: ‘Ya sé, usaré expresiones regulares.’ Ahora tienen dos problemas.”\n— Jamie Zawinski\n\n\n\n\n\n\n\n\nS2: Regular Expressions - La Navaja Suiza del NLP\n\n\nAprenderemos a buscar, extraer y manipular patrones de texto de forma eficiente."
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#agenda-de-hoy",
+    "href": "slides/semana01/s3_preprocesamiento.html#agenda-de-hoy",
+    "title": "Preprocesamiento de Texto",
+    "section": "Agenda de Hoy",
+    "text": "Agenda de Hoy\n\n\nPrimera Parte\n\n🔤 ¿Qué es la tokenización?\n🛠️ Herramientas: NLTK y spaCy\n📝 Normalización de texto\n\n\nSegunda Parte\n\n🌱 Stemming\n📖 Lematización\n🔧 Pipeline completo de preprocesamiento"
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#el-texto-crudo-es-ruidoso",
+    "href": "slides/semana01/s3_preprocesamiento.html#el-texto-crudo-es-ruidoso",
+    "title": "Preprocesamiento de Texto",
+    "section": "El Texto Crudo es Ruidoso",
+    "text": "El Texto Crudo es Ruidoso\n\n\nTexto real del mundo:\n¡¡¡INCREÍBLE oferta!!!  \nVisita https://tienda.com 😍😍\nEnvía un msg al +591-71234567\n#Descuento @tienda_bo\n    precio: $99.99 USD\n\nProblemas para una máquina:\n\nMayúsculas / minúsculas\nPuntuación repetida\nURLs, emails, emojis\nHashtags, menciones\nEspacios irregulares\nNúmeros en distintos formatos\n\n\n\n\n\n\n\n\n\nRegla de Oro del NLP\n\n\nBasura entra, basura sale (Garbage in, garbage out). La calidad de cualquier modelo depende directamente de la calidad del preprocesamiento."
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#el-pipeline-de-preprocesamiento",
+    "href": "slides/semana01/s3_preprocesamiento.html#el-pipeline-de-preprocesamiento",
+    "title": "Preprocesamiento de Texto",
+    "section": "El Pipeline de Preprocesamiento",
+    "text": "El Pipeline de Preprocesamiento\n\n\nCode\nflowchart LR\n    A[📄 Texto&lt;br&gt;crudo] --&gt; B[🔤 Tokenización]\n    B --&gt; C[🔡 Normalización]\n    C --&gt; D[🚫 Stopwords]\n    D --&gt; E[🌱 Stemming /&lt;br&gt;📖 Lematización]\n    E --&gt; F[✅ Texto&lt;br&gt;limpio]\n\n    style A fill:#fff3cd,color:#000\n    style B fill:#cfe2ff,color:#000\n    style C fill:#d1e7dd,color:#000\n    style D fill:#f8d7da,color:#000\n    style E fill:#e2d9f3,color:#000\n    style F fill:#d4edda,color:#000\n\n\n\n\n\nflowchart LR\n    A[📄 Texto&lt;br&gt;crudo] --&gt; B[🔤 Tokenización]\n    B --&gt; C[🔡 Normalización]\n    C --&gt; D[🚫 Stopwords]\n    D --&gt; E[🌱 Stemming /&lt;br&gt;📖 Lematización]\n    E --&gt; F[✅ Texto&lt;br&gt;limpio]\n\n    style A fill:#fff3cd,color:#000\n    style B fill:#cfe2ff,color:#000\n    style C fill:#d1e7dd,color:#000\n    style D fill:#f8d7da,color:#000\n    style E fill:#e2d9f3,color:#000\n    style F fill:#d4edda,color:#000\n\n\n\n\n\n\nCada paso transforma el texto para que sea más útil para nuestros modelos."
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#qué-es-tokenizar",
+    "href": "slides/semana01/s3_preprocesamiento.html#qué-es-tokenizar",
+    "title": "Preprocesamiento de Texto",
+    "section": "¿Qué es Tokenizar?",
+    "text": "¿Qué es Tokenizar?\n\nDividir un texto en unidades mínimas significativas llamadas tokens.\n\n\n\nTipos de tokenización:\n\n\n\nNivel\nEjemplo\n\n\n\n\nOración\n“Hola. ¿Qué tal?” → 2 oraciones\n\n\nPalabra\n“el gato negro” → 3 tokens\n\n\nSubpalabra\n“jugando” → “jug” + “##ando”\n\n\nCarácter\n“gato” → g, a, t, o\n\n\n\n\n¿Por qué importa?\n\nDefine la unidad básica de análisis\nAfecta el vocabulario del modelo\nDiferente en cada idioma\nNo es trivial: “New York” → ¿1 o 2 tokens?"
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#método-1-split-naïve",
+    "href": "slides/semana01/s3_preprocesamiento.html#método-1-split-naïve",
+    "title": "Preprocesamiento de Texto",
+    "section": "Método 1: split() (Naïve)",
+    "text": "Método 1: split() (Naïve)\n\ntexto = \"El gato, que estaba en el jardín, cazó un ratón.\"\n\n# split() divide por espacios\ntokens = texto.split()\nprint(f\"Tokens: {tokens}\")\nprint(f\"Cantidad: {len(tokens)}\")\n\nTokens: ['El', 'gato,', 'que', 'estaba', 'en', 'el', 'jardín,', 'cazó', 'un', 'ratón.']\nCantidad: 10\n\n\n\n\n\n\n\n\n\nProblemas de split()\n\n\n\n“gato,” se considera un solo token (incluye la coma)\nNo separa puntuación\nNo maneja contracciones (“del” = “de” + “el”)\nNo detecta límites de oración"
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#método-2-regex-mejor",
+    "href": "slides/semana01/s3_preprocesamiento.html#método-2-regex-mejor",
+    "title": "Preprocesamiento de Texto",
+    "section": "Método 2: Regex (Mejor)",
+    "text": "Método 2: Regex (Mejor)\n\nimport re\n\ntexto = \"El gato, que estaba en el jardín, cazó un ratón.\"\n\n# Tokenización con regex\ntokens = re.findall(r\"\\w+|[^\\w\\s]\", texto)\nprint(f\"Tokens: {tokens}\")\nprint(f\"Cantidad: {len(tokens)}\")\n\nTokens: ['El', 'gato', ',', 'que', 'estaba', 'en', 'el', 'jardín', ',', 'cazó', 'un', 'ratón', '.']\nCantidad: 13\n\n\n\nMejor, pero aún tiene limitaciones con:\n\nAbreviaturas: “EE.UU.” → ¿“EE”, “.”, “UU”, “.”?\nNúmeros decimales: “3.14” → ¿“3”, “.”, “14”?\nContracciones del español: “al” = “a” + “el”"
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#método-3-nltk",
+    "href": "slides/semana01/s3_preprocesamiento.html#método-3-nltk",
+    "title": "Preprocesamiento de Texto",
+    "section": "Método 3: NLTK",
+    "text": "Método 3: NLTK\n\nimport nltk\nnltk.download('punkt_tab', quiet=True)\n\nfrom nltk.tokenize import word_tokenize, sent_tokenize\n\ntexto = \"El Dr. García vive en La Paz. Trabaja en la U.C.B. desde 2019.\"\n\n# Tokenización por oraciones\noraciones = sent_tokenize(texto, language='spanish')\nprint(\"Oraciones:\")\nfor i, sent in enumerate(oraciones):\n    print(f\"  {i+1}. {sent}\")\n\n# Tokenización por palabras\ntokens = word_tokenize(texto, language='spanish')\nprint(f\"\\nTokens: {tokens}\")\n\nOraciones:\n  1. El Dr. García vive en La Paz.\n  2. Trabaja en la U.C.B.\n  3. desde 2019.\n\nTokens: ['El', 'Dr.', 'García', 'vive', 'en', 'La', 'Paz', '.', 'Trabaja', 'en', 'la', 'U.C.B', '.', 'desde', '2019', '.']"
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#método-4-spacy",
+    "href": "slides/semana01/s3_preprocesamiento.html#método-4-spacy",
+    "title": "Preprocesamiento de Texto",
+    "section": "Método 4: spaCy",
+    "text": "Método 4: spaCy\n\nimport spacy\n\nnlp = spacy.load(\"es_core_news_sm\")\n\ntexto = \"El Dr. García vive en La Paz. Trabaja en la U.C.B. desde 2019.\"\ndoc = nlp(texto)\n\n# Tokenización por oraciones\nprint(\"Oraciones:\")\nfor i, sent in enumerate(doc.sents):\n    print(f\"  {i+1}. {sent.text}\")\n\n# Tokenización por palabras con información adicional\nprint(\"\\nTokens con POS tags:\")\nfor token in doc:\n    print(f\"  '{token.text:12s}' → POS: {token.pos_:6s} | Lema: {token.lemma_}\")\n\nOraciones:\n  1. El Dr. García vive en La Paz.\n  2. Trabaja en la U.C.B. desde 2019.\n\nTokens con POS tags:\n  'El          ' → POS: DET    | Lema: el\n  'Dr.         ' → POS: PROPN  | Lema: Dr.\n  'García      ' → POS: PROPN  | Lema: García\n  'vive        ' → POS: VERB   | Lema: vivir\n  'en          ' → POS: ADP    | Lema: en\n  'La          ' → POS: DET    | Lema: el\n  'Paz         ' → POS: PROPN  | Lema: Paz\n  '.           ' → POS: PUNCT  | Lema: .\n  'Trabaja     ' → POS: VERB   | Lema: trabajar\n  'en          ' → POS: ADP    | Lema: en\n  'la          ' → POS: DET    | Lema: el\n  'U.C.B.      ' → POS: PROPN  | Lema: U.C.B.\n  'desde       ' → POS: ADP    | Lema: desde\n  '2019        ' → POS: NOUN   | Lema: 2019\n  '.           ' → POS: PUNCT  | Lema: ."
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#comparación-de-tokenizadores",
+    "href": "slides/semana01/s3_preprocesamiento.html#comparación-de-tokenizadores",
+    "title": "Preprocesamiento de Texto",
+    "section": "Comparación de Tokenizadores",
+    "text": "Comparación de Tokenizadores\n\nimport re\nimport nltk\nimport spacy\nfrom nltk.tokenize import word_tokenize\n\nnlp = spacy.load(\"es_core_news_sm\")\n\ntexto = \"No puedo creer que cueste $99.99 en EE.UU.\"\n\n# Comparar los 4 métodos\nmetodos = {\n    \"split()\": texto.split(),\n    \"regex\": re.findall(r\"\\w+|[^\\w\\s]\", texto),\n    \"NLTK\": word_tokenize(texto, language='spanish'),\n    \"spaCy\": [t.text for t in nlp(texto)]\n}\n\nfor nombre, tokens in metodos.items():\n    print(f\"{nombre:8s} ({len(tokens):2d} tokens): {tokens}\")\n\nsplit()  ( 8 tokens): ['No', 'puedo', 'creer', 'que', 'cueste', '$99.99', 'en', 'EE.UU.']\nregex    (14 tokens): ['No', 'puedo', 'creer', 'que', 'cueste', '$', '99', '.', '99', 'en', 'EE', '.', 'UU', '.']\nNLTK     (10 tokens): ['No', 'puedo', 'creer', 'que', 'cueste', '$', '99.99', 'en', 'EE.UU', '.']\nspaCy    ( 9 tokens): ['No', 'puedo', 'creer', 'que', 'cueste', '$', '99.99', 'en', 'EE.UU.']\n\n\n\n\n\n\n\n\nRecomendación\n\n\nPara proyectos reales, usa spaCy o NLTK. Reserva split() y regex para prototipos rápidos."
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#técnicas-de-normalización",
+    "href": "slides/semana01/s3_preprocesamiento.html#técnicas-de-normalización",
+    "title": "Preprocesamiento de Texto",
+    "section": "Técnicas de Normalización",
+    "text": "Técnicas de Normalización\n\n\nTécnicas Básicas\n\nLowercase - Convertir a minúsculas\nEliminar puntuación\nEliminar números (o normalizarlos)\nEliminar espacios extra\n\n\nTécnicas Avanzadas\n\nEliminar stopwords\nEliminar acentos (depende del caso)\nExpandir contracciones\nNormalizar Unicode"
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#ejemplo-normalización-paso-a-paso",
+    "href": "slides/semana01/s3_preprocesamiento.html#ejemplo-normalización-paso-a-paso",
+    "title": "Preprocesamiento de Texto",
+    "section": "Ejemplo: Normalización Paso a Paso",
+    "text": "Ejemplo: Normalización Paso a Paso\n\nimport re\nimport unicodedata\n\ntexto = \"  ¡¡HOLA Mundo!!  ¿Cómo ESTÁS?   😊  \"\n\n# Paso 1: Lowercase\npaso1 = texto.lower()\nprint(f\"1. Lowercase:    '{paso1}'\")\n\n# Paso 2: Normalizar espacios\npaso2 = re.sub(r\"\\s+\", \" \", paso1).strip()\nprint(f\"2. Espacios:     '{paso2}'\")\n\n# Paso 3: Eliminar puntuación repetida\npaso3 = re.sub(r\"([¿?¡!.])\\1+\", r\"\\1\", paso2)\nprint(f\"3. Puntuación:   '{paso3}'\")\n\n# Paso 4: Eliminar emojis\npaso4 = re.sub(r\"[^\\w\\s¿?¡!.,áéíóúñü]\", \"\", paso3)\nprint(f\"4. Sin emojis:   '{paso4}'\")\n\n1. Lowercase:    '  ¡¡hola mundo!!  ¿cómo estás?   😊  '\n2. Espacios:     '¡¡hola mundo!! ¿cómo estás? 😊'\n3. Puntuación:   '¡hola mundo! ¿cómo estás? 😊'\n4. Sin emojis:   '¡hola mundo! ¿cómo estás? '"
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#stopwords-palabras-vacías",
+    "href": "slides/semana01/s3_preprocesamiento.html#stopwords-palabras-vacías",
+    "title": "Preprocesamiento de Texto",
+    "section": "Stopwords: Palabras Vacías",
+    "text": "Stopwords: Palabras Vacías\nStopwords = palabras muy frecuentes que aportan poco significado.\n\nimport nltk\nnltk.download('stopwords', quiet=True)\nfrom nltk.corpus import stopwords\n\n# Stopwords en español\nstops_es = set(stopwords.words('spanish'))\nprint(f\"Total stopwords en español: {len(stops_es)}\")\nprint(f\"Ejemplos: {sorted(list(stops_es))[:20]}\")\n\nTotal stopwords en español: 313\nEjemplos: ['a', 'al', 'algo', 'algunas', 'algunos', 'ante', 'antes', 'como', 'con', 'contra', 'cual', 'cuando', 'de', 'del', 'desde', 'donde', 'durante', 'e', 'el', 'ella']"
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#eliminación-de-stopwords",
+    "href": "slides/semana01/s3_preprocesamiento.html#eliminación-de-stopwords",
+    "title": "Preprocesamiento de Texto",
+    "section": "Eliminación de Stopwords",
+    "text": "Eliminación de Stopwords\n\nfrom nltk.corpus import stopwords\nfrom nltk.tokenize import word_tokenize\n\nstops = set(stopwords.words('spanish'))\n\ntexto = \"El procesamiento de lenguaje natural es una rama de la inteligencia artificial\"\ntokens = word_tokenize(texto.lower(), language='spanish')\n\n# Filtrar stopwords\ntokens_limpios = [t for t in tokens if t not in stops and t.isalpha()]\n\nprint(f\"Original ({len(tokens)} tokens):\")\nprint(f\"  {tokens}\")\nprint(f\"\\nSin stopwords ({len(tokens_limpios)} tokens):\")\nprint(f\"  {tokens_limpios}\")\n\nOriginal (12 tokens):\n  ['el', 'procesamiento', 'de', 'lenguaje', 'natural', 'es', 'una', 'rama', 'de', 'la', 'inteligencia', 'artificial']\n\nSin stopwords (6 tokens):\n  ['procesamiento', 'lenguaje', 'natural', 'rama', 'inteligencia', 'artificial']\n\n\n\n\n\n\n\n\n⚠️ Cuidado con las stopwords\n\n\nNo siempre hay que eliminarlas. Para análisis de sentimiento, “no” es crucial. Para modelos de lenguaje, las necesitamos todas."
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#qué-es-stemming",
+    "href": "slides/semana01/s3_preprocesamiento.html#qué-es-stemming",
+    "title": "Preprocesamiento de Texto",
+    "section": "¿Qué es Stemming?",
+    "text": "¿Qué es Stemming?\n\nReducir una palabra a su raíz (stem) eliminando sufijos morfológicos mediante reglas heurísticas.\n\n\n\nEjemplo:\n\n\n\nPalabra\nStem\n\n\n\n\njugando\njug\n\n\njugador\njug\n\n\njuegos\njueg\n\n\njugar\njug\n\n\njugable\njug\n\n\n\n\nCaracterísticas:\n\n✅ Rápido y simple\n✅ No necesita diccionario\n❌ La raíz puede no ser una palabra real\n❌ Errores frecuentes\n❌ Basado en reglas fijas"
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#snowball-stemmer-para-español",
+    "href": "slides/semana01/s3_preprocesamiento.html#snowball-stemmer-para-español",
+    "title": "Preprocesamiento de Texto",
+    "section": "Snowball Stemmer para Español",
+    "text": "Snowball Stemmer para Español\n\nfrom nltk.stem import SnowballStemmer\n\nstemmer = SnowballStemmer(\"spanish\")\n\npalabras = [\n    \"corriendo\", \"correr\", \"corrió\", \"corredor\", \"corrida\",\n    \"computadora\", \"computadoras\", \"computación\", \"computar\",\n    \"universidad\", \"universitario\", \"universitaria\", \"universidades\"\n]\n\nprint(f\"{'Palabra':&lt;18} {'Stem':&lt;12}\")\nprint(\"-\" * 30)\nfor palabra in palabras:\n    stem = stemmer.stem(palabra)\n    print(f\"{palabra:&lt;18} {stem:&lt;12}\")\n\nPalabra            Stem        \n------------------------------\ncorriendo          corr        \ncorrer             corr        \ncorrió             corr        \ncorredor           corredor    \ncorrida            corr        \ncomputadora        comput      \ncomputadoras       comput      \ncomputación        comput      \ncomputar           comput      \nuniversidad        univers     \nuniversitario      universitari\nuniversitaria      universitari\nuniversidades      univers"
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#errores-comunes-del-stemming",
+    "href": "slides/semana01/s3_preprocesamiento.html#errores-comunes-del-stemming",
+    "title": "Preprocesamiento de Texto",
+    "section": "Errores Comunes del Stemming",
+    "text": "Errores Comunes del Stemming\n\nfrom nltk.stem import SnowballStemmer\n\nstemmer = SnowballStemmer(\"spanish\")\n\n# Over-stemming: palabras diferentes → mismo stem\nprint(\"Over-stemming (falsos positivos):\")\npares_over = [(\"universo\", \"universidad\"), (\"general\", \"generoso\")]\nfor p1, p2 in pares_over:\n    s1, s2 = stemmer.stem(p1), stemmer.stem(p2)\n    print(f\"  '{p1}' → '{s1}' | '{p2}' → '{s2}' | ¿Iguales? {s1 == s2}\")\n\n# Under-stemming: palabras relacionadas → stems diferentes\nprint(\"\\nUnder-stemming (falsos negativos):\")\npares_under = [(\"absorber\", \"absorción\"), (\"producir\", \"producto\")]\nfor p1, p2 in pares_under:\n    s1, s2 = stemmer.stem(p1), stemmer.stem(p2)\n    print(f\"  '{p1}' → '{s1}' | '{p2}' → '{s2}' | ¿Iguales? {s1 == s2}\")\n\nOver-stemming (falsos positivos):\n  'universo' → 'univers' | 'universidad' → 'univers' | ¿Iguales? True\n  'general' → 'general' | 'generoso' → 'gener' | ¿Iguales? False\n\nUnder-stemming (falsos negativos):\n  'absorber' → 'absorb' | 'absorción' → 'absorcion' | ¿Iguales? False\n  'producir' → 'produc' | 'producto' → 'product' | ¿Iguales? False"
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#qué-es-la-lematización",
+    "href": "slides/semana01/s3_preprocesamiento.html#qué-es-la-lematización",
+    "title": "Preprocesamiento de Texto",
+    "section": "¿Qué es la Lematización?",
+    "text": "¿Qué es la Lematización?\n\nReducir una palabra a su lema: la forma canónica que aparecería en un diccionario, considerando el contexto gramatical.\n\n\n\nEjemplo:\n\n\n\nPalabra\nLema\n\n\n\n\njugando\njugar\n\n\njugador\njugador\n\n\njuegos\njuego\n\n\nmejores\nmejor\n\n\nfue\nir / ser\n\n\n\n\nCaracterísticas:\n\n✅ El resultado es una palabra real\n✅ Considera el contexto (POS)\n✅ Más preciso que stemming\n❌ Más lento\n❌ Necesita diccionario / modelo"
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#lematización-con-spacy",
+    "href": "slides/semana01/s3_preprocesamiento.html#lematización-con-spacy",
+    "title": "Preprocesamiento de Texto",
+    "section": "Lematización con spaCy",
+    "text": "Lematización con spaCy\n\nimport spacy\n\nnlp = spacy.load(\"es_core_news_sm\")\n\ntexto = \"Los estudiantes corrieron rápidamente hacia las mejores universidades del país\"\ndoc = nlp(texto)\n\nprint(f\"{'Token':&lt;18} {'Lema':&lt;16} {'POS':&lt;8} {'¿Cambió?'}\")\nprint(\"-\" * 52)\nfor token in doc:\n    cambio = \"✅\" if token.text.lower() != token.lemma_ else \"\"\n    print(f\"{token.text:&lt;18} {token.lemma_:&lt;16} {token.pos_:&lt;8} {cambio}\")\n\nToken              Lema             POS      ¿Cambió?\n----------------------------------------------------\nLos                el               DET      ✅\nestudiantes        estudiante       NOUN     ✅\ncorrieron          correr           VERB     ✅\nrápidamente        rápidamente      ADV      \nhacia              hacia            ADP      \nlas                el               DET      ✅\nmejores            mejor            ADJ      ✅\nuniversidades      universidad      NOUN     ✅\ndel                del              ADP      \npaís               país             NOUN"
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#stemming-vs.-lematización",
+    "href": "slides/semana01/s3_preprocesamiento.html#stemming-vs.-lematización",
+    "title": "Preprocesamiento de Texto",
+    "section": "Stemming vs. Lematización",
+    "text": "Stemming vs. Lematización\n\nfrom nltk.stem import SnowballStemmer\nimport spacy\n\nstemmer = SnowballStemmer(\"spanish\")\nnlp = spacy.load(\"es_core_news_sm\")\n\npalabras = [\"corriendo\", \"mejores\", \"ciudades\", \"producción\", \"dificultades\", \"haciendo\"]\n\nprint(f\"{'Palabra':&lt;16} {'Stem':&lt;14} {'Lema (spaCy)':&lt;16}\")\nprint(\"-\" * 46)\nfor palabra in palabras:\n    stem = stemmer.stem(palabra)\n    doc = nlp(palabra)\n    lema = doc[0].lemma_\n    print(f\"{palabra:&lt;16} {stem:&lt;14} {lema:&lt;16}\")\n\nPalabra          Stem           Lema (spaCy)    \n----------------------------------------------\ncorriendo        corr           correr          \nmejores          mejor          mejor           \nciudades         ciudad         ciudad          \nproducción       produccion     producción      \ndificultades     dificultad     dificultad      \nhaciendo         hac            hacer           \n\n\n\n\n\n\n\n\n\n¿Cuándo usar cuál?\n\n\n\nStemming: Búsqueda de información, indexación, cuando la velocidad importa\nLematización: Análisis de sentimiento, chatbots, cuando la precisión importa"
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#función-de-preprocesamiento",
+    "href": "slides/semana01/s3_preprocesamiento.html#función-de-preprocesamiento",
+    "title": "Preprocesamiento de Texto",
+    "section": "Función de Preprocesamiento",
+    "text": "Función de Preprocesamiento\n\nimport re\nimport spacy\nfrom nltk.corpus import stopwords\n\nnlp = spacy.load(\"es_core_news_sm\")\nstops = set(stopwords.words('spanish'))\n\ndef preprocesar(texto, usar_lemas=True, quitar_stops=True):\n    \"\"\"Pipeline completo de preprocesamiento para NLP en español.\"\"\"\n    # 1. Lowercase\n    texto = texto.lower()\n    # 2. Eliminar URLs y emails\n    texto = re.sub(r\"https?://\\S+|www\\.\\S+\", \"\", texto)\n    texto = re.sub(r\"\\S+@\\S+\", \"\", texto)\n    # 3. Eliminar caracteres especiales (mantener letras y espacios)\n    texto = re.sub(r\"[^\\w\\sáéíóúñü]\", \" \", texto)\n    # 4. Normalizar espacios\n    texto = re.sub(r\"\\s+\", \" \", texto).strip()\n    # 5. Tokenizar y lematizar con spaCy\n    doc = nlp(texto)\n    tokens = []\n    for token in doc:\n        palabra = token.lemma_ if usar_lemas else token.text\n        if quitar_stops and palabra in stops:\n            continue\n        if not palabra.isalpha():\n            continue\n        tokens.append(palabra)\n    return tokens"
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#demo-del-pipeline",
+    "href": "slides/semana01/s3_preprocesamiento.html#demo-del-pipeline",
+    "title": "Preprocesamiento de Texto",
+    "section": "Demo del Pipeline",
+    "text": "Demo del Pipeline\n\ntexto_crudo = \"\"\"\n¡¡Los MEJORES estudiantes de la Universidad Católica están \ndesarrollando proyectos increíbles!! 🎓🚀\nVisita https://ucb.edu.bo para más información.\nContacto: info@ucb.edu.bo\n\"\"\"\n\nprint(f\"TEXTO ORIGINAL:\\n{texto_crudo}\")\n\n# Con lemas y sin stopwords\nresultado1 = preprocesar(texto_crudo, usar_lemas=True, quitar_stops=True)\nprint(f\"Con lemas, sin stops:\\n  {resultado1}\\n\")\n\n# Sin lemas, sin stopwords\nresultado2 = preprocesar(texto_crudo, usar_lemas=False, quitar_stops=True)\nprint(f\"Sin lemas, sin stops:\\n  {resultado2}\\n\")\n\n# Con lemas, con stopwords\nresultado3 = preprocesar(texto_crudo, usar_lemas=True, quitar_stops=False)\nprint(f\"Con lemas, con stops:\\n  {resultado3}\")\n\nTEXTO ORIGINAL:\n\n¡¡Los MEJORES estudiantes de la Universidad Católica están \ndesarrollando proyectos increíbles!! 🎓🚀\nVisita https://ucb.edu.bo para más información.\nContacto: info@ucb.edu.bo\n\nCon lemas, sin stops:\n  ['mejor', 'estudiante', 'universidad', 'católico', 'desarrollar', 'proyecto', 'increíble', 'visitar', 'información', 'contacto']\n\nSin lemas, sin stops:\n  ['mejores', 'estudiantes', 'universidad', 'católica', 'desarrollando', 'proyectos', 'increíbles', 'visita', 'información', 'contacto']\n\nCon lemas, con stops:\n  ['el', 'mejor', 'estudiante', 'de', 'el', 'universidad', 'católico', 'estar', 'desarrollar', 'proyecto', 'increíble', 'visitar', 'para', 'más', 'información', 'contacto']"
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#procesando-múltiples-documentos",
+    "href": "slides/semana01/s3_preprocesamiento.html#procesando-múltiples-documentos",
+    "title": "Preprocesamiento de Texto",
+    "section": "Procesando Múltiples Documentos",
+    "text": "Procesando Múltiples Documentos\n\ndocumentos = [\n    \"El procesamiento de lenguaje natural permite analizar textos automáticamente.\",\n    \"Las redes neuronales han revolucionado la inteligencia artificial moderna.\",\n    \"Bolivia tiene una gran diversidad lingüística con más de 30 idiomas nativos.\",\n]\n\nprint(\"DOCUMENTOS PREPROCESADOS:\\n\")\nfor i, doc in enumerate(documentos):\n    tokens = preprocesar(doc)\n    print(f\"Doc {i+1}: {tokens}\")\n\nDOCUMENTOS PREPROCESADOS:\n\nDoc 1: ['procesamiento', 'lenguaje', 'natural', 'permitir', 'analizar', 'texto', 'automáticamente']\nDoc 2: ['red', 'neuronal', 'haber', 'revolucionar', 'inteligencia', 'artificial', 'moderno']\nDoc 3: ['bolivia', 'tener', 'gran', 'diversidad', 'lingüístico', 'idioma', 'nativo']\n\n\n\n\n\n\n\n\nSiguiente paso\n\n\nCon el texto preprocesado, estamos listos para representarlo numéricamente (Semana 2: Bag of Words, TF-IDF…)."
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#desafío-preprocesador-de-tweets",
+    "href": "slides/semana01/s3_preprocesamiento.html#desafío-preprocesador-de-tweets",
+    "title": "Preprocesamiento de Texto",
+    "section": "Desafío: Preprocesador de Tweets",
+    "text": "Desafío: Preprocesador de Tweets\nCrea una función que preprocese tweets en español:\n\nEliminar menciones (@usuario)\nExtraer y eliminar hashtags\nEliminar URLs\nLematizar el texto restante\n\n\n\nCode\ndef preprocesar_tweet(tweet):\n    \"\"\"Preprocesa un tweet en español.\"\"\"\n    # Extraer hashtags antes de limpiar\n    hashtags = re.findall(r\"#\\w+\", tweet)\n    # Eliminar menciones, hashtags, URLs\n    limpio = re.sub(r\"@\\w+\", \"\", tweet)\n    limpio = re.sub(r\"#\\w+\", \"\", limpio)\n    limpio = re.sub(r\"https?://\\S+\", \"\", limpio)\n    # Preprocesar\n    tokens = preprocesar(limpio)\n    return {\"tokens\": tokens, \"hashtags\": hashtags}\n\n# Prueba\ntweet = \"Gran clase de @fsuarez sobre #NLP y #MachineLearning 🔥 https://t.co/abc123\"\nresultado = preprocesar_tweet(tweet)\nprint(f\"Tweet: {tweet}\")\nprint(f\"Tokens: {resultado['tokens']}\")\nprint(f\"Hashtags: {resultado['hashtags']}\")\n\n\nTweet: Gran clase de @fsuarez sobre #NLP y #MachineLearning 🔥 https://t.co/abc123\nTokens: ['gran', 'clase']\nHashtags: ['#NLP', '#MachineLearning']"
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#lo-que-aprendimos-hoy",
+    "href": "slides/semana01/s3_preprocesamiento.html#lo-que-aprendimos-hoy",
+    "title": "Preprocesamiento de Texto",
+    "section": "Lo que Aprendimos Hoy ✅",
+    "text": "Lo que Aprendimos Hoy ✅\n\n\nTokenización:\n\nsplit() — simple pero limitado\nRegex — más control\nNLTK — soporte multi-idioma\nspaCy — info lingüística completa\n\nNormalización:\n\nLowercase, puntuación\nStopwords\nLimpieza de URLs, emails, emojis\n\n\nStemming:\n\nReducción heurística a raíz\nSnowball Stemmer para español\nRápido pero impreciso\n\nLematización:\n\nReducción a forma de diccionario\nspaCy para español\nMás lento pero más preciso"
+  },
+  {
+    "objectID": "slides/semana01/s3_preprocesamiento.html#para-la-próxima-clase",
+    "href": "slides/semana01/s3_preprocesamiento.html#para-la-próxima-clase",
+    "title": "Preprocesamiento de Texto",
+    "section": "Para la Próxima Clase 📚",
+    "text": "Para la Próxima Clase 📚\n\n\n\n\n\n\nSemana 2, S1: Bag of Words y One-hot Encoding\n\n\nAprenderemos a representar texto como vectores numéricos para que los modelos de machine learning puedan trabajar con ellos.\n\n\n\nLectura:\n\nCapítulo 2: Speech and Language Processing (Jurafsky & Martin)\nDocumentación de spaCy"
+  },
+  {
+    "objectID": "slides/semana02/s2_tfidf.html#agenda-de-hoy",
+    "href": "slides/semana02/s2_tfidf.html#agenda-de-hoy",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Agenda de Hoy",
+    "text": "Agenda de Hoy\n\n\nPrimera Parte\n\n📝 Repaso: Bag of Words y sus limitaciones\n📊 Term Frequency (TF)\n📉 Inverse Document Frequency (IDF)\n\n\nSegunda Parte\n\n⚡ TF-IDF: La combinación\n🛠️ TF-IDF con scikit-learn\n🔍 Aplicaciones prácticas"
+  },
+  {
+    "objectID": "slides/semana02/s2_tfidf.html#repaso-bag-of-words",
+    "href": "slides/semana02/s2_tfidf.html#repaso-bag-of-words",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Repaso: Bag of Words",
+    "text": "Repaso: Bag of Words\nEn la sesión anterior representamos documentos como vectores de frecuencias:\n\nfrom sklearn.feature_extraction.text import CountVectorizer\nimport pandas as pd\n\ndocumentos = [\n    \"el gato come pescado\",\n    \"el perro come carne\",\n    \"el gato y el perro juegan\"\n]\n\nvectorizer = CountVectorizer()\nX = vectorizer.fit_transform(documentos)\n\ndf = pd.DataFrame(\n    X.toarray(),\n    columns=vectorizer.get_feature_names_out(),\n    index=[f\"Doc {i+1}\" for i in range(len(documentos))]\n)\nprint(df.to_string())\n\n       carne  come  el  gato  juegan  perro  pescado\nDoc 1      0     1   1     1       0      0        1\nDoc 2      1     1   1     0       0      1        0\nDoc 3      0     0   2     1       1      1        0"
+  },
+  {
+    "objectID": "slides/semana02/s2_tfidf.html#el-problema-de-bow",
+    "href": "slides/semana02/s2_tfidf.html#el-problema-de-bow",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "El Problema de BoW",
+    "text": "El Problema de BoW\n\n\nTodas las palabras valen igual 🤔\nEn BoW, “el” y “inteligencia” tienen el mismo peso si aparecen la misma cantidad de veces.\nDoc: \"El procesamiento de lenguaje \n      natural es el futuro de la \n      inteligencia artificial\"\n\n\n\nPalabra\nFrecuencia\n\n\n\n\nel\n2\n\n\nde\n2\n\n\ninteligencia\n1\n\n\nartificial\n1\n\n\n\n\n¿Cuáles son más informativas? 💡\n\n“el”, “de”, “es”, “la” → aparecen en todos los documentos\n“inteligencia”, “artificial” → aparecen en pocos documentos\n\n. . .\n\n\n\n\n\n\nIntuición Clave\n\n\nUna palabra que aparece en muchos documentos es menos informativa que una que aparece en pocos."
+  },
+  {
+    "objectID": "slides/semana02/s2_tfidf.html#demostración-del-problema",
+    "href": "slides/semana02/s2_tfidf.html#demostración-del-problema",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Demostración del Problema",
+    "text": "Demostración del Problema\n\nfrom sklearn.feature_extraction.text import CountVectorizer\nfrom sklearn.metrics.pairwise import cosine_similarity\nimport numpy as np\n\ncorpus = [\n    \"el gato es un animal doméstico y el gato es independiente\",\n    \"el perro es un animal doméstico y el perro es leal\",\n    \"la economía del país es compleja y la inflación es alta\",\n]\n\nvectorizer = CountVectorizer()\nX = vectorizer.fit_transform(corpus)\n\nsim = cosine_similarity(X)\nprint(\"Similitud Coseno con BoW:\")\nprint(f\"  Gato vs Perro (animales):  {sim[0][1]:.3f}\")\nprint(f\"  Gato vs Economía:          {sim[0][2]:.3f}\")\nprint(f\"  Perro vs Economía:         {sim[1][2]:.3f}\")\n\nSimilitud Coseno con BoW:\n  Gato vs Perro (animales):  0.688\n  Gato vs Economía:          0.267\n  Perro vs Economía:         0.267\n\n\n\nLas palabras comunes (“el”, “es”, “un”, “y”) inflan la similitud entre documentos que no tienen nada que ver.\n\n\n\n\n\n\nSolución: TF-IDF\n\n\nPonderar las palabras por su importancia relativa en el corpus."
+  },
+  {
+    "objectID": "slides/semana02/s2_tfidf.html#qué-es-term-frequency",
+    "href": "slides/semana02/s2_tfidf.html#qué-es-term-frequency",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "¿Qué es Term Frequency?",
+    "text": "¿Qué es Term Frequency?\n\nLa frecuencia del término mide qué tan frecuente es una palabra dentro de un documento específico.\n\n\n\nVariante 1: Frecuencia bruta\n\\[\\text{TF}(t, d) = f(t, d)\\]\nSimplemente contar ocurrencias.\nVariante 2: Frecuencia normalizada\n\\[\\text{TF}(t, d) = \\frac{f(t, d)}{\\max_{t' \\in d} f(t', d)}\\]\nDividir por la frecuencia máxima del documento.\n\nVariante 3: Logarítmica\n\\[\\text{TF}(t, d) = \\begin{cases} 1 + \\log f(t, d) & \\text{si } f(t,d) &gt; 0 \\\\ 0 & \\text{si } f(t,d) = 0 \\end{cases}\\]\nReducir el impacto de frecuencias muy altas.\nVariante 4: Binaria\n\\[\\text{TF}(t, d) = \\begin{cases} 1 & \\text{si } t \\in d \\\\ 0 & \\text{si } t \\notin d \\end{cases}\\]\nSolo presencia o ausencia."
+  },
+  {
+    "objectID": "slides/semana02/s2_tfidf.html#tf-en-la-práctica",
+    "href": "slides/semana02/s2_tfidf.html#tf-en-la-práctica",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "TF en la Práctica",
+    "text": "TF en la Práctica\n\nimport numpy as np\n\ndocumento = \"el gato el gato el gato come pescado y come carne\"\npalabras = documento.split()\nvocabulario = sorted(set(palabras))\nfrecuencias = {v: palabras.count(v) for v in vocabulario}\n\nprint(f\"Documento: '{documento}'\")\nprint(f\"Total palabras: {len(palabras)}\\n\")\n\nprint(f\"{'Término':&lt;12} {'Bruta':&gt;8} {'Normalizada':&gt;12} {'Log':&gt;8} {'Binaria':&gt;8}\")\nprint(\"-\" * 52)\n\nmax_freq = max(frecuencias.values())\nfor termino in vocabulario:\n    f = frecuencias[termino]\n    tf_bruta = f\n    tf_norm = f / max_freq\n    tf_log = 1 + np.log(f) if f &gt; 0 else 0\n    tf_bin = 1 if f &gt; 0 else 0\n    print(f\"{termino:&lt;12} {tf_bruta:&gt;8d} {tf_norm:&gt;12.3f} {tf_log:&gt;8.3f} {tf_bin:&gt;8d}\")\n\nDocumento: 'el gato el gato el gato come pescado y come carne'\nTotal palabras: 11\n\nTérmino         Bruta  Normalizada      Log  Binaria\n----------------------------------------------------\ncarne               1        0.333    1.000        1\ncome                2        0.667    1.693        1\nel                  3        1.000    2.099        1\ngato                3        1.000    2.099        1\npescado             1        0.333    1.000        1\ny                   1        0.333    1.000        1\n\n\n\n\n\n\n\n\n\nProblema\n\n\nTF por sí solo no resuelve nada: “el” sigue teniendo la frecuencia más alta."
+  },
+  {
+    "objectID": "slides/semana02/s2_tfidf.html#visualización-de-tf",
+    "href": "slides/semana02/s2_tfidf.html#visualización-de-tf",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Visualización de TF",
+    "text": "Visualización de TF\n\n\nCode\nimport matplotlib.pyplot as plt\nimport numpy as np\n\nterminos = list(frecuencias.keys())\nfreqs = list(frecuencias.values())\nmax_f = max(freqs)\n\nfig, axes = plt.subplots(1, 3, figsize=(12, 4))\n\n# TF Bruta\naxes[0].barh(terminos, freqs, color='#0077b6')\naxes[0].set_title('TF Bruta', fontsize=12)\naxes[0].set_xlabel('Frecuencia')\n\n# TF Normalizada\ntf_norm = [f / max_f for f in freqs]\naxes[1].barh(terminos, tf_norm, color='#00b4d8')\naxes[1].set_title('TF Normalizada', fontsize=12)\naxes[1].set_xlabel('TF / max(TF)')\n\n# TF Logarítmica\ntf_log = [1 + np.log(f) if f &gt; 0 else 0 for f in freqs]\naxes[2].barh(terminos, tf_log, color='#48cae4')\naxes[2].set_title('TF Logarítmica', fontsize=12)\naxes[2].set_xlabel('1 + log(f)')\n\nplt.tight_layout()\nplt.show()\n\n\n\nLa TF logarítmica comprime las diferencias: “el” (3 veces) ya no domina tanto."
+  },
+  {
+    "objectID": "slides/semana02/s2_tfidf.html#la-intuición-detrás-de-idf",
+    "href": "slides/semana02/s2_tfidf.html#la-intuición-detrás-de-idf",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "La Intuición detrás de IDF",
+    "text": "La Intuición detrás de IDF\n\n\nPalabras comunes = poco informativas\nSi una palabra aparece en todos los documentos, no sirve para distinguirlos.\nCorpus de 1000 documentos:\n\n\"el\"    → aparece en 1000 docs 😴\n\"perro\" → aparece en 50 docs   🤔\n\"quásar\" → aparece en 2 docs   🤩\n\nPalabras raras = muy informativas\nUna palabra que aparece en pocos documentos es más útil para identificar de qué trata un documento.\n\n\n\n\n\n\nPrincipio IDF\n\n\nPenalizar las palabras que aparecen en muchos documentos y favorecer las que aparecen en pocos."
+  },
+  {
+    "objectID": "slides/semana02/s2_tfidf.html#fórmula-de-idf",
+    "href": "slides/semana02/s2_tfidf.html#fórmula-de-idf",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Fórmula de IDF",
+    "text": "Fórmula de IDF\n\\[\\text{IDF}(t) = \\log\\left(\\frac{N}{df(t)}\\right)\\]\nDonde:\n\n\\(N\\) = número total de documentos en el corpus\n\\(df(t)\\) = número de documentos que contienen el término \\(t\\)\n\n\n\n\nEjemplo con \\(N = 1000\\):\n\n\n\nTérmino\n\\(df(t)\\)\nIDF\n\n\n\n\n“el”\n1000\n\\(\\log(1000/1000) = 0.0\\)\n\n\n“perro”\n50\n\\(\\log(1000/50) = 3.0\\)\n\n\n“quásar”\n2\n\\(\\log(1000/2) = 6.2\\)\n\n\n\n\nComportamiento:\n\nPalabra en todos los docs → IDF ≈ 0\nPalabra en pocos docs → IDF es alto\nPalabra en un solo doc → IDF es máximo"
+  },
+  {
+    "objectID": "slides/semana02/s2_tfidf.html#variante-con-suavizado",
+    "href": "slides/semana02/s2_tfidf.html#variante-con-suavizado",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Variante con suavizado",
+    "text": "Variante con suavizado\nPara evitar divisiones por cero y valores extremos, scikit-learn usa:\n\\[\\text{IDF}(t) = \\log\\left(\\frac{1 + N}{1 + df(t)}\\right) + 1\\]\n\nimport numpy as np\n\nN = 1000  # Total de documentos\n\nprint(f\"{'Término':&lt;12} {'df(t)':&gt;6} {'IDF estándar':&gt;14} {'IDF suavizado':&gt;14}\")\nprint(\"-\" * 50)\n\nfor termino, df in [(\"el\", 1000), (\"animal\", 200), (\"perro\", 50), (\"quásar\", 2), (\"xyz\", 1)]:\n    idf_std = np.log(N / df)\n    idf_smooth = np.log((1 + N) / (1 + df)) + 1\n    print(f\"{termino:&lt;12} {df:&gt;6d} {idf_std:&gt;14.3f} {idf_smooth:&gt;14.3f}\")\n\nTérmino       df(t)   IDF estándar  IDF suavizado\n--------------------------------------------------\nel             1000          0.000          1.000\nanimal          200          1.609          2.605\nperro            50          2.996          3.977\nquásar            2          6.215          6.810\nxyz               1          6.908          7.216\n\n\n\n\n\n\n\n\n\n¿Por qué el “+1” final?\n\n\nGarantiza que incluso las palabras más comunes tengan un peso positivo (nunca cero)."
+  },
+  {
+    "objectID": "slides/semana02/s2_tfidf.html#idf-visualización",
+    "href": "slides/semana02/s2_tfidf.html#idf-visualización",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "IDF: Visualización",
+    "text": "IDF: Visualización\n\n\nCode\nimport matplotlib.pyplot as plt\nimport numpy as np\n\nN = 1000\ndf_values = np.arange(1, N + 1)\n\nidf_standard = np.log(N / df_values)\nidf_smooth = np.log((1 + N) / (1 + df_values)) + 1\n\nfig, ax = plt.subplots(figsize=(10, 4))\nax.plot(df_values, idf_standard, label='IDF estándar: log(N/df)', color='#e63946', linewidth=2)\nax.plot(df_values, idf_smooth, label='IDF suavizado: log((1+N)/(1+df)) + 1', color='#0077b6', linewidth=2)\n\nax.set_xlabel('df(t) — Documentos que contienen el término', fontsize=11)\nax.set_ylabel('IDF(t)', fontsize=11)\nax.set_title(f'IDF en función de df(t) para N={N} documentos', fontsize=13)\nax.legend(fontsize=10)\nax.grid(True, alpha=0.3)\nax.axhline(y=0, color='gray', linestyle='--', alpha=0.5)\n\n# Anotar puntos clave\nax.annotate('Muy raro\\n(informativo)', xy=(5, idf_standard[4]), fontsize=9,\n            xytext=(100, 6), arrowprops=dict(arrowstyle='-&gt;', color='#e63946'),\n            color='#e63946', fontweight='bold')\nax.annotate('Muy común\\n(poco informativo)', xy=(950, idf_standard[949]), fontsize=9,\n            xytext=(700, 3), arrowprops=dict(arrowstyle='-&gt;', color='#e63946'),\n            color='#e63946', fontweight='bold')\n\nplt.tight_layout()\nplt.show()"
+  },
+  {
+    "objectID": "slides/semana02/s2_tfidf.html#la-fórmula-tf-idf",
+    "href": "slides/semana02/s2_tfidf.html#la-fórmula-tf-idf",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "La Fórmula TF-IDF",
+    "text": "La Fórmula TF-IDF\n\\[\\text{TF-IDF}(t, d) = \\text{TF}(t, d) \\times \\text{IDF}(t)\\]\n\n\nTF (Term Frequency):\n\nMide la importancia local del término\n¿Qué tan frecuente es en este documento?\n\n\nIDF (Inverse Document Frequency):\n\nMide la importancia global del término\n¿Qué tan raro es en el corpus?\n\n\n\n\n\n\n\n\n\nIntuición\n\n\nUn término tiene TF-IDF alto cuando:\n\nAparece muchas veces en el documento (TF alto)\nAparece en pocos documentos del corpus (IDF alto)\n\nUn término tiene TF-IDF bajo cuando es raro en el doc O común en el corpus."
+  },
+  {
+    "objectID": "slides/semana02/s2_tfidf.html#tf-idf-diagrama-conceptual",
+    "href": "slides/semana02/s2_tfidf.html#tf-idf-diagrama-conceptual",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "TF-IDF: Diagrama Conceptual",
+    "text": "TF-IDF: Diagrama Conceptual\n\n\nCode\nflowchart LR\n    A[\"📄 Documento d\"] --&gt; B[\"TF(t,d)&lt;br&gt;Frecuencia local\"]\n    C[\"📚 Corpus\"] --&gt; D[\"IDF(t)&lt;br&gt;Rareza global\"]\n    B --&gt; E[\"✖️ Multiplicar\"]\n    D --&gt; E\n    E --&gt; F[\"📊 TF-IDF(t,d)&lt;br&gt;Peso final\"]\n\n    style A fill:#cfe2ff,color:#000\n    style C fill:#d1e7dd,color:#000\n    style B fill:#48cae4,color:#000\n    style D fill:#2a9d8f,color:#fff\n    style E fill:#ffd166,color:#000\n    style F fill:#0077b6,color:#fff,stroke:#023e8a,stroke-width:3px\n\n\n\n\n\nflowchart LR\n    A[\"📄 Documento d\"] --&gt; B[\"TF(t,d)&lt;br&gt;Frecuencia local\"]\n    C[\"📚 Corpus\"] --&gt; D[\"IDF(t)&lt;br&gt;Rareza global\"]\n    B --&gt; E[\"✖️ Multiplicar\"]\n    D --&gt; E\n    E --&gt; F[\"📊 TF-IDF(t,d)&lt;br&gt;Peso final\"]\n\n    style A fill:#cfe2ff,color:#000\n    style C fill:#d1e7dd,color:#000\n    style B fill:#48cae4,color:#000\n    style D fill:#2a9d8f,color:#fff\n    style E fill:#ffd166,color:#000\n    style F fill:#0077b6,color:#fff,stroke:#023e8a,stroke-width:3px\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nEscenario\nTF\nIDF\nTF-IDF\nInterpretación\n\n\n\n\nFrecuente en doc, raro en corpus\nAlto\nAlto\nMuy alto\nTérmino clave del documento\n\n\nFrecuente en doc, común en corpus\nAlto\nBajo\nMedio\nPalabra funcional frecuente\n\n\nRaro en doc, raro en corpus\nBajo\nAlto\nMedio-bajo\nPresente pero no dominante\n\n\nRaro en doc, común en corpus\nBajo\nBajo\nMuy bajo\nPoco relevante"
+  },
+  {
+    "objectID": "slides/semana02/s2_tfidf.html#cálculo-manual-paso-a-paso",
+    "href": "slides/semana02/s2_tfidf.html#cálculo-manual-paso-a-paso",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Cálculo Manual Paso a Paso",
+    "text": "Cálculo Manual Paso a Paso\n\nimport numpy as np\n\ncorpus = [\n    \"el gato come pescado\",\n    \"el perro come carne\",\n    \"el gato y el perro juegan\",\n]\n\n# Tokenizar\ndocs_tokenizados = [doc.split() for doc in corpus]\nvocabulario = sorted(set(w for doc in docs_tokenizados for w in doc))\nN = len(corpus)\n\nprint(f\"Vocabulario: {vocabulario}\")\nprint(f\"N = {N} documentos\\n\")\n\n# Calcular TF, DF, IDF y TF-IDF\nprint(f\"{'Término':&lt;10} {'TF(doc1)':&gt;8} {'df(t)':&gt;6} {'IDF':&gt;8} {'TF-IDF(doc1)':&gt;12}\")\nprint(\"-\" * 48)\n\nfor t in vocabulario:\n    tf = docs_tokenizados[0].count(t)  # TF para doc 1\n    df = sum(1 for doc in docs_tokenizados if t in doc)\n    idf = np.log(N / df)\n    tfidf = tf * idf\n    print(f\"{t:&lt;10} {tf:&gt;8d} {df:&gt;6d} {idf:&gt;8.3f} {tfidf:&gt;12.3f}\")\n\nVocabulario: ['carne', 'come', 'el', 'gato', 'juegan', 'perro', 'pescado', 'y']\nN = 3 documentos\n\nTérmino    TF(doc1)  df(t)      IDF TF-IDF(doc1)\n------------------------------------------------\ncarne             0      1    1.099        0.000\ncome              1      2    0.405        0.405\nel                1      3    0.000        0.000\ngato              1      2    0.405        0.405\njuegan            0      1    1.099        0.000\nperro             0      2    0.405        0.000\npescado           1      1    1.099        1.099\ny                 0      1    1.099        0.000\n\n\n\n“gato” y “pescado” tienen los pesos TF-IDF más altos para el Doc 1. Son los términos que mejor lo identifican."
+  },
+  {
+    "objectID": "slides/semana02/s2_tfidf.html#tfidfvectorizer",
+    "href": "slides/semana02/s2_tfidf.html#tfidfvectorizer",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "TfidfVectorizer",
+    "text": "TfidfVectorizer\nscikit-learn ofrece TfidfVectorizer que calcula todo automáticamente:\n\nfrom sklearn.feature_extraction.text import TfidfVectorizer\nimport pandas as pd\n\ncorpus = [\n    \"el gato come pescado fresco\",\n    \"el perro come carne roja\",\n    \"el gato y el perro juegan juntos\",\n    \"el pescado fresco es delicioso\",\n]\n\ntfidf = TfidfVectorizer()\nX = tfidf.fit_transform(corpus)\n\ndf = pd.DataFrame(\n    X.toarray().round(3),\n    columns=tfidf.get_feature_names_out(),\n    index=[f\"Doc {i+1}\" for i in range(len(corpus))]\n)\nprint(df.to_string())\n\n       carne   come  delicioso     el     es  fresco   gato  juegan  juntos  perro  pescado   roja\nDoc 1  0.000  0.475      0.000  0.314  0.000   0.475  0.475    0.00    0.00  0.000    0.475  0.000\nDoc 2  0.533  0.420      0.000  0.278  0.000   0.000  0.000    0.00    0.00  0.420    0.000  0.533\nDoc 3  0.000  0.000      0.000  0.501  0.000   0.000  0.379    0.48    0.48  0.379    0.000  0.000\nDoc 4  0.000  0.000      0.533  0.278  0.533   0.420  0.000    0.00    0.00  0.000    0.420  0.000\n\n\n\n\n\n\n\n\nNormalización L2\n\n\nTfidfVectorizer normaliza cada vector de documento para que tenga norma unitaria (\\(||v|| = 1\\)), lo que facilita la comparación por similitud coseno."
+  },
+  {
+    "objectID": "slides/semana02/s2_tfidf.html#bow-vs.-tf-idf-comparación-directa",
+    "href": "slides/semana02/s2_tfidf.html#bow-vs.-tf-idf-comparación-directa",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "BoW vs. TF-IDF: Comparación Directa",
+    "text": "BoW vs. TF-IDF: Comparación Directa\n\nfrom sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer\nimport pandas as pd\n\ncorpus = [\n    \"el gato duerme en la casa y el gato ronronea\",\n    \"el perro juega en el parque y el perro ladra\",\n    \"la economía global muestra signos de recuperación\",\n]\n\n# BoW\ncv = CountVectorizer()\nX_bow = cv.fit_transform(corpus)\n\n# TF-IDF\ntv = TfidfVectorizer()\nX_tfidf = tv.fit_transform(corpus)\n\nprint(\"=== Bag of Words ===\")\ndf_bow = pd.DataFrame(X_bow.toarray(), columns=cv.get_feature_names_out(),\n                       index=[\"Gato\", \"Perro\", \"Economía\"])\nprint(df_bow.to_string())\n\nprint(\"\\n=== TF-IDF ===\")\ndf_tfidf = pd.DataFrame(X_tfidf.toarray().round(3), columns=tv.get_feature_names_out(),\n                          index=[\"Gato\", \"Perro\", \"Economía\"])\nprint(df_tfidf.to_string())\n\n=== Bag of Words ===\n          casa  de  duerme  economía  el  en  gato  global  juega  la  ladra  muestra  parque  perro  recuperación  ronronea  signos\nGato         1   0       1         0   2   1     2       0      0   1      0        0       0      0             0         1       0\nPerro        0   0       0         0   3   1     0       0      1   0      1        0       1      2             0         0       0\nEconomía     0   1       0         1   0   0     0       1      0   1      0        1       0      0             1         0       1\n\n=== TF-IDF ===\n           casa    de  duerme  economía     el     en   gato  global  juega     la  ladra  muestra  parque  perro  recuperación  ronronea  signos\nGato      0.309  0.00   0.309      0.00  0.470  0.235  0.618    0.00   0.00  0.235   0.00     0.00    0.00  0.000          0.00     0.309    0.00\nPerro     0.000  0.00   0.000      0.00  0.638  0.213  0.000    0.00   0.28  0.000   0.28     0.00    0.28  0.559          0.00     0.000    0.00\nEconomía  0.000  0.39   0.000      0.39  0.000  0.000  0.000    0.39   0.00  0.297   0.00     0.39    0.00  0.000          0.39     0.000    0.39"
+  },
+  {
+    "objectID": "slides/semana02/s2_tfidf.html#el-impacto-en-la-similitud",
+    "href": "slides/semana02/s2_tfidf.html#el-impacto-en-la-similitud",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "El Impacto en la Similitud",
+    "text": "El Impacto en la Similitud\n\nfrom sklearn.metrics.pairwise import cosine_similarity\nimport numpy as np\n\n# Similitud con BoW\nsim_bow = cosine_similarity(X_bow)\n\n# Similitud con TF-IDF\nsim_tfidf = cosine_similarity(X_tfidf)\n\netiquetas = [\"Gato\", \"Perro\", \"Economía\"]\nprint(\"Similitud Coseno — BoW vs TF-IDF:\\n\")\nprint(f\"{'Par':&lt;24} {'BoW':&gt;8} {'TF-IDF':&gt;8} {'Diferencia':&gt;10}\")\nprint(\"-\" * 52)\n\nfor i in range(len(etiquetas)):\n    for j in range(i+1, len(etiquetas)):\n        diff = sim_tfidf[i][j] - sim_bow[i][j]\n        signo = \"↓\" if diff &lt; 0 else \"↑\"\n        print(f\"{etiquetas[i]+' vs '+etiquetas[j]:&lt;24} {sim_bow[i][j]:&gt;8.3f} {sim_tfidf[i][j]:&gt;8.3f} {diff:&gt;+9.3f} {signo}\")\n\nSimilitud Coseno — BoW vs TF-IDF:\n\nPar                           BoW   TF-IDF Diferencia\n----------------------------------------------------\nGato vs Perro               0.471    0.350    -0.121 ↓\nGato vs Economía            0.105    0.070    -0.035 ↓\nPerro vs Economía           0.000    0.000    +0.000 ↑\n\n\n\n\n\n\n\n\n\nResultado Clave\n\n\nTF-IDF reduce la similitud espuria causada por palabras comunes (“el”, “en”, “y”), haciendo las comparaciones más significativas."
+  },
+  {
+    "objectID": "slides/semana02/s2_tfidf.html#visualización-bow-vs-tf-idf",
+    "href": "slides/semana02/s2_tfidf.html#visualización-bow-vs-tf-idf",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Visualización: BoW vs TF-IDF",
+    "text": "Visualización: BoW vs TF-IDF\n\n\nCode\nimport matplotlib.pyplot as plt\nimport numpy as np\n\nfig, axes = plt.subplots(1, 2, figsize=(12, 4))\n\netiquetas = [\"Gato\", \"Perro\", \"Economía\"]\n\nfor ax, sim, titulo in [(axes[0], sim_bow, \"Similitud Coseno — BoW\"),\n                         (axes[1], sim_tfidf, \"Similitud Coseno — TF-IDF\")]:\n    im = ax.imshow(sim, cmap='Blues', vmin=0, vmax=1)\n    ax.set_xticks(range(len(etiquetas)))\n    ax.set_xticklabels(etiquetas, fontsize=10)\n    ax.set_yticks(range(len(etiquetas)))\n    ax.set_yticklabels(etiquetas, fontsize=10)\n    ax.set_title(titulo, fontsize=12)\n\n    for i in range(len(etiquetas)):\n        for j in range(len(etiquetas)):\n            color = 'white' if sim[i][j] &gt; 0.5 else 'black'\n            ax.text(j, i, f'{sim[i][j]:.2f}', ha='center', va='center',\n                    fontsize=12, fontweight='bold', color=color)\n\nplt.colorbar(im, ax=axes, label='Similitud', shrink=0.8)\nplt.tight_layout()\nplt.show()"
+  },
+  {
+    "objectID": "slides/semana02/s2_tfidf.html#parámetros-de-tfidfvectorizer",
+    "href": "slides/semana02/s2_tfidf.html#parámetros-de-tfidfvectorizer",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Parámetros de TfidfVectorizer",
+    "text": "Parámetros de TfidfVectorizer\n\nfrom sklearn.feature_extraction.text import TfidfVectorizer\n\ncorpus = [\n    \"El procesamiento de lenguaje natural es apasionante\",\n    \"El lenguaje natural humano es complejo y fascinante\",\n    \"La inteligencia artificial procesa el lenguaje de forma eficiente\",\n    \"El aprendizaje automático usa datos para mejorar modelos\",\n    \"Los datos son el recurso principal de la inteligencia artificial\"\n]\n\n# Parámetros principales\ntfidf = TfidfVectorizer(\n    max_features=15,       # Limitar vocabulario\n    min_df=1,              # Frecuencia mínima de documentos\n    max_df=0.9,            # Frecuencia máxima de documentos (porcentaje)\n    ngram_range=(1, 2),    # Unigramas y bigramas\n    sublinear_tf=True,     # Usar 1 + log(tf) en vez de tf\n    norm='l2',             # Normalización L2 (default)\n    smooth_idf=True,       # Sumar 1 al numerador y denominador del IDF\n)\n\nX = tfidf.fit_transform(corpus)\nprint(f\"Forma: {X.shape} (documentos × términos)\")\nprint(f\"Vocabulario: {tfidf.get_feature_names_out().tolist()}\")\n\nForma: (5, 15) (documentos × términos)\nVocabulario: ['artificial', 'automático usa', 'complejo', 'datos', 'datos para', 'de', 'el lenguaje', 'es', 'inteligencia', 'inteligencia artificial', 'la', 'la inteligencia', 'lenguaje', 'lenguaje natural', 'natural']\n\n\n\n\n\n\n\n\nParámetro Clave: sublinear_tf=True\n\n\nUsa \\(1 + \\log(\\text{tf})\\) en vez de \\(\\text{tf}\\) bruto. Recomendado en la mayoría de aplicaciones."
+  },
+  {
+    "objectID": "slides/semana02/s2_tfidf.html#encontrar-las-palabras-más-relevantes",
+    "href": "slides/semana02/s2_tfidf.html#encontrar-las-palabras-más-relevantes",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Encontrar las Palabras más Relevantes",
+    "text": "Encontrar las Palabras más Relevantes\n\nfrom sklearn.feature_extraction.text import TfidfVectorizer\nimport numpy as np\n\ncorpus = [\n    \"Bolivia tiene una rica biodiversidad en sus regiones amazónicas\",\n    \"La economía boliviana depende de la exportación de gas natural\",\n    \"El fútbol boliviano celebra su liga profesional cada año\",\n    \"La inteligencia artificial transforma la medicina y la educación\",\n    \"Las redes neuronales profundas mejoran el reconocimiento de imágenes\",\n]\n\ntfidf = TfidfVectorizer()\nX = tfidf.fit_transform(corpus)\nnombres = tfidf.get_feature_names_out()\n\nprint(\"Top 3 términos más relevantes por documento:\\n\")\nfor i, doc in enumerate(corpus):\n    vector = X[i].toarray().flatten()\n    top_indices = vector.argsort()[-3:][::-1]\n    top_palabras = [(nombres[j], vector[j]) for j in top_indices]\n    print(f\"Doc {i+1}: {doc[:55]}...\")\n    for palabra, peso in top_palabras:\n        barra = \"█\" * int(peso * 30)\n        print(f\"  {palabra:&lt;20} {peso:.3f} {barra}\")\n    print()\n\nTop 3 términos más relevantes por documento:\n\nDoc 1: Bolivia tiene una rica biodiversidad en sus regiones am...\n  una                  0.333 ██████████\n  tiene                0.333 ██████████\n  rica                 0.333 ██████████\n\nDoc 2: La economía boliviana depende de la exportación de gas ...\n  de                   0.482 ██████████████\n  la                   0.482 ██████████████\n  natural              0.299 ████████\n\nDoc 3: El fútbol boliviano celebra su liga profesional cada añ...\n  su                   0.340 ██████████\n  cada                 0.340 ██████████\n  celebra              0.340 ██████████\n\nDoc 4: La inteligencia artificial transforma la medicina y la ...\n  la                   0.735 ██████████████████████\n  transforma           0.303 █████████\n  educación            0.303 █████████\n\nDoc 5: Las redes neuronales profundas mejoran el reconocimient...\n  las                  0.347 ██████████\n  mejoran              0.347 ██████████\n  neuronales           0.347 ██████████"
+  },
+  {
+    "objectID": "slides/semana02/s2_tfidf.html#aplicación-1-motor-de-búsqueda-mejorado",
+    "href": "slides/semana02/s2_tfidf.html#aplicación-1-motor-de-búsqueda-mejorado",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Aplicación 1: Motor de Búsqueda Mejorado 🔍",
+    "text": "Aplicación 1: Motor de Búsqueda Mejorado 🔍\nComparemos el buscador de la sesión anterior (BoW) con TF-IDF:\n\nfrom sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer\nfrom sklearn.metrics.pairwise import cosine_similarity\n\ncorpus = [\n    \"La inteligencia artificial está transformando la medicina moderna\",\n    \"Los robots aprenden a cocinar platos gourmet con redes neuronales\",\n    \"El cambio climático afecta los glaciares de Bolivia\",\n    \"Python es el lenguaje más popular para ciencia de datos\",\n    \"Las redes neuronales artificiales imitan el cerebro humano\",\n    \"La deforestación en la Amazonía alcanza niveles récord\",\n    \"El aprendizaje automático mejora el diagnóstico médico\",\n]\n\n# BoW\ncv = CountVectorizer()\nX_bow = cv.fit_transform(corpus)\n\n# TF-IDF\ntv = TfidfVectorizer()\nX_tfidf = tv.fit_transform(corpus)\n\ndef buscar_comparado(consulta, top_n=3):\n    \"\"\"Compara resultados BoW vs TF-IDF.\"\"\"\n    # BoW\n    q_bow = cv.transform([consulta])\n    sim_bow = cosine_similarity(q_bow, X_bow).flatten()\n    # TF-IDF\n    q_tfidf = tv.transform([consulta])\n    sim_tfidf = cosine_similarity(q_tfidf, X_tfidf).flatten()\n\n    print(f\"🔍 Consulta: '{consulta}'\\n\")\n    print(f\"{'Rank':&lt;5} {'BoW':&gt;6} {'TF-IDF':&gt;8}  Documento\")\n    print(\"-\" * 70)\n\n    idx_tfidf = sim_tfidf.argsort()[::-1][:top_n]\n    for rank, idx in enumerate(idx_tfidf, 1):\n        print(f\"  {rank}    {sim_bow[idx]:.3f}   {sim_tfidf[idx]:.3f}   {corpus[idx][:55]}\")\n\nbuscar_comparado(\"inteligencia artificial medicina\")\n\n🔍 Consulta: 'inteligencia artificial medicina'\n\nRank     BoW   TF-IDF  Documento\n----------------------------------------------------------------------\n  1    0.548   0.585   La inteligencia artificial está transformando la medici\n  2    0.000   0.000   La deforestación en la Amazonía alcanza niveles récord\n  3    0.000   0.000   El aprendizaje automático mejora el diagnóstico médico"
+  },
+  {
+    "objectID": "slides/semana02/s2_tfidf.html#aplicación-2-clasificación-de-texto",
+    "href": "slides/semana02/s2_tfidf.html#aplicación-2-clasificación-de-texto",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Aplicación 2: Clasificación de Texto",
+    "text": "Aplicación 2: Clasificación de Texto\n\nfrom sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer\nfrom sklearn.naive_bayes import MultinomialNB\nfrom sklearn.model_selection import cross_val_score\nimport numpy as np\n\n# Dataset: deportes vs. tecnología\ntextos = [\n    \"el equipo ganó el partido de fútbol\",\n    \"el gol del delantero fue espectacular\",\n    \"el campeonato de tenis terminó ayer\",\n    \"el jugador se lesionó en el entrenamiento\",\n    \"el maratón de la ciudad fue un éxito deportivo\",\n    \"la empresa lanzó un nuevo teléfono inteligente\",\n    \"el procesador del computador es muy rápido\",\n    \"la inteligencia artificial avanza cada día\",\n    \"el software tiene un error crítico grave\",\n    \"la nube permite almacenar datos de forma segura\",\n]\netiquetas = [\"deporte\"]*5 + [\"tecnología\"]*5\n\n# Comparar BoW vs TF-IDF\nfor nombre, vec in [(\"BoW\", CountVectorizer()), (\"TF-IDF\", TfidfVectorizer())]:\n    X = vec.fit_transform(textos)\n    clf = MultinomialNB()\n    scores = cross_val_score(clf, X, etiquetas, cv=3)\n    print(f\"{nombre:8s} → Accuracy: {scores.mean():.2f} (±{scores.std():.2f})\")\n\nBoW      → Accuracy: 0.81 (±0.14)\nTF-IDF   → Accuracy: 0.47 (±0.20)\n\n\n\n\n\n\n\n\n\nEn la práctica\n\n\nTF-IDF generalmente supera a BoW en tareas de clasificación porque reduce el ruido de las palabras comunes."
+  },
+  {
+    "objectID": "slides/semana02/s2_tfidf.html#aplicación-3-extracción-de-palabras-clave",
+    "href": "slides/semana02/s2_tfidf.html#aplicación-3-extracción-de-palabras-clave",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Aplicación 3: Extracción de Palabras Clave",
+    "text": "Aplicación 3: Extracción de Palabras Clave\n\nfrom sklearn.feature_extraction.text import TfidfVectorizer\n\narticulos = [\n    \"\"\"Bolivia cuenta con una gran diversidad cultural y lingüística. \n    El país tiene más de 30 idiomas nativos reconocidos oficialmente. \n    El quechua y el aymara son los idiomas indígenas más hablados en Bolivia.\"\"\",\n    \n    \"\"\"Las redes neuronales convolucionales son fundamentales en visión por computadora.\n    Estas redes procesan imágenes mediante filtros y capas de convolución.\n    Las redes convolucionales detectan patrones como bordes y texturas.\"\"\",\n    \n    \"\"\"El cambio climático provoca el derretimiento de glaciares en los Andes.\n    La temperatura global sigue aumentando cada década.\n    Los glaciares tropicales de Bolivia han perdido más del 40 por ciento de su masa.\"\"\",\n]\n\ntfidf = TfidfVectorizer(max_features=50)\nX = tfidf.fit_transform(articulos)\nnombres = tfidf.get_feature_names_out()\n\ntitulos = [\"🇧🇴 Diversidad Lingüística\", \"🧠 Redes Neuronales\", \"🌡️ Cambio Climático\"]\n\nprint(\"Palabras clave extraídas con TF-IDF:\\n\")\nfor i, titulo in enumerate(titulos):\n    vector = X[i].toarray().flatten()\n    top_idx = vector.argsort()[-5:][::-1]\n    keywords = [(nombres[j], vector[j]) for j in top_idx]\n    print(f\"{titulo}:\")\n    for kw, score in keywords:\n        print(f\"  • {kw:&lt;20} ({score:.3f})\")\n    print()\n\nPalabras clave extraídas con TF-IDF:\n\n🇧🇴 Diversidad Lingüística:\n  • el                   (0.442)\n  • idiomas              (0.387)\n  • bolivia              (0.294)\n  • más                  (0.294)\n  • gran                 (0.194)\n\n🧠 Redes Neuronales:\n  • redes                (0.540)\n  • las                  (0.360)\n  • convolucionales      (0.360)\n  • imágenes             (0.180)\n  • mediante             (0.180)\n\n🌡️ Cambio Climático:\n  • glaciares            (0.379)\n  • de                   (0.336)\n  • los                  (0.288)\n  • el                   (0.288)\n  • han                  (0.189)"
+  },
+  {
+    "objectID": "slides/semana02/s2_tfidf.html#resumen-visual-bow-tf-idf",
+    "href": "slides/semana02/s2_tfidf.html#resumen-visual-bow-tf-idf",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Resumen Visual: BoW → TF-IDF",
+    "text": "Resumen Visual: BoW → TF-IDF\n\n\nCode\nflowchart TD\n    A[\"📄 Documentos&lt;br&gt;crudos\"] --&gt; B[\"🧹 Preprocesamiento&lt;br&gt;(Semana 1)\"]\n    B --&gt; C{\"¿Qué representación?\"}\n    C --&gt;|Frecuencia simple| D[\"📊 BoW&lt;br&gt;CountVectorizer\"]\n    C --&gt;|Frecuencia ponderada| E[\"⚡ TF-IDF&lt;br&gt;TfidfVectorizer\"]\n    D --&gt; F[\"🔢 Matriz DTM&lt;br&gt;(frecuencias)\"]\n    E --&gt; G[\"🔢 Matriz TF-IDF&lt;br&gt;(pesos)\"]\n    F --&gt; H[\"🤖 Modelo ML\"]\n    G --&gt; H\n    H --&gt; I[\"📈 Clasificación&lt;br&gt;Búsqueda&lt;br&gt;Clustering\"]\n\n    style D fill:#48cae4,color:#000\n    style E fill:#0077b6,color:#fff,stroke:#023e8a,stroke-width:3px\n    style G fill:#2a9d8f,color:#fff\n\n\n\n\n\nflowchart TD\n    A[\"📄 Documentos&lt;br&gt;crudos\"] --&gt; B[\"🧹 Preprocesamiento&lt;br&gt;(Semana 1)\"]\n    B --&gt; C{\"¿Qué representación?\"}\n    C --&gt;|Frecuencia simple| D[\"📊 BoW&lt;br&gt;CountVectorizer\"]\n    C --&gt;|Frecuencia ponderada| E[\"⚡ TF-IDF&lt;br&gt;TfidfVectorizer\"]\n    D --&gt; F[\"🔢 Matriz DTM&lt;br&gt;(frecuencias)\"]\n    E --&gt; G[\"🔢 Matriz TF-IDF&lt;br&gt;(pesos)\"]\n    F --&gt; H[\"🤖 Modelo ML\"]\n    G --&gt; H\n    H --&gt; I[\"📈 Clasificación&lt;br&gt;Búsqueda&lt;br&gt;Clustering\"]\n\n    style D fill:#48cae4,color:#000\n    style E fill:#0077b6,color:#fff,stroke:#023e8a,stroke-width:3px\n    style G fill:#2a9d8f,color:#fff"
+  },
+  {
+    "objectID": "slides/semana02/s2_tfidf.html#lo-que-aprendimos-hoy",
+    "href": "slides/semana02/s2_tfidf.html#lo-que-aprendimos-hoy",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Lo que Aprendimos Hoy ✅",
+    "text": "Lo que Aprendimos Hoy ✅\n\n\nTerm Frequency (TF):\n\nFrecuencia local de un término\nVariantes: bruta, normalizada, logarítmica\nPor sí sola no es suficiente\n\nInverse Document Frequency (IDF):\n\nPenaliza palabras comunes\n\\(\\text{IDF}(t) = \\log\\left(\\frac{N}{df(t)}\\right)\\)\nFavorece palabras discriminantes\n\n\nTF-IDF:\n\n\\(\\text{TF-IDF} = \\text{TF} \\times \\text{IDF}\\)\nPondera importancia local × global\nSupera a BoW en casi todas las tareas\n\nHerramientas:\n\nTfidfVectorizer de scikit-learn\nParámetros: sublinear_tf, min_df, max_df, ngram_range"
+  },
+  {
+    "objectID": "slides/semana02/s2_tfidf.html#tabla-comparativa-final",
+    "href": "slides/semana02/s2_tfidf.html#tabla-comparativa-final",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Tabla Comparativa Final",
+    "text": "Tabla Comparativa Final\n\n\n\n\n\n\n\n\n\nAspecto\nOne-hot\nBoW\nTF-IDF\n\n\n\n\nNivel\nPalabra\nDocumento\nDocumento\n\n\nCaptura frecuencia\n❌\n✅\n✅\n\n\nPondera importancia\n❌\n❌\n✅\n\n\nSemántica\n❌\n❌\n❌\n\n\nOrden\nN/A\n❌\n❌\n\n\nHerramienta\nOneHotEncoder\nCountVectorizer\nTfidfVectorizer\n\n\nCuándo usar\nEntrada a NN\nBaseline rápido\nClasificación, búsqueda\n\n\n\n\n\n\n\n\n\n\nLo que aún falta\n\n\nNinguna de estas técnicas captura significado. “auto” y “carro” siguen siendo palabras completamente diferentes. La solución: embeddings densos (Semana 4)."
+  },
+  {
+    "objectID": "slides/semana02/s2_tfidf.html#para-la-próxima-clase",
+    "href": "slides/semana02/s2_tfidf.html#para-la-próxima-clase",
+    "title": "Semántica Léxica & Espacio Vectorial",
+    "section": "Para la Próxima Clase 📚",
+    "text": "Para la Próxima Clase 📚\n\n\n\n\n\n\nSemana 2, S3: Información Mutua Puntual (PMI) y N-gramas\n\n\nAprenderemos a medir la asociación estadística entre pares de palabras: ¿qué palabras tienden a aparecer juntas?\n\n\n\nLectura:\n\nCapítulo 6 (secciones 6.6-6.7): Speech and Language Processing (Jurafsky & Martin)\nDocumentación de scikit-learn: TfidfVectorizer\n\nPreparación:\n\nRevisar conceptos de logaritmos y probabilidad básica"
   }
 ]
