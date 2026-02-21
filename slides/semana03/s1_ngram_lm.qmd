@@ -1,0 +1,876 @@
+---
+title: "Modelado de Lenguaje (Clásico)"
+subtitle: "S1: Modelos de Lenguaje N-gram y Regla de la Cadena"
+author: "Prof. Francisco Suárez"
+institute: "Universidad Católica Boliviana"
+date: today
+format:
+  revealjs:
+    theme: sky
+    transition: slide
+    slide-number: true
+    chalkboard: true
+    code-fold: true
+    code-tools: true
+    highlight-style: github
+    footer: "NLP y Análisis Semántico | Semana 3"
+    logo: ""
+    incremental: false
+    scrollable: true
+execute:
+  echo: true
+  warning: false
+---
+
+## Agenda de Hoy {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+**Primera Parte**
+
+1. 🧠 ¿Qué es un modelo de lenguaje?
+2. 📐 Probabilidad conjunta y regla de la cadena
+3. 🔗 Supuesto de Markov
+
+:::
+::: {.column width="50%"}
+**Segunda Parte**
+
+4. 📊 Modelos N-gram (unigrama, bigrama, trigrama)
+5. 🛠️ Implementación en Python
+6. ✍️ Generación de texto
+
+:::
+:::
+
+# Bloque 1: ¿Qué es un Modelo de Lenguaje? {background-color="#0077b6"}
+
+## Definición {.smaller}
+
+> Un **modelo de lenguaje** (LM) asigna una **probabilidad** a cualquier secuencia de palabras.
+
+::: {.columns}
+::: {.column width="50%"}
+
+### ¿Qué probabilidad tiene...?
+
+| Secuencia | $P(\text{secuencia})$ |
+|:----------|:---------------------:|
+| "el gato come pescado" | **Alta** ✅ |
+| "come gato el pescado" | Baja ❌ |
+| "el gato baila impuesto" | Muy baja ❌ |
+
+:::
+::: {.column width="50%"}
+
+### Formalmente
+
+Dada una secuencia de palabras $w_1, w_2, \dots, w_n$:
+
+$$P(w_1, w_2, \dots, w_n) = \text{?}$$
+
+El modelo de lenguaje estima esta **probabilidad conjunta**.
+
+:::
+:::
+
+## ¿Para Qué Sirve un LM? {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Aplicaciones directas
+
+1. **Autocompletar** 📱
+   - $P(\text{?} \mid \text{"buenos "}) \to \text{"días"}$
+
+2. **Corrección ortográfica** ✏️
+   - $P(\text{"casa"}) > P(\text{"csa"})$
+
+3. **Generación de texto** ✍️
+   - ChatGPT, Claude, etc.
+
+:::
+::: {.column width="50%"}
+
+### Como componente de otros sistemas
+
+4. **Traducción automática** 🌐
+   - ¿Qué traducción es más fluida?
+
+5. **Reconocimiento de voz** 🎤
+   - ¿"Reconocer voz" o "reconocer vos"?
+
+6. **Resumen automático** 📝
+   - Generar texto coherente
+
+:::
+:::
+
+. . .
+
+::: {.callout-important}
+## Idea Central
+Un modelo de lenguaje responde: **¿Qué tan probable es esta secuencia de palabras?** y **¿Cuál es la siguiente palabra más probable?**
+:::
+
+## El Problema Fundamental {.smaller}
+
+Queremos estimar:
+
+$$P(w_1, w_2, \dots, w_n)$$
+
+**Ejemplo:** $P(\text{el, gato, come, pescado, fresco})$
+
+. . .
+
+::: {.callout-warning}
+## ¿Por qué es difícil?
+- El vocabulario típico tiene **50,000+** palabras
+- Una oración de 10 palabras tiene $50{,}000^{10} \approx 10^{47}$ combinaciones posibles
+- **Imposible** observar todas las secuencias posibles en un corpus
+- Necesitamos **simplificaciones inteligentes**
+:::
+
+# Bloque 2: Regla de la Cadena {background-color="#023e8a"}
+
+## Probabilidad Conjunta {.smaller}
+
+La **regla de la cadena de probabilidad** nos permite descomponer la probabilidad conjunta:
+
+$$P(w_1, w_2, \dots, w_n) = \prod_{k=1}^{n} P(w_k \mid w_1, \dots, w_{k-1})$$
+
+. . .
+
+**Ejemplo:**
+
+$$P(\text{el, gato, come}) = P(\text{el}) \times P(\text{gato} \mid \text{el}) \times P(\text{come} \mid \text{el, gato})$$
+
+::: {.columns}
+::: {.column width="50%"}
+
+```{mermaid}
+graph LR
+    A["P(el)"] --> B["P(gato|el)"]
+    B --> C["P(come|el,gato)"]
+    style A fill:#cfe2ff,color:#000
+    style B fill:#90e0ef,color:#000
+    style C fill:#0077b6,color:#fff
+```
+
+:::
+::: {.column width="50%"}
+
+Cada palabra depende de **todo el historial previo**.
+
+Esto es exacto, pero **impracticable** para historiales largos.
+
+:::
+:::
+
+## Demostración: Regla de la Cadena {.smaller}
+
+```{python}
+#| code-fold: false
+from collections import Counter
+
+corpus = [
+    "el gato come pescado",
+    "el gato come carne",
+    "el gato bebe leche",
+    "el perro come carne",
+    "el perro bebe agua",
+    "el gato come pescado fresco",
+]
+
+# Tokenizar
+docs = [sent.split() for sent in corpus]
+todas = [w for doc in docs for w in doc]
+N = len(todas)
+
+# P(el)
+p_el = Counter(todas)["el"] / N
+print(f"P(el) = {Counter(todas)['el']}/{N} = {p_el:.3f}")
+
+# P(gato | el) — ¿cuántas veces "gato" sigue a "el"?
+bigramas = [(docs[i][j], docs[i][j+1]) for i in range(len(docs)) for j in range(len(docs[i])-1)]
+bigrama_count = Counter(bigramas)
+p_gato_dado_el = bigrama_count[("el", "gato")] / Counter(todas)["el"]
+print(f"P(gato|el) = {bigrama_count[('el', 'gato')]}/{Counter(todas)['el']} = {p_gato_dado_el:.3f}")
+
+# P(come | el, gato)
+trigramas = [(docs[i][j], docs[i][j+1], docs[i][j+2])
+             for i in range(len(docs)) for j in range(len(docs[i])-2)]
+trigrama_count = Counter(trigramas)
+p_come_dado_el_gato = trigrama_count[("el", "gato", "come")] / bigrama_count[("el", "gato")]
+print(f"P(come|el,gato) = {trigrama_count[('el', 'gato', 'come')]}/{bigrama_count[('el', 'gato')]} = {p_come_dado_el_gato:.3f}")
+
+# P(el, gato, come)
+p_conjunta = p_el * p_gato_dado_el * p_come_dado_el_gato
+print(f"\nP(el, gato, come) = {p_el:.3f} × {p_gato_dado_el:.3f} × {p_come_dado_el_gato:.3f} = {p_conjunta:.3f}")
+```
+
+## El Problema de la Regla de la Cadena {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Historia cada vez más larga
+
+$$P(w_5 \mid w_1, w_2, w_3, w_4)$$
+
+Para estimar esto necesitamos contar cuántas veces aparece la secuencia completa $w_1 w_2 w_3 w_4 w_5$ en el corpus.
+
+**Problema:** la mayoría de secuencias largas **nunca aparecen** en el corpus → probabilidad = 0.
+
+:::
+::: {.column width="50%"}
+
+### Ejemplo
+
+$$P(\text{fresco} \mid \text{el, gato, come, pescado})$$
+
+¿Cuántas veces aparece "el gato come pescado fresco" en un corpus?
+
+Probablemente **muy pocas o ninguna**.
+
+:::
+:::
+
+. . .
+
+::: {.callout-note}
+## Solución: Supuesto de Markov
+En lugar de condicionar en **todo** el historial, condicionamos solo en las **últimas $N-1$ palabras**.
+:::
+
+# Bloque 3: Supuesto de Markov y Modelos N-gram {background-color="#03045e"}
+
+## El Supuesto de Markov {.smaller}
+
+> La probabilidad de una palabra depende **solo de las $N-1$ palabras anteriores**, no de todo el historial.
+
+$$P(w_k \mid w_1, \dots, w_{k-1}) \approx P(w_k \mid w_{k-N+1}, \dots, w_{k-1})$$
+
+. . .
+
+::: {.columns}
+::: {.column width="33%"}
+
+### Unigrama ($N=1$)
+
+$$P(w_k)$$
+
+No depende de nada.
+
+Cada palabra es **independiente**.
+
+:::
+::: {.column width="33%"}
+
+### Bigrama ($N=2$)
+
+$$P(w_k \mid w_{k-1})$$
+
+Depende solo de la **palabra anterior**.
+
+:::
+::: {.column width="33%"}
+
+### Trigrama ($N=3$)
+
+$$P(w_k \mid w_{k-2}, w_{k-1})$$
+
+Depende de las **2 palabras anteriores**.
+
+:::
+:::
+
+## Fórmulas de los Modelos N-gram {.smaller}
+
+| Modelo | Probabilidad conjunta |
+|:-------|:---------------------|
+| **Unigrama** | $P(w_1 \dots w_n) = \prod_{k=1}^n P(w_k)$ |
+| **Bigrama** | $P(w_1 \dots w_n) = \prod_{k=1}^n P(w_k \mid w_{k-1})$ |
+| **Trigrama** | $P(w_1 \dots w_n) = \prod_{k=1}^n P(w_k \mid w_{k-2}, w_{k-1})$ |
+
+: {.striped .hover}
+
+. . .
+
+**Estimación por Máxima Verosimilitud (MLE):**
+
+$$P_{\text{MLE}}(w_k \mid w_{k-1}) = \frac{C(w_{k-1}, w_k)}{C(w_{k-1})}$$
+
+Donde $C(\cdot)$ es el conteo en el corpus de entrenamiento.
+
+## Ejemplo Visual: Bigrama {.smaller}
+
+```{mermaid}
+%%| fig-width: 10
+flowchart LR
+    A["&lt;s&gt;"] -->|"P(el|&lt;s&gt;)"| B["el"]
+    B -->|"P(gato|el)"| C["gato"]
+    C -->|"P(come|gato)"| D["come"]
+    D -->|"P(pescado|come)"| E["pescado"]
+    E -->|"P(&lt;/s&gt;|pescado)"| F["&lt;/s&gt;"]
+
+    style A fill:#ffd166,color:#000
+    style B fill:#cfe2ff,color:#000
+    style C fill:#90e0ef,color:#000
+    style D fill:#48cae4,color:#000
+    style E fill:#0077b6,color:#fff
+    style F fill:#ffd166,color:#000
+```
+
+. . .
+
+$$P(\text{el gato come pescado}) = P(\text{el} \mid \text{<s>}) \times P(\text{gato} \mid \text{el}) \times P(\text{come} \mid \text{gato}) \times P(\text{pescado} \mid \text{come}) \times P(\text{</s>} \mid \text{pescado})$$
+
+::: {.callout-note}
+## Tokens especiales
+- `<s>` = inicio de oración (start)
+- `</s>` = fin de oración (end)
+
+Se agregan para modelar qué palabras tienden a iniciar/terminar oraciones.
+:::
+
+# Bloque 4: Implementación en Python {background-color="#0077b6"}
+
+## Modelo Unigrama {.smaller}
+
+```{python}
+#| code-fold: false
+from collections import Counter
+import numpy as np
+
+corpus = [
+    "el gato come pescado fresco",
+    "el perro come carne roja",
+    "el gato bebe leche fresca",
+    "el perro bebe agua fresca",
+    "el gato come pescado y carne",
+    "el perro juega en el parque",
+    "el gato duerme en la alfombra",
+    "el perro duerme en la cama",
+]
+
+# Agregar tokens de inicio y fin
+def preparar_corpus(corpus):
+    return [["<s>"] + sent.split() + ["</s>"] for sent in corpus]
+
+docs = preparar_corpus(corpus)
+todas = [w for doc in docs for w in doc]
+vocab = sorted(set(todas))
+N_total = len(todas)
+freq = Counter(todas)
+
+print(f"Vocabulario: {len(vocab)} palabras")
+print(f"Total tokens: {N_total}\n")
+
+# Probabilidades unigrama
+print(f"{'Palabra':<12} {'Conteo':>7} {'P(w)':>8}")
+print("-" * 30)
+for w in sorted(freq, key=freq.get, reverse=True)[:10]:
+    p = freq[w] / N_total
+    print(f"{w:<12} {freq[w]:>7} {p:>8.3f}")
+```
+
+## Modelo Bigrama {.smaller}
+
+```{python}
+#| code-fold: false
+from collections import Counter, defaultdict
+
+# Construir conteos de bigramas
+bigrama_counts = Counter()
+unigrama_counts = Counter()
+
+for doc in docs:
+    for i in range(len(doc) - 1):
+        bigrama_counts[(doc[i], doc[i+1])] += 1
+    for w in doc:
+        unigrama_counts[w] += 1
+
+# Probabilidad bigrama: P(w2 | w1) = C(w1, w2) / C(w1)
+def p_bigrama(w2, w1):
+    if unigrama_counts[w1] == 0:
+        return 0
+    return bigrama_counts[(w1, w2)] / unigrama_counts[w1]
+
+# Mostrar probabilidades condicionales para "el"
+print("P(? | el):")
+siguientes = [(w2, p_bigrama(w2, "el")) for (w1, w2) in bigrama_counts if w1 == "el"]
+siguientes.sort(key=lambda x: -x[1])
+for w, p in siguientes:
+    barra = "█" * int(p * 40)
+    print(f"  P({w:<10} | el) = {p:.3f} {barra}")
+
+# Mostrar para "come"
+print("\nP(? | come):")
+siguientes = [(w2, p_bigrama(w2, "come")) for (w1, w2) in bigrama_counts if w1 == "come"]
+siguientes.sort(key=lambda x: -x[1])
+for w, p in siguientes:
+    barra = "█" * int(p * 40)
+    print(f"  P({w:<10} | come) = {p:.3f} {barra}")
+```
+
+## Tabla de Probabilidades Bigrama {.smaller}
+
+```{python}
+#| code-fold: true
+#| fig-width: 10
+#| fig-height: 6
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Seleccionar palabras interesantes
+palabras_sel = ["<s>", "el", "gato", "perro", "come", "bebe", "pescado", "carne", "en", "</s>"]
+
+n = len(palabras_sel)
+prob_matrix = np.zeros((n, n))
+
+for i, w1 in enumerate(palabras_sel):
+    for j, w2 in enumerate(palabras_sel):
+        prob_matrix[i][j] = p_bigrama(w2, w1)
+
+fig, ax = plt.subplots(figsize=(9, 7))
+im = ax.imshow(prob_matrix, cmap='Blues', aspect='auto', vmin=0)
+
+ax.set_xticks(range(n))
+ax.set_xticklabels(palabras_sel, rotation=45, ha='right', fontsize=9)
+ax.set_yticks(range(n))
+ax.set_yticklabels(palabras_sel, fontsize=9)
+ax.set_xlabel('w₂ (siguiente)', fontsize=11)
+ax.set_ylabel('w₁ (contexto)', fontsize=11)
+ax.set_title('P(w₂ | w₁) — Probabilidades Bigrama', fontsize=13)
+
+for i in range(n):
+    for j in range(n):
+        val = prob_matrix[i][j]
+        if val > 0:
+            color = 'white' if val > 0.4 else 'black'
+            ax.text(j, i, f'{val:.2f}', ha='center', va='center', fontsize=8, color=color)
+
+plt.colorbar(im, label='P(w₂ | w₁)')
+plt.tight_layout()
+plt.show()
+```
+
+## Calcular Probabilidad de una Oración {.smaller}
+
+```{python}
+#| code-fold: false
+import numpy as np
+
+def prob_oracion_bigrama(oracion):
+    """Calcular P(oración) con modelo bigrama."""
+    tokens = ["<s>"] + oracion.split() + ["</s>"]
+    log_prob = 0
+    detalles = []
+
+    for i in range(1, len(tokens)):
+        p = p_bigrama(tokens[i], tokens[i-1])
+        if p == 0:
+            return 0, [(tokens[i-1], tokens[i], 0, float('-inf'))]
+        lp = np.log2(p)
+        log_prob += lp
+        detalles.append((tokens[i-1], tokens[i], p, lp))
+
+    return 2**log_prob, detalles
+
+oraciones = [
+    "el gato come pescado",
+    "el perro come carne",
+    "el gato come carne",
+    "el pescado come gato",
+]
+
+for oracion in oraciones:
+    prob, detalles = prob_oracion_bigrama(oracion)
+    print(f"'{oracion}'")
+    for w1, w2, p, lp in detalles:
+        print(f"  P({w2}|{w1}) = {p:.3f}  [log₂ = {lp:.3f}]")
+    print(f"  → P(oración) = {prob:.6f}\n")
+```
+
+## Modelo Trigrama {.smaller}
+
+```{python}
+#| code-fold: false
+from collections import Counter
+
+# Preparar con doble inicio para trigramas
+docs_tri = [["<s>", "<s>"] + sent.split() + ["</s>"] for sent in corpus]
+
+# Conteos
+trigrama_counts = Counter()
+bigrama_counts_tri = Counter()
+
+for doc in docs_tri:
+    for i in range(len(doc) - 2):
+        trigrama_counts[(doc[i], doc[i+1], doc[i+2])] += 1
+    for i in range(len(doc) - 1):
+        bigrama_counts_tri[(doc[i], doc[i+1])] += 1
+
+def p_trigrama(w3, w1, w2):
+    """P(w3 | w1, w2)"""
+    denom = bigrama_counts_tri[(w1, w2)]
+    if denom == 0:
+        return 0
+    return trigrama_counts[(w1, w2, w3)] / denom
+
+# Comparar: ¿qué sigue después de "el gato"?
+print("P(? | el, gato):")
+siguientes = [(w3, p_trigrama(w3, "el", "gato"))
+              for (w1, w2, w3) in trigrama_counts if w1 == "el" and w2 == "gato"]
+siguientes.sort(key=lambda x: -x[1])
+for w, p in siguientes:
+    barra = "█" * int(p * 40)
+    print(f"  P({w:<10} | el, gato) = {p:.3f} {barra}")
+
+print("\nP(? | el, perro):")
+siguientes = [(w3, p_trigrama(w3, "el", "perro"))
+              for (w1, w2, w3) in trigrama_counts if w1 == "el" and w2 == "perro"]
+siguientes.sort(key=lambda x: -x[1])
+for w, p in siguientes:
+    barra = "█" * int(p * 40)
+    print(f"  P({w:<10} | el, perro) = {p:.3f} {barra}")
+```
+
+## Comparación: Unigrama vs Bigrama vs Trigrama {.smaller}
+
+```{python}
+#| code-fold: false
+import numpy as np
+
+def prob_unigrama(oracion):
+    tokens = oracion.split()
+    prob = 1.0
+    for w in tokens:
+        p = freq.get(w, 0) / N_total
+        if p == 0:
+            return 0
+        prob *= p
+    return prob
+
+def prob_bigrama_simple(oracion):
+    p, _ = prob_oracion_bigrama(oracion)
+    return p
+
+oraciones_test = [
+    "el gato come pescado",       # Gramatical y vista
+    "el perro bebe agua",         # Gramatical y vista
+    "el gato come carne",         # Gramatical, parcialmente vista
+    "come el pescado gato",       # Agramatical
+]
+
+print(f"{'Oración':<30} {'Unigrama':>12} {'Bigrama':>12}")
+print("-" * 56)
+for oracion in oraciones_test:
+    p_uni = prob_unigrama(oracion)
+    p_bi = prob_bigrama_simple(oracion)
+    print(f"{oracion:<30} {p_uni:>12.6f} {p_bi:>12.6f}")
+```
+
+. . .
+
+::: {.callout-tip}
+## Observación
+El modelo **bigrama** asigna probabilidad **0** a "come el pescado gato" porque $P(\text{el} \mid \text{come}) = 0$ en nuestro corpus. El unigrama no puede detectar este desorden.
+:::
+
+# Bloque 5: Generación de Texto {background-color="#023e8a"}
+
+## Generación con Modelo Bigrama {.smaller}
+
+Podemos **generar texto** muestreando la siguiente palabra según las probabilidades del modelo:
+
+```{python}
+#| code-fold: false
+import numpy as np
+
+def generar_bigrama(max_palabras=15, seed=42):
+    """Generar texto con modelo bigrama."""
+    rng = np.random.RandomState(seed)
+    palabra_actual = "<s>"
+    oracion = []
+
+    for _ in range(max_palabras):
+        # Obtener distribución de la siguiente palabra
+        candidatos = [(w2, p_bigrama(w2, palabra_actual))
+                      for (w1, w2) in bigrama_counts if w1 == palabra_actual]
+        if not candidatos:
+            break
+
+        palabras, probs = zip(*candidatos)
+        probs = np.array(probs)
+        probs = probs / probs.sum()  # Normalizar
+
+        # Muestrear
+        idx = rng.choice(len(palabras), p=probs)
+        siguiente = palabras[idx]
+
+        if siguiente == "</s>":
+            break
+        oracion.append(siguiente)
+        palabra_actual = siguiente
+
+    return " ".join(oracion)
+
+print("Oraciones generadas con modelo bigrama:\n")
+for i in range(8):
+    texto = generar_bigrama(seed=i*7+1)
+    print(f"  {i+1}. {texto}")
+```
+
+## Efecto del Tamaño de N {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### $N$ pequeño (unigrama, bigrama)
+
+- ✅ Buena cobertura (menos ceros)
+- ✅ Estimaciones estables
+- ❌ No captura contexto lejano
+- ❌ Genera texto incoherente
+
+**"pescado el fresco come gato"** 😵
+
+:::
+::: {.column width="50%"}
+
+### $N$ grande (4-gram, 5-gram)
+
+- ✅ Captura más contexto
+- ✅ Genera texto más coherente
+- ❌ Muchas probabilidades = 0 (sparsity)
+- ❌ Requiere corpus enorme
+
+**"el gato come pescado fresco"** → memorización
+
+:::
+:::
+
+. . .
+
+::: {.callout-warning}
+## El Dilema de los N-gramas
+- $N$ pequeño → **mala calidad** pero buena cobertura
+- $N$ grande → **buena calidad** pero poca cobertura (muchos ceros)
+- Solución: **suavizado** (Semana 3, S2)
+:::
+
+## Visualización: Distribución de Probabilidades {.smaller}
+
+```{python}
+#| code-fold: true
+#| fig-width: 10
+#| fig-height: 5
+import matplotlib.pyplot as plt
+import numpy as np
+
+contextos = ["<s>", "el", "gato", "come"]
+fig, axes = plt.subplots(1, 4, figsize=(14, 4))
+
+for ax, ctx in zip(axes, contextos):
+    candidatos = [(w2, p_bigrama(w2, ctx))
+                  for (w1, w2) in bigrama_counts if w1 == ctx and p_bigrama(w2, ctx) > 0]
+    if candidatos:
+        candidatos.sort(key=lambda x: -x[1])
+        palabras, probs = zip(*candidatos)
+        colores = ['#0077b6' if p == max(probs) else '#90e0ef' for p in probs]
+        ax.barh(list(palabras)[::-1], list(probs)[::-1], color=colores[::-1])
+    ax.set_title(f'P(? | "{ctx}")', fontsize=11)
+    ax.set_xlim(0, 1.05)
+
+plt.suptitle('Distribuciones Condicionales del Modelo Bigrama', fontsize=13, y=1.02)
+plt.tight_layout()
+plt.show()
+```
+
+# Bloque 6: Problemas y Limitaciones {background-color="#03045e"}
+
+## Problema 1: Probabilidad Cero {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### El problema
+
+Si un N-grama **nunca apareció** en el corpus de entrenamiento:
+
+$$C(\text{gato, cocina}) = 0 \implies P(\text{cocina} \mid \text{gato}) = 0$$
+
+Y si **cualquier** término de la cadena es 0, toda la oración tiene probabilidad 0:
+
+$$P(\text{oración}) = \dots \times 0 \times \dots = 0$$
+
+:::
+::: {.column width="50%"}
+
+### Ejemplo
+
+```{python}
+#| code-fold: false
+oracion = "el gato cocina pescado"
+prob, detalles = prob_oracion_bigrama(oracion)
+print(f"'{oracion}'")
+for w1, w2, p, lp in detalles:
+    marca = " ← ¡CERO!" if p == 0 else ""
+    print(f"  P({w2}|{w1}) = {p:.3f}{marca}")
+print(f"\nP(oración) = {prob}")
+```
+
+:::
+:::
+
+. . .
+
+::: {.callout-important}
+## Consecuencia
+Una sola coocurrencia no vista **destruye** toda la probabilidad. ¿La solución? **Suavizado** (próxima sesión).
+:::
+
+## Problema 2: Underflow Numérico {.smaller}
+
+Multiplicar muchas probabilidades pequeñas lleva a **números extremadamente pequeños**:
+
+```{python}
+#| code-fold: false
+import numpy as np
+
+# Simular: multiplicar muchas probabilidades pequeñas
+probs = [0.3, 0.1, 0.05, 0.2, 0.1, 0.15, 0.08, 0.12, 0.06, 0.1]
+
+producto = 1.0
+for i, p in enumerate(probs, 1):
+    producto *= p
+    print(f"  Después de {i:2d} multiplicaciones: {producto:.2e}")
+
+print(f"\n¡Con 20 palabras esto llega a ~{producto**2:.2e}!")
+```
+
+. . .
+
+**Solución:** Trabajar en **espacio logarítmico**:
+
+$$\log P(w_1 \dots w_n) = \sum_{k=1}^n \log P(w_k \mid w_{k-1})$$
+
+Las multiplicaciones se convierten en **sumas** de logaritmos.
+
+## Problema 3: Contexto Limitado {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Los N-gramas son "miopes"
+
+Un modelo bigrama solo ve **una palabra** de contexto:
+
+> "El profesor que enseña la clase de **procesamiento** de lenguaje natural en la universidad católica boliviana **___**"
+
+El bigrama solo ve "boliviana" para predecir lo siguiente. ¡Perdió todo el contexto relevante!
+
+:::
+::: {.column width="50%"}
+
+### Dependencias a larga distancia
+
+```text
+"El gato que estaba encima 
+ de la mesa que compramos 
+ ayer en la tienda del 
+ centro come pescado"
+       ↑
+  El sujeto (gato) está 
+  a 13 palabras de distancia
+  del verbo (come)
+```
+
+Los N-gramas no pueden capturar estas dependencias.
+
+:::
+:::
+
+. . .
+
+::: {.callout-note}
+## Adelanto
+Las **RNNs** (Semana 6) y los **Transformers** (Semana 9) resuelven este problema usando mecanismos de memoria y atención.
+:::
+
+## Resumen de Problemas {.smaller}
+
+| Problema | Descripción | Solución |
+|:---------|:------------|:---------|
+| **Probabilidad cero** | N-gramas no vistos → $P = 0$ | Suavizado (S2) |
+| **Underflow** | Producto de probs → ≈ 0 | Log-probabilidades |
+| **Contexto limitado** | Solo $N-1$ palabras de historia | RNNs, Transformers |
+| **Almacenamiento** | $O(V^N)$ parámetros posibles | Modelos neurales |
+| **Datos escasos** | Corpus finito ≠ lenguaje infinito | Más datos + suavizado |
+
+: {.striped .hover}
+
+# Resumen {background-color="#0077b6"}
+
+## Lo que Aprendimos Hoy ✅ {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+**Modelos de Lenguaje:**
+
+- Asignan probabilidad a secuencias de palabras
+- Aplicaciones: autocompletar, traducción, generación
+
+**Regla de la Cadena:**
+
+- $P(w_1 \dots w_n) = \prod P(w_k | w_1 \dots w_{k-1})$
+- Exacta pero impracticable
+
+:::
+::: {.column width="50%"}
+
+**Modelos N-gram:**
+
+- Supuesto de Markov: solo últimas $N-1$ palabras
+- Unigrama, bigrama, trigrama
+- MLE: $P(w_k | w_{k-1}) = C(w_{k-1}, w_k) / C(w_{k-1})$
+
+**Limitaciones:**
+
+- Probabilidad cero para N-gramas no vistos
+- Contexto limitado a $N-1$ palabras
+- Trabajar en log-espacio para evitar underflow
+
+:::
+:::
+
+## Para la Próxima Clase 📚
+
+::: {.callout-note}
+## Semana 3, S2: Evaluación — Perplejidad y Técnicas de Suavizado
+¿Cómo medimos qué tan bueno es un modelo de lenguaje? ¿Cómo manejamos las probabilidades cero?
+:::
+
+**Lectura:**
+
+- Capítulo 3 (secciones 3.4-3.6): *Speech and Language Processing* (Jurafsky & Martin) — Suavizado y Evaluación
+- [N-gram Language Models](https://web.stanford.edu/~jurafsky/slp3/3.pdf) (borrador online gratuito)
+
+**Preparación:**
+
+- Repasar logaritmos: $\log(ab) = \log a + \log b$
+- Concepto de entropía: $H = -\sum p \log p$
+
+# ¿Preguntas? 🙋 {background-color="#03045e"}
+
+:::{.r-fit-text}
+**¡Gracias!**
+:::
+
+📧 fsuarez@ucb.edu.bo
+
+🔗 Materiales: [github.com/fjsuarez/ucb-nlp](https://github.com/fjsuarez/ucb-nlp)

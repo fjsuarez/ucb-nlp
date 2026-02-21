@@ -16,5 +16,8 @@ format: html
 - [TF-IDF: Encontrando lo Relevante](slides/semana02/s2_tfidf.qmd)
 - [Información Mutua Puntual (PMI) y N-gramas](slides/semana02/s3_pmi_ngrams.qmd)
 
+### Semana 3
+- [Modelos de Lenguaje N-gram y Regla de la Cadena](slides/semana03/s1_ngram_lm.qmd)
+
 ## Información general
 - [Programa del Curso](programa.qmd)
