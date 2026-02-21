@@ -219,6 +219,11 @@ def _clean_markdown(text: str) -> str:
     return text.strip()
 
 
+def _single_line(text: str) -> str:
+    """Collapse text to a single line (for option values)."""
+    return re.sub(r"\s+", " ", text).strip()
+
+
 # ─────────────────────────────────────────────
 # Google Forms Creation
 # ─────────────────────────────────────────────
@@ -275,7 +280,7 @@ def create_google_form(quiz: dict, answers: dict | None = None):
                 requests.append({
                     "createItem": {
                         "item": {
-                            "title": section["title"],
+                            "title": _single_line(section["title"]),
                             "description": "",
                             "pageBreakItem": {},
                         },
@@ -318,12 +323,26 @@ def create_google_form(quiz: dict, answers: dict | None = None):
     return form_id
 
 
+def _split_title_description(text: str) -> tuple[str, str]:
+    """Split text into a single-line title and a multi-line description.
+    
+    Google Forms API requires titles to have no newlines.
+    We put the first sentence/line as title and the rest as description.
+    """
+    # Split on first double newline or after first sentence
+    parts = text.split("\n\n", 1)
+    title = _single_line(parts[0])
+    description = parts[1].strip() if len(parts) > 1 else ""
+    return title, description
+
+
 def _build_question_request(
     question: dict, index: int, answers: dict | None
 ) -> dict:
     """Build a createItem request for a question."""
     q_num = question["number"]
-    q_text = f"Pregunta {q_num}. {question['text']}"
+    full_text = f"Pregunta {q_num}. {question['text']}"
+    title, description = _split_title_description(full_text)
     points = 1  # Each question is worth 1 point
 
     if question["type"] == "multiple_choice":
@@ -333,12 +352,13 @@ def _build_question_request(
 
         for opt in question["options"]:
             option_value = {
-                "value": f"{opt['letter']}) {opt['text']}",
+                "value": _single_line(f"{opt['letter']}) {opt['text']}"),
             }
             options.append(option_value)
 
         item = {
-            "title": q_text,
+            "title": title,
+            "description": description,
             "questionItem": {
                 "question": {
                     "required": True,
@@ -367,7 +387,8 @@ def _build_question_request(
     else:
         # Paragraph / code question
         item = {
-            "title": q_text,
+            "title": title,
+            "description": description,
             "questionItem": {
                 "question": {
                     "required": True,
