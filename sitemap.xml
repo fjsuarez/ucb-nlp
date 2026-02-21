@@ -1,39 +1,43 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://fjsuarez.me/slides/semana02/s3_pmi_ngrams.html</loc>
+    <loc>https://fjsuarez.me/slides/semana03/s1_ngram_lm.html</loc>
+    <lastmod>2026-02-21T14:33:13.768Z</lastmod>
+  </url>
+  <url>
+    <loc>https://fjsuarez.me/slides/semana02/s2_tfidf.html</loc>
     <lastmod>2026-02-18T18:24:42.897Z</lastmod>
-  </url>
-  <url>
-    <loc>https://fjsuarez.me/slides/semana02/s1_bow_one_hot.html</loc>
-    <lastmod>2026-02-18T18:24:42.897Z</lastmod>
-  </url>
-  <url>
-    <loc>https://fjsuarez.me/slides/semana01/s2_regex.html</loc>
-    <lastmod>2026-02-18T18:24:42.887Z</lastmod>
-  </url>
-  <url>
-    <loc>https://fjsuarez.me/programa.html</loc>
-    <lastmod>2026-02-18T18:24:42.887Z</lastmod>
-  </url>
-  <url>
-    <loc>https://fjsuarez.me/general.html</loc>
-    <lastmod>2026-02-07T13:30:49.491Z</lastmod>
-  </url>
-  <url>
-    <loc>https://fjsuarez.me/index.html</loc>
-    <lastmod>2026-02-18T18:26:32.716Z</lastmod>
-  </url>
-  <url>
-    <loc>https://fjsuarez.me/slides/semana01/s1_intro_nlp.html</loc>
-    <lastmod>2026-02-18T18:24:42.887Z</lastmod>
   </url>
   <url>
     <loc>https://fjsuarez.me/slides/semana01/s3_preprocesamiento.html</loc>
     <lastmod>2026-02-18T18:24:42.897Z</lastmod>
   </url>
   <url>
-    <loc>https://fjsuarez.me/slides/semana02/s2_tfidf.html</loc>
+    <loc>https://fjsuarez.me/slides/semana01/s1_intro_nlp.html</loc>
+    <lastmod>2026-02-18T18:24:42.887Z</lastmod>
+  </url>
+  <url>
+    <loc>https://fjsuarez.me/index.html</loc>
+    <lastmod>2026-02-21T14:34:44.226Z</lastmod>
+  </url>
+  <url>
+    <loc>https://fjsuarez.me/general.html</loc>
+    <lastmod>2026-02-07T13:30:49.491Z</lastmod>
+  </url>
+  <url>
+    <loc>https://fjsuarez.me/programa.html</loc>
+    <lastmod>2026-02-21T14:34:44.226Z</lastmod>
+  </url>
+  <url>
+    <loc>https://fjsuarez.me/slides/semana01/s2_regex.html</loc>
+    <lastmod>2026-02-18T18:24:42.887Z</lastmod>
+  </url>
+  <url>
+    <loc>https://fjsuarez.me/slides/semana02/s1_bow_one_hot.html</loc>
+    <lastmod>2026-02-18T18:24:42.897Z</lastmod>
+  </url>
+  <url>
+    <loc>https://fjsuarez.me/slides/semana02/s3_pmi_ngrams.html</loc>
     <lastmod>2026-02-18T18:24:42.897Z</lastmod>
   </url>
 </urlset>
