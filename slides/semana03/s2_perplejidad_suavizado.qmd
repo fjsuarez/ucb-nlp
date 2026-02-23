@@ -1,0 +1,1038 @@
+---
+title: "Modelado de Lenguaje (Clásico)"
+subtitle: "S2: Evaluación — Perplejidad y Técnicas de Suavizado"
+author: "Prof. Francisco Suárez"
+institute: "Universidad Católica Boliviana"
+date: "2026-02-24"
+format:
+  revealjs:
+    theme: sky
+    transition: slide
+    slide-number: true
+    chalkboard: true
+    code-fold: true
+    code-tools: true
+    highlight-style: github
+    footer: "NLP y Análisis Semántico | Semana 3"
+    logo: ""
+    incremental: false
+    scrollable: true
+execute:
+  echo: true
+  warning: false
+---
+
+## Agenda de Hoy {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+**Primera Parte**
+
+1. 🔄 Repaso rápido: modelos N-gram
+2. 📏 ¿Cómo evaluamos un modelo de lenguaje?
+3. 🤯 Perplejidad (Perplexity)
+
+:::
+::: {.column width="50%"}
+**Segunda Parte**
+
+4. ❄️ El problema de las probabilidades cero
+5. 🧈 Técnicas de suavizado (Smoothing)
+6. 🛠️ Implementación en Python
+
+:::
+:::
+
+# Bloque 1: Repaso Rápido {background-color="#0077b6"}
+
+## ¿Dónde Quedamos? {.smaller}
+
+En la sesión anterior construimos **modelos de lenguaje N-gram**:
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Unigrama
+$$P(w_i) = \frac{C(w_i)}{N}$$
+
+### Bigrama
+$$P(w_i \mid w_{i-1}) = \frac{C(w_{i-1}, w_i)}{C(w_{i-1})}$$
+
+### Trigrama
+$$P(w_i \mid w_{i-2}, w_{i-1}) = \frac{C(w_{i-2}, w_{i-1}, w_i)}{C(w_{i-2}, w_{i-1})}$$
+
+:::
+::: {.column width="50%"}
+
+### Supuesto de Markov
+
+> La probabilidad de una palabra depende *solo* de las $n-1$ palabras anteriores.
+
+$$P(w_i \mid w_1, \cdots, w_{i-1}) \approx P(w_i \mid w_{i-n+1}, \cdots, w_{i-1})$$
+
+:::
+:::
+
+## Ejemplo: Bigrama {.smaller}
+
+**Corpus:** "el gato come pescado . el gato bebe leche ."
+
+| Bigrama | Conteo | $P(w_2 \mid w_1)$ |
+|:--------|:------:|:------------------:|
+| (el, gato) | 2 | $\frac{2}{2} = 1.0$ |
+| (gato, come) | 1 | $\frac{1}{2} = 0.5$ |
+| (gato, bebe) | 1 | $\frac{1}{2} = 0.5$ |
+| (come, pescado) | 1 | $\frac{1}{1} = 1.0$ |
+| (bebe, leche) | 1 | $\frac{1}{1} = 1.0$ |
+
+. . .
+
+::: {.callout-tip}
+## Pregunta Clave
+Tenemos el modelo... pero ¿**cómo sabemos si es bueno**? 🤔
+:::
+
+# Bloque 2: Evaluación de Modelos de Lenguaje {background-color="#023e8a"}
+
+## Evaluación: La Idea Intuitiva {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### ¿Qué queremos?
+Un modelo de lenguaje **bueno** debería:
+
+- Asignar probabilidad **alta** a oraciones gramaticales y coherentes
+- Asignar probabilidad **baja** a oraciones sin sentido
+
+:::
+::: {.column width="50%"}
+
+### Ejemplo
+
+| Oración | Modelo bueno | Modelo malo |
+|:--------|:----------:|:---------:|
+| "el gato come" | $P$ alta ✅ | $P$ baja ❌ |
+| "come el gato" | $P$ baja ✅ | $P$ alta ❌ |
+
+:::
+:::
+
+. . .
+
+### Evaluación extrínseca vs. intrínseca
+
+| Tipo | ¿Cómo? | Pros | Contras |
+|:-----|:-------|:-----|:--------|
+| **Extrínseca** | Medir rendimiento en una tarea real (traducción, ASR) | Mide utilidad real | Lenta, costosa |
+| **Intrínseca** | Medir qué tan bien predice un corpus de prueba | Rápida, barata | No garantiza utilidad |
+
+## Probabilidad del Corpus de Test {.smaller}
+
+Dado un corpus de prueba $W = w_1 w_2 \cdots w_N$, evaluamos el modelo calculando:
+
+$$P(W) = P(w_1, w_2, \cdots, w_N) = \prod_{i=1}^{N} P(w_i \mid w_{i-n+1}, \cdots, w_{i-1})$$
+
+. . .
+
+**Ejemplo (bigrama):** Test = "el gato come"
+
+$$P(\text{el gato come}) = P(\text{el} \mid \langle s \rangle) \times P(\text{gato} \mid \text{el}) \times P(\text{come} \mid \text{gato})$$
+
+. . .
+
+::: {.callout-warning}
+## Problemas con usar $P(W)$ directamente
+
+1. **Números muy pequeños:** El producto de muchas probabilidades $\to 0$ rápidamente
+2. **Depende del largo:** Textos más largos siempre tienen $P$ más baja
+3. **Underflow numérico:** Las computadoras pierden precisión
+:::
+
+## Solución: Log-Probabilidad {.smaller}
+
+En lugar del producto, usamos la **suma de log-probabilidades**:
+
+$$\log P(W) = \sum_{i=1}^{N} \log P(w_i \mid w_{i-n+1}, \cdots, w_{i-1})$$
+
+. . .
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Ventajas
+
+- ✅ Evita underflow numérico
+- ✅ Sumas en vez de productos
+- ✅ Más estable numéricamente
+
+:::
+::: {.column width="50%"}
+
+### Pero...
+
+- ❌ Sigue dependiendo del largo del texto
+- ❌ No es fácil de interpretar
+- Necesitamos **normalizar** por la longitud
+
+:::
+:::
+
+. . .
+
+::: {.callout-note}
+## Idea
+¿Qué tal si calculamos el **promedio** de log-probabilidad por palabra?
+$$\frac{1}{N} \log P(W) = \frac{1}{N} \sum_{i=1}^{N} \log P(w_i \mid \cdots)$$
+:::
+
+# Bloque 3: Perplejidad (Perplexity) {background-color="#0077b6"}
+
+## Definición de Perplejidad {.smaller}
+
+La **perplejidad** (perplexity, PP) es la métrica estándar para evaluar modelos de lenguaje:
+
+$$\text{PP}(W) = P(w_1 w_2 \cdots w_N)^{-\frac{1}{N}}$$
+
+. . .
+
+Equivalentemente, usando logaritmos:
+
+$$\text{PP}(W) = 2^{-\frac{1}{N} \sum_{i=1}^{N} \log_2 P(w_i \mid w_{i-n+1}, \cdots, w_{i-1})}$$
+
+. . .
+
+::: {.callout-important}
+## Regla de Oro
+**Menor perplejidad = mejor modelo**
+
+La perplejidad mide qué tan "sorprendido" está el modelo al ver el texto de prueba.
+:::
+
+## Intuición: ¿Qué Significa la Perplejidad? {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Como "factor de ramificación"
+
+La perplejidad es el **número promedio de palabras** entre las cuales el modelo "duda" en cada paso.
+
+- PP = 1 → El modelo **sabe exactamente** qué palabra sigue
+- PP = 10 → El modelo duda entre **10 opciones** en promedio
+- PP = 50,000 → Equivalente a elegir **al azar** del vocabulario
+
+:::
+::: {.column width="50%"}
+
+### Ejemplo visual
+
+```{mermaid}
+graph TD
+    A["El"] --> B["gato"]
+    A --> C["perro"]
+    A --> D["..."]
+    B --> E["come"]
+    B --> F["duerme"]
+    B --> G["..."]
+    style A fill:#0077b6,color:#fff
+    style B fill:#90e0ef,color:#000
+    style E fill:#cfe2ff,color:#000
+    style C fill:#e0e0e0,color:#888
+    style D fill:#e0e0e0,color:#888
+    style F fill:#e0e0e0,color:#888
+    style G fill:#e0e0e0,color:#888
+```
+
+Si PP = 2, en promedio el modelo duda entre 2 opciones.
+
+:::
+:::
+
+## Ejemplo Numérico {.smaller}
+
+**Corpus de test:** "el gato come" (3 palabras, usando bigrama)
+
+| Paso | Probabilidad | $\log_2 P$ |
+|:-----|:----------:|:----------:|
+| $P(\text{el} \mid \langle s \rangle) = 0.5$ | 0.5 | $-1.0$ |
+| $P(\text{gato} \mid \text{el}) = 0.8$ | 0.8 | $-0.322$ |
+| $P(\text{come} \mid \text{gato}) = 0.5$ | 0.5 | $-1.0$ |
+
+. . .
+
+$$\text{PP} = 2^{-\frac{1}{3}(-1.0 + (-0.322) + (-1.0))} = 2^{0.774} = \mathbf{1.71}$$
+
+. . .
+
+::: {.callout-tip}
+## Interpretación
+PP = 1.71 → El modelo duda en promedio entre **~2 palabras** en cada posición. ¡Bastante bueno! 👍
+:::
+
+## Perplejidad en la Práctica {.smaller}
+
+### Benchmarks típicos
+
+| Modelo | Dataset | Perplejidad |
+|:-------|:--------|:----------:|
+| Unigrama | Wall Street Journal | ~960 |
+| Bigrama | Wall Street Journal | ~170 |
+| Trigrama | Wall Street Journal | ~109 |
+| Trigrama + Kneser-Ney | Wall Street Journal | ~74 |
+| GPT-2 (2019) | WikiText-103 | ~22 |
+| GPT-3 (2020) | Penn Treebank | ~20 |
+
+. . .
+
+::: {.callout-note}
+## Observaciones
+- Más contexto (n más grande) → menor perplejidad
+- Los modelos neuronales modernos tienen PP mucho menor
+- La perplejidad de un modelo **depende del corpus** de test (¡no se puede comparar entre datasets diferentes!)
+:::
+
+## Implementación en Python {.smaller}
+
+```{python}
+import numpy as np
+from collections import Counter, defaultdict
+
+def calcular_perplejidad(modelo_bigrama, conteos_unigrama, texto_test, V):
+    """Calcula la perplejidad de un modelo de bigrama sobre un texto de test."""
+    palabras = texto_test.split()
+    palabras = ['<s>'] + palabras + ['</s>']
+    
+    N = len(palabras) - 1  # no contamos <s>
+    log_prob_total = 0.0
+    
+    for i in range(1, len(palabras)):
+        bigrama = (palabras[i-1], palabras[i])
+        w_prev = palabras[i-1]
+        
+        # Probabilidad MLE del bigrama
+        conteo_bigrama = modelo_bigrama.get(bigrama, 0)
+        conteo_previo = conteos_unigrama.get(w_prev, 0)
+        
+        if conteo_previo > 0 and conteo_bigrama > 0:
+            prob = conteo_bigrama / conteo_previo
+        else:
+            prob = 1 / V  # respaldo uniforme (por ahora)
+        
+        log_prob_total += np.log2(prob)
+    
+    perplejidad = 2 ** (-log_prob_total / N)
+    return perplejidad
+
+# Ejemplo con un corpus pequeño
+corpus_train = [
+    "el gato come pescado",
+    "el gato bebe leche",
+    "el perro come carne",
+    "el perro bebe agua"
+]
+
+# Construir modelo bigrama
+todas_palabras = []
+conteos_bigrama = Counter()
+conteos_unigrama = Counter()
+
+for oracion in corpus_train:
+    palabras = ['<s>'] + oracion.split() + ['</s>']
+    todas_palabras.extend(palabras)
+    for i in range(1, len(palabras)):
+        conteos_bigrama[(palabras[i-1], palabras[i])] += 1
+    for p in palabras:
+        conteos_unigrama[p] += 1
+
+V = len(set(todas_palabras))
+print(f"Vocabulario: {V} palabras")
+
+# Evaluar
+test1 = "el gato come pescado"
+test2 = "el gato come carne"
+test3 = "el elefante baila salsa"
+
+for test in [test1, test2, test3]:
+    pp = calcular_perplejidad(conteos_bigrama, conteos_unigrama, test, V)
+    print(f"PP(\"{test}\") = {pp:.2f}")
+```
+
+## Comparando Modelos {.smaller}
+
+```{python}
+# Comparar unigrama vs bigrama
+def perplejidad_unigrama(conteos_unigrama, total_palabras, texto_test, V):
+    """Perplejidad de un modelo unigrama."""
+    palabras = texto_test.split()
+    N = len(palabras)
+    log_prob = 0.0
+    
+    for w in palabras:
+        conteo = conteos_unigrama.get(w, 0)
+        if conteo > 0:
+            prob = conteo / total_palabras
+        else:
+            prob = 1 / V
+        log_prob += np.log2(prob)
+    
+    return 2 ** (-log_prob / N)
+
+total_palabras = sum(conteos_unigrama[w] for w in conteos_unigrama if w not in ['<s>', '</s>'])
+
+print("Comparación Unigrama vs Bigrama:")
+print("-" * 55)
+print(f"{'Texto':<35} {'Unigrama':>8} {'Bigrama':>8}")
+print("-" * 55)
+for test in [test1, test2, test3]:
+    pp_uni = perplejidad_unigrama(conteos_unigrama, total_palabras, test, V)
+    pp_bi = calcular_perplejidad(conteos_bigrama, conteos_unigrama, test, V)
+    print(f"{test:<35} {pp_uni:>8.2f} {pp_bi:>8.2f}")
+```
+
+. . .
+
+::: {.callout-important}
+## Observación
+El modelo de bigrama tiene **menor perplejidad** en oraciones que siguen patrones del corpus de entrenamiento. Pero ¿qué pasa con palabras o combinaciones **nunca vistas**?
+:::
+
+# Bloque 4: El Problema de las Probabilidades Cero {background-color="#023e8a"}
+
+## El Desastre del Cero {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### El problema
+
+Si un bigrama **nunca aparece** en el corpus de entrenamiento:
+
+$$C(w_{i-1}, w_i) = 0 \implies P(w_i \mid w_{i-1}) = 0$$
+
+Y si **cualquier** factor es 0:
+
+$$P(W) = \cdots \times 0 \times \cdots = 0$$
+
+$$\text{PP}(W) = 0^{-1/N} = \infty$$
+
+:::
+::: {.column width="50%"}
+
+### Ejemplo concreto
+
+Corpus: "el gato come pescado"
+
+Test: "el gato come **atún**"
+
+- $P(\text{atún} \mid \text{come}) = \frac{C(\text{come, atún})}{C(\text{come})} = \frac{0}{1} = 0$ ❌
+
+**¡Perplejidad infinita!** 😱
+
+:::
+:::
+
+. . .
+
+::: {.callout-warning}
+## Realidad
+El hecho de que no hayamos **visto** algo no significa que sea **imposible**. Necesitamos **suavizar** las probabilidades.
+:::
+
+## Analogía: El Problema del Censo {.smaller}
+
+Imagina que haces un censo de animales en un zoológico pequeño:
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Lo que observaste
+
+| Animal | Conteo |
+|:-------|:------:|
+| León | 3 |
+| Tigre | 2 |
+| Oso | 1 |
+| Jirafa | 0 |
+| Elefante | 0 |
+
+:::
+::: {.column width="50%"}
+
+### ¿Conclusión?
+
+- ¿P(jirafa) = 0? 🦒
+- ¿P(elefante) = 0? 🐘
+
+**¡No!** Solo porque no los vimos no significa que no existan.
+
+Debemos **redistribuir** un poco de probabilidad de los animales vistos a los no vistos.
+
+:::
+:::
+
+. . .
+
+> Esta es exactamente la idea detrás del **suavizado** (smoothing).
+
+# Bloque 5: Técnicas de Suavizado {background-color="#0077b6"}
+
+## 5.1 Suavizado de Laplace (Add-1) {.smaller}
+
+La idea más simple: **sumar 1** a todos los conteos.
+
+$$P_{\text{Laplace}}(w_i \mid w_{i-1}) = \frac{C(w_{i-1}, w_i) + 1}{C(w_{i-1}) + V}$$
+
+Donde $V$ es el tamaño del vocabulario.
+
+. . .
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Sin suavizado (MLE)
+
+| Bigrama | Conteo | $P$ |
+|:--------|:------:|:---:|
+| (come, pescado) | 1 | $\frac{1}{1} = 1.0$ |
+| (come, atún) | 0 | $\frac{0}{1} = 0.0$ |
+
+:::
+::: {.column width="50%"}
+
+### Con Laplace (V=10)
+
+| Bigrama | Conteo+1 | $P$ |
+|:--------|:--------:|:---:|
+| (come, pescado) | 2 | $\frac{2}{11} = 0.18$ |
+| (come, atún) | 1 | $\frac{1}{11} = 0.09$ |
+
+:::
+:::
+
+. . .
+
+::: {.callout-warning}
+## Problema
+Laplace **redistribuye demasiada** masa de probabilidad. Un bigrama visto 1 vez pasa de $P=1.0$ a $P=0.18$. ¡Cambio drástico!
+:::
+
+## Implementación: Laplace {.smaller}
+
+```{python}
+def bigrama_laplace(conteos_bigrama, conteos_unigrama, bigrama, V, k=1):
+    """Probabilidad de bigrama con suavizado Add-k."""
+    w_prev, w = bigrama
+    conteo_bi = conteos_bigrama.get(bigrama, 0)
+    conteo_prev = conteos_unigrama.get(w_prev, 0)
+    return (conteo_bi + k) / (conteo_prev + k * V)
+
+
+# Comparar MLE vs Laplace
+print("Comparación: MLE vs Laplace (Add-1)")
+print("-" * 60)
+print(f"{'Bigrama':<25} {'MLE':>8} {'Laplace':>8}")
+print("-" * 60)
+
+bigramas_test = [
+    ("come", "pescado"),  # Visto en corpus
+    ("come", "carne"),    # Visto en corpus
+    ("come", "atún"),     # NO visto
+    ("gato", "come"),     # Visto
+    ("gato", "corre"),    # NO visto
+]
+
+for bi in bigramas_test:
+    # MLE
+    c_bi = conteos_bigrama.get(bi, 0)
+    c_prev = conteos_unigrama.get(bi[0], 0)
+    p_mle = c_bi / c_prev if c_prev > 0 else 0
+    
+    # Laplace
+    p_lap = bigrama_laplace(conteos_bigrama, conteos_unigrama, bi, V)
+    
+    visto = "✅" if c_bi > 0 else "❌"
+    print(f"{str(bi):<25} {p_mle:>8.4f} {p_lap:>8.4f}  {visto}")
+```
+
+## 5.2 Suavizado Add-k {.smaller}
+
+Generalización de Laplace: sumar $k < 1$ en lugar de 1.
+
+$$P_{\text{Add-k}}(w_i \mid w_{i-1}) = \frac{C(w_{i-1}, w_i) + k}{C(w_{i-1}) + k \cdot V}$$
+
+. . .
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Valores típicos de $k$
+
+| $k$ | Efecto |
+|:----|:-------|
+| $k = 1$ | Laplace (agresivo) |
+| $k = 0.5$ | Lidstone |
+| $k = 0.01$ | Conservador |
+| $k = 0$ | MLE (sin suavizado) |
+
+:::
+::: {.column width="50%"}
+
+### Ventaja
+
+- Redistribuye **menos** masa de probabilidad
+- $k$ se puede optimizar en un conjunto de validación
+
+### Desventaja
+
+- Sigue siendo una heurística simple
+- No aprovecha información de los unigramas
+
+:::
+:::
+
+```{python}
+# Efecto de k en las probabilidades
+print("Efecto del valor de k en P(pescado|come):")
+print("-" * 40)
+for k in [0.001, 0.01, 0.1, 0.5, 1.0]:
+    p = bigrama_laplace(conteos_bigrama, conteos_unigrama, 
+                        ("come", "pescado"), V, k=k)
+    print(f"  k = {k:<6} → P = {p:.4f}")
+```
+
+## 5.3 Interpolación Lineal {.smaller}
+
+**Idea:** Combinar modelos de diferentes órdenes $n$-gram.
+
+Para un trigrama, interpolamos:
+
+$$\hat{P}(w_i \mid w_{i-2}, w_{i-1}) = \lambda_3 \cdot P_3(w_i \mid w_{i-2}, w_{i-1}) + \lambda_2 \cdot P_2(w_i \mid w_{i-1}) + \lambda_1 \cdot P_1(w_i)$$
+
+Donde $\lambda_1 + \lambda_2 + \lambda_3 = 1$
+
+. . .
+
+::: {.columns}
+::: {.column width="50%"}
+
+### ¿Por qué funciona?
+
+Si el trigrama $(w_{i-2}, w_{i-1}, w_i)$ no se vio, el bigrama $(w_{i-1}, w_i)$ podría haberse visto.
+
+Si el bigrama tampoco se vio, al menos el unigrama $w_i$ probablemente sí.
+
+:::
+::: {.column width="50%"}
+
+### Ejemplo
+
+$P(\text{come} \mid \text{el, gato})$:
+
+- $\lambda_3 = 0.6$: Peso al trigrama
+- $\lambda_2 = 0.3$: Peso al bigrama
+- $\lambda_1 = 0.1$: Peso al unigrama
+
+Si el trigrama tiene $P=0$, los otros niveles "rescatan" la estimación.
+
+:::
+:::
+
+. . .
+
+::: {.callout-tip}
+## Los $\lambda$ se optimizan
+Se eligen los valores de $\lambda$ que **minimizan la perplejidad** en un corpus de validación (held-out).
+:::
+
+## Implementación: Interpolación {.smaller}
+
+```{python}
+def interpolacion_lineal(w, w_prev, conteos_bigrama, conteos_unigrama, 
+                          total_palabras, V, lambda_bi=0.7, lambda_uni=0.3):
+    """Probabilidad interpolada bigrama + unigrama."""
+    # Probabilidad bigrama
+    c_bi = conteos_bigrama.get((w_prev, w), 0)
+    c_prev = conteos_unigrama.get(w_prev, 0)
+    p_bi = c_bi / c_prev if c_prev > 0 else 0
+    
+    # Probabilidad unigrama
+    c_uni = conteos_unigrama.get(w, 0)
+    p_uni = c_uni / total_palabras if total_palabras > 0 else 1/V
+    
+    return lambda_bi * p_bi + lambda_uni * p_uni
+
+
+# Comparar
+print("Interpolación (λ_bi=0.7, λ_uni=0.3) vs MLE vs Laplace")
+print("-" * 65)
+print(f"{'Bigrama':<25} {'MLE':>7} {'Laplace':>8} {'Interp':>7}")
+print("-" * 65)
+
+for bi in bigramas_test:
+    w_prev, w = bi
+    c_bi = conteos_bigrama.get(bi, 0)
+    c_prev = conteos_unigrama.get(w_prev, 0)
+    p_mle = c_bi / c_prev if c_prev > 0 else 0
+    p_lap = bigrama_laplace(conteos_bigrama, conteos_unigrama, bi, V)
+    p_int = interpolacion_lineal(w, w_prev, conteos_bigrama, conteos_unigrama, 
+                                  total_palabras, V)
+    visto = "✅" if c_bi > 0 else "❌"
+    print(f"{str(bi):<25} {p_mle:>7.4f} {p_lap:>8.4f} {p_int:>7.4f}  {visto}")
+```
+
+## 5.4 Backoff (Katz Backoff) {.smaller}
+
+**Idea:** Usar el modelo de mayor orden si hay datos suficientes. Si no, **retroceder** al modelo de menor orden.
+
+. . .
+
+::: {.columns}
+::: {.column width="55%"}
+
+### Algoritmo
+
+```
+Si C(w_{i-2}, w_{i-1}, w_i) > 0:
+    usar P_trigrama
+Si no, si C(w_{i-1}, w_i) > 0:
+    usar α × P_bigrama      ← descuento
+Si no:
+    usar α × β × P_unigrama ← doble descuento
+```
+
+:::
+::: {.column width="45%"}
+
+```{mermaid}
+graph TD
+    A["¿Trigrama visto?"] -->|Sí| B["Usar P_trigrama"]
+    A -->|No| C["¿Bigrama visto?"]
+    C -->|Sí| D["Usar α·P_bigrama"]
+    C -->|No| E["Usar α·β·P_unigrama"]
+    style A fill:#0077b6,color:#fff
+    style B fill:#00b4d8,color:#fff
+    style C fill:#0077b6,color:#fff
+    style D fill:#90e0ef,color:#000
+    style E fill:#cfe2ff,color:#000
+```
+
+:::
+:::
+
+. . .
+
+::: {.callout-note}
+## Diferencia con Interpolación
+- **Interpolación:** Siempre combina todos los niveles
+- **Backoff:** Solo usa niveles inferiores cuando el superior falla
+:::
+
+## 5.5 Suavizado de Kneser-Ney {.smaller}
+
+El método más sofisticado y efectivo para n-gramas. Se basa en dos ideas clave:
+
+### Idea 1: Descuento Absoluto
+
+En lugar de redistribuir proporcionalmente, **restar una constante** $d$ (típicamente $d \approx 0.75$):
+
+$$P_{\text{abs}}(w_i \mid w_{i-1}) = \frac{\max(C(w_{i-1}, w_i) - d, 0)}{C(w_{i-1})} + \lambda(w_{i-1}) \cdot P_{\text{cont}}(w_i)$$
+
+. . .
+
+### Idea 2: Probabilidad de Continuación
+
+En vez de usar $P(w_i)$ como respaldo, usar la **probabilidad de continuación**: ¿en cuántos contextos diferentes aparece $w_i$?
+
+$$P_{\text{cont}}(w_i) = \frac{|\{w_{i-1} : C(w_{i-1}, w_i) > 0\}|}{|\{(w_j, w_k) : C(w_j, w_k) > 0\}|}$$
+
+## ¿Por qué Continuación? {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Ejemplo: "Francisco"
+
+- Frecuencia alta en un corpus sobre Bolivia
+- PERO aparece solo en contextos limitados:
+  - "San Francisco"
+  - "Francisco Suárez"
+
+$P_{\text{cont}}(\text{Francisco})$ es **baja** porque aparece en pocos contextos.
+
+:::
+::: {.column width="50%"}
+
+### Ejemplo: "come"
+
+- Quizá frecuencia similar a "Francisco"
+- PERO aparece en muchos contextos:
+  - "el gato come"
+  - "Juan come"
+  - "ella come"
+  - "mi hijo come"
+
+$P_{\text{cont}}(\text{come})$ es **alta** porque aparece en muchos contextos.
+
+:::
+:::
+
+. . .
+
+::: {.callout-important}
+## Insight de Kneser-Ney
+Cuando hacemos backoff, no queremos saber qué tan **frecuente** es una palabra, sino qué tan **versátil** es — en cuántos contextos diferentes aparece.
+:::
+
+## Resumen de Técnicas de Suavizado {.smaller}
+
+| Técnica | Idea Central | Complejidad | Calidad |
+|:--------|:-------------|:----------:|:-------:|
+| **Laplace (Add-1)** | Sumar 1 a todos los conteos | ⭐ | ⭐ |
+| **Add-k** | Sumar $k < 1$ | ⭐ | ⭐⭐ |
+| **Interpolación** | Mezclar n-gramas de diferente orden | ⭐⭐ | ⭐⭐⭐ |
+| **Backoff** | Retroceder cuando no hay datos | ⭐⭐ | ⭐⭐⭐ |
+| **Kneser-Ney** | Descuento absoluto + continuación | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
+
+. . .
+
+::: {.callout-tip}
+## En la Práctica
+**Kneser-Ney** (y su variante modificada) es el estándar de facto para modelos n-gram. Herramientas como [KenLM](https://kheafield.com/code/kenlm/) lo implementan de forma eficiente.
+:::
+
+# Bloque 6: Práctica Integradora {background-color="#023e8a"}
+
+## Ejercicio Completo {.smaller}
+
+```{python}
+# Pipeline completo: entrenar, suavizar y evaluar
+
+corpus_train = [
+    "el gato come pescado fresco",
+    "el gato bebe leche fría",
+    "el perro come carne cruda",
+    "el perro bebe agua fresca",
+    "un gato duerme en la cama",
+    "un perro duerme en el piso",
+    "el gato persigue al ratón",
+    "el perro persigue al gato"
+]
+
+corpus_test = [
+    "el gato come carne",       # Parcialmente visto
+    "el perro bebe leche",      # Parcialmente visto
+    "un gato bebe agua",        # Mezcla de patrones vistos
+    "el pájaro come semillas",  # Palabra nueva: pájaro, semillas
+]
+
+# Construir modelo
+conteos_bi = Counter()
+conteos_uni = Counter()
+total = 0
+
+for oracion in corpus_train:
+    palabras = ['<s>'] + oracion.split() + ['</s>']
+    for i in range(1, len(palabras)):
+        conteos_bi[(palabras[i-1], palabras[i])] += 1
+    for p in palabras:
+        conteos_uni[p] += 1
+        total += 1
+
+V = len(set(conteos_uni.keys()))
+total_sin_marcadores = sum(v for k, v in conteos_uni.items() if k not in ['<s>', '</s>'])
+
+print(f"Vocabulario: {V} palabras")
+print(f"Total tokens: {total}")
+print(f"Bigramas únicos: {len(conteos_bi)}")
+```
+
+## Comparación de Métodos {.smaller}
+
+```{python}
+# Precomputar conteos de continuación para Kneser-Ney
+from collections import defaultdict
+
+# ¿En cuántos contextos distintos aparece w como segunda palabra de un bigrama?
+contextos_de = defaultdict(set)  # w → {w_prev : C(w_prev, w) > 0}
+for (w_prev, w), c in conteos_bi.items():
+    if c > 0:
+        contextos_de[w].add(w_prev)
+
+total_tipos_bigrama = len(conteos_bi)  # |{(w_j, w_k) : C(w_j, w_k) > 0}|
+
+# Descuento absoluto d (típicamente 0.75)
+d_kn = 0.75
+
+def perplejidad_modelo(texto, metodo='mle', k=1, lambda_bi=0.7, lambda_uni=0.3):
+    """Calcula perplejidad con diferentes métodos de suavizado."""
+    palabras = ['<s>'] + texto.split() + ['</s>']
+    N = len(palabras) - 1
+    log_prob = 0.0
+    
+    for i in range(1, len(palabras)):
+        w_prev, w = palabras[i-1], palabras[i]
+        
+        if metodo == 'mle':
+            c_bi = conteos_bi.get((w_prev, w), 0)
+            c_prev = conteos_uni.get(w_prev, 0)
+            if c_prev > 0 and c_bi > 0:
+                prob = c_bi / c_prev
+            else:
+                # MLE no puede manejar n-gramas no vistos → P = 0
+                return float('inf')
+            
+        elif metodo == 'laplace':
+            prob = bigrama_laplace(conteos_bi, conteos_uni, (w_prev, w), V, k=1)
+            
+        elif metodo == 'add_k':
+            prob = bigrama_laplace(conteos_bi, conteos_uni, (w_prev, w), V, k=k)
+            
+        elif metodo == 'interpolacion':
+            # Interpolación con respaldo uniforme para OOV
+            c_bi = conteos_bi.get((w_prev, w), 0)
+            c_prev = conteos_uni.get(w_prev, 0)
+            p_bi = c_bi / c_prev if c_prev > 0 else 0
+            
+            c_uni = conteos_uni.get(w, 0)
+            p_uni = c_uni / total_sin_marcadores if c_uni > 0 else 1 / V
+            
+            prob = lambda_bi * p_bi + lambda_uni * p_uni
+        
+        elif metodo == 'kneser_ney':
+            c_bi = conteos_bi.get((w_prev, w), 0)
+            c_prev = conteos_uni.get(w_prev, 0)
+            
+            # Primer término: descuento absoluto
+            primer_termino = max(c_bi - d_kn, 0) / c_prev if c_prev > 0 else 0
+            
+            # Lambda de normalización
+            tipos_que_siguen = sum(1 for (wp, _) in conteos_bi if wp == w_prev)
+            lmbda = (d_kn / c_prev) * tipos_que_siguen if c_prev > 0 else 1
+            
+            # P_continuación: versatilidad de w
+            n_contextos = len(contextos_de.get(w, set()))
+            p_cont = n_contextos / total_tipos_bigrama if n_contextos > 0 else 1 / V
+            
+            prob = primer_termino + lmbda * p_cont
+        
+        log_prob += np.log2(prob)
+    
+    return 2 ** (-log_prob / N)
+
+
+# Tabla comparativa
+print("=" * 85)
+print(f"{'Texto test':<30} {'MLE':>8} {'Laplace':>8} {'Add-k':>8} {'Interp':>8} {'KN':>8}")
+print("=" * 85)
+for texto in corpus_test:
+    pp_mle = perplejidad_modelo(texto, 'mle')
+    pp_lap = perplejidad_modelo(texto, 'laplace')
+    pp_addk = perplejidad_modelo(texto, 'add_k', k=0.1)
+    pp_int = perplejidad_modelo(texto, 'interpolacion')
+    pp_kn = perplejidad_modelo(texto, 'kneser_ney')
+    
+    mle_str = f"{pp_mle:>8.1f}" if pp_mle != float('inf') else "       ∞"
+    print(f"{texto:<30} {mle_str} {pp_lap:>8.1f} {pp_addk:>8.1f} {pp_int:>8.1f} {pp_kn:>8.1f}")
+
+print("=" * 85)
+print("(Menor perplejidad = mejor | ∞ = MLE no puede evaluar)")
+```
+
+## Visualización {.smaller}
+
+```{python}
+import matplotlib.pyplot as plt
+
+# Perplejidad promedio por método de suavizado (excluimos MLE porque da ∞)
+metodos = ['Laplace\n(Add-1)', 'Add-0.1', 'Interpolación', 'Kneser-Ney']
+pp_promedios = []
+
+for metodo, kwargs in [('laplace', {}), ('add_k', {'k': 0.1}), ('interpolacion', {}), ('kneser_ney', {})]:
+    pps = [perplejidad_modelo(t, metodo, **kwargs) for t in corpus_test]
+    pp_promedios.append(np.mean(pps))
+
+colores = ['#457b9d', '#2a9d8f', '#e9c46a', '#e76f51']
+
+fig, ax = plt.subplots(figsize=(9, 5))
+bars = ax.bar(metodos, pp_promedios, color=colores, edgecolor='black', linewidth=0.5)
+
+# Etiquetas en las barras
+for bar, val in zip(bars, pp_promedios):
+    ax.text(bar.get_x() + bar.get_width()/2., bar.get_height() + 0.3,
+            f'{val:.1f}', ha='center', va='bottom', fontweight='bold', fontsize=13)
+
+ax.set_ylabel('Perplejidad Promedio', fontsize=12)
+ax.set_title('Comparación de Métodos de Suavizado\n(MLE excluido: da ∞ con n-gramas no vistos)', fontsize=13)
+ax.set_ylim(0, max(pp_promedios) * 1.3)
+plt.tight_layout()
+plt.show()
+```
+
+# Resumen {background-color="#0077b6"}
+
+## Lo Que Aprendimos Hoy {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Evaluación
+
+- La **perplejidad** es la métrica estándar para modelos de lenguaje
+- Menor PP = mejor modelo
+- PP es el "factor de ramificación" promedio
+- **No** comparar PP entre datasets diferentes
+
+:::
+::: {.column width="50%"}
+
+### Suavizado
+
+- Las probabilidades cero son un **desastre** para modelos n-gram
+- **Laplace:** Simple pero agresivo
+- **Add-k:** Más conservador
+- **Interpolación:** Combina múltiples niveles
+- **Kneser-Ney:** El mejor — usa versatilidad en vez de frecuencia
+
+:::
+:::
+
+## Fórmulas Clave {.smaller}
+
+| Concepto | Fórmula |
+|:---------|:--------|
+| **Perplejidad** | $\text{PP}(W) = 2^{-\frac{1}{N}\sum_i \log_2 P(w_i \mid \cdots)}$ |
+| **Laplace** | $P(w_i \mid w_{i-1}) = \frac{C(w_{i-1}, w_i) + 1}{C(w_{i-1}) + V}$ |
+| **Add-k** | $P(w_i \mid w_{i-1}) = \frac{C(w_{i-1}, w_i) + k}{C(w_{i-1}) + kV}$ |
+| **Interpolación** | $\hat{P} = \lambda_2 P_2(w_i \mid w_{i-1}) + \lambda_1 P_1(w_i)$ |
+| **Kneser-Ney** | $P(w_i \mid w_{i-1}) = \frac{\max(C - d, 0)}{C(w_{i-1})} + \lambda \cdot P_{\text{cont}}(w_i)$ |
+
+## Para la Próxima Sesión 📚
+
+::: {.callout-note}
+## Sesión 3: HMM para POS Tagging
+
+- Modelos Ocultos de Markov
+- El algoritmo de Viterbi
+- Etiquetado de partes del discurso (POS)
+:::
+
+**Lectura:**
+
+- Jurafsky & Martin, Cap. 8: *Sequence Labeling*
+- Artículo: [A Tutorial on HMMs](https://www.cs.cmu.edu/~cga/behavior/rabiner1.pdf) (Rabiner, 1989)
+
+**Preparación:**
+
+- Repasar las fórmulas de perplejidad y suavizado
+- Quiz 3 cubrirá: modelos n-gram (S1) + perplejidad y suavizado (S2) 🧮
+
+# ¿Preguntas? 🙋 {background-color="#03045e"}
+
+:::{.r-fit-text}
+**¡Gracias!**
+:::
+
+📧 fsuarez@ucb.edu.bo
+
+🔗 Materiales: [github.com/fjsuarez/ucb-nlp](https://github.com/fjsuarez/ucb-nlp)

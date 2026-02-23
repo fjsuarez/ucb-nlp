@@ -44,6 +44,7 @@ from googleapiclient.discovery import build
 # Scopes needed for Forms and Drive
 SCOPES = [
     "https://www.googleapis.com/auth/forms.body",
+    "https://www.googleapis.com/auth/forms.responses.readonly",
     "https://www.googleapis.com/auth/drive",
 ]
 
@@ -248,7 +249,7 @@ def create_google_form(quiz: dict, answers: dict | None = None):
     # Step 2: Build batch update requests
     requests = []
 
-    # Set description and quiz mode
+    # Set quiz mode and collect emails
     requests.append({
         "updateSettings": {
             "settings": {
@@ -257,6 +258,15 @@ def create_google_form(quiz: dict, answers: dict | None = None):
                 }
             },
             "updateMask": "quizSettings.isQuiz",
+        }
+    })
+
+    requests.append({
+        "updateSettings": {
+            "settings": {
+                "emailCollectionType": "VERIFIED",
+            },
+            "updateMask": "emailCollectionType",
         }
     })
 
