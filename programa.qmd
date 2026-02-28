@@ -16,7 +16,7 @@
 | **3** | **Modelado de Lenguaje (Clásico)** | |
 | | [S1: Modelos de lenguaje N-gram y Regla de la Cadena](slides/semana03/s1_ngram_lm.qmd) | |
 | | [S2: Evaluación: Perplejidad y técnicas de Suavizado](slides/semana03/s2_perplejidad_suavizado.qmd) | Quiz 3 |
-| | S3: Modelos Ocultos de Markov (HMM) para etiquetado POS | |
+| | [S3: Modelos Ocultos de Markov (HMM) para etiquetado POS](slides/semana03/s3_hmm_pos.qmd) | |
 | **4** | **La Revolución Vectorial** | |
 | | S1: Word2Vec: Skip-gram y CBOW | |
 | | S2: GloVe y FastText (embeddings de subpalabras) | |

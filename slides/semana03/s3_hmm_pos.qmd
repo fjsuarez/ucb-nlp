@@ -1,0 +1,1086 @@
+---
+title: "Modelado de Lenguaje (Clásico)"
+subtitle: "S3: Modelos Ocultos de Markov (HMM) para Etiquetado POS"
+author: "Prof. Francisco Suárez"
+institute: "Universidad Católica Boliviana"
+date: "2026-02-28"
+format:
+  revealjs:
+    theme: sky
+    transition: slide
+    slide-number: true
+    chalkboard: true
+    code-fold: true
+    code-tools: true
+    highlight-style: github
+    footer: "NLP y Análisis Semántico | Semana 3"
+    logo: ""
+    incremental: false
+    scrollable: true
+execute:
+  echo: true
+  warning: false
+---
+
+## Agenda de Hoy {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+**Primera Parte**
+
+1. 🏷️ ¿Qué es el etiquetado POS?
+2. 🔗 De modelos n-gram a secuencias ocultas
+3. 🤖 Modelos Ocultos de Markov (HMM)
+
+:::
+::: {.column width="50%"}
+**Segunda Parte**
+
+4. 🧮 Los 3 problemas fundamentales de HMM
+5. 🛤️ El algoritmo de Viterbi
+6. 🛠️ Implementación en Python
+
+:::
+:::
+
+# Bloque 1: Etiquetado POS {background-color="#0077b6"}
+
+## ¿Qué es POS Tagging? {.smaller}
+
+> **Part-of-Speech (POS) Tagging** es la tarea de asignar a cada palabra de una oración su **categoría gramatical**.
+
+. . .
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Ejemplo
+
+| Palabra | Etiqueta POS |
+|:--------|:------------|
+| El | DET |
+| gato | NOUN |
+| come | VERB |
+| pescado | NOUN |
+| fresco | ADJ |
+
+:::
+::: {.column width="50%"}
+
+### ¿Por qué importa?
+
+- **Desambiguación:** "bajo" → ¿ADJ o VERB o PREP?
+- **Parsing sintáctico:** estructura de la oración
+- **Extracción de información:** encontrar entidades
+- **Traducción automática:** orden de palabras
+- **Lematización informada:** forma base correcta
+
+:::
+:::
+
+## Ambigüedad: El Gran Desafío {.smaller}
+
+Muchas palabras pueden tener **múltiples categorías**:
+
+| Palabra | Contexto 1 | POS 1 | Contexto 2 | POS 2 |
+|:--------|:-----------|:------|:-----------|:------|
+| **bajo** | "el techo bajo" | ADJ | "bajo la mesa" | PREP |
+| **como** | "como pizza" | VERB | "blanco como la nieve" | CONJ |
+| **sobre** | "el sobre amarillo" | NOUN | "sobre la mesa" | PREP |
+| **canto** | "el canto del ave" | NOUN | "yo canto bien" | VERB |
+| **traje** | "un traje negro" | NOUN | "te traje flores" | VERB |
+
+. . .
+
+::: {.callout-important}
+## Dato
+En español, aproximadamente el **40%** de los tipos de palabras (word types) son ambiguos en cuanto a su POS. Sin embargo, la mayoría de los tokens (word tokens) en texto real son **no ambiguos** en contexto.
+:::
+
+## Conjunto de Etiquetas POS {.smaller}
+
+### Universal POS Tags (UPOS) — 17 categorías
+
+::: {.columns}
+::: {.column width="33%"}
+
+| Tag | Categoría |
+|:----|:----------|
+| ADJ | Adjetivo |
+| ADP | Adposición |
+| ADV | Adverbio |
+| AUX | Auxiliar |
+| CCONJ | Conj. coordinante |
+| DET | Determinante |
+
+:::
+::: {.column width="33%"}
+
+| Tag | Categoría |
+|:----|:----------|
+| INTJ | Interjección |
+| NOUN | Sustantivo |
+| NUM | Numeral |
+| PART | Partícula |
+| PRON | Pronombre |
+| PROPN | Nombre propio |
+
+:::
+::: {.column width="33%"}
+
+| Tag | Categoría |
+|:----|:----------|
+| PUNCT | Puntuación |
+| SCONJ | Conj. subordinante |
+| SYM | Símbolo |
+| VERB | Verbo |
+| X | Otro |
+
+:::
+:::
+
+. . .
+
+::: {.callout-note}
+## Nota
+El Penn Treebank usa **45 etiquetas** (NN, NNS, VB, VBD, JJ, ...). Nosotros usaremos UPOS por simplicidad.
+:::
+
+## Enfoques para POS Tagging {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Basados en reglas
+- Diccionarios + reglas lingüísticas
+- Ejemplo: "si termina en -mente → ADV"
+- Limitado y frágil
+
+### Basados en aprendizaje
+- **HMM** ← Hoy 🎯
+- CRF (Campos Aleatorios Condicionales)
+- Redes neuronales (BiLSTM-CRF)
+- Transformers (BERT + fine-tuning)
+
+:::
+::: {.column width="50%"}
+
+### Baseline sorprendentemente buena
+
+**"Most Frequent Tag":** asignar a cada palabra su etiqueta más frecuente en el corpus de entrenamiento.
+
+- Precisión: **~90%** 🤯
+- Pero falla precisamente en los casos **ambiguos** e interesantes
+
+:::
+:::
+
+. . .
+
+::: {.callout-tip}
+## Conexión
+Los modelos n-gram que vimos en S1 y S2 modelan secuencias de **palabras**. Los HMM modelan secuencias de **etiquetas**, condicionadas en las palabras observadas.
+:::
+
+# Bloque 2: De N-gramas a Secuencias Ocultas {background-color="#023e8a"}
+
+## La Intuición {.smaller}
+
+En los modelos n-gram, estimábamos:
+
+$$P(w_1, w_2, \dots, w_n)$$
+
+Para POS tagging, queremos encontrar la **mejor secuencia de etiquetas** $t_1, t_2, \dots, t_n$ para una secuencia de palabras $w_1, w_2, \dots, w_n$:
+
+$$\hat{t}_1^n = \arg\max_{t_1^n} P(t_1, t_2, \dots, t_n \mid w_1, w_2, \dots, w_n)$$
+
+. . .
+
+### Aplicando Bayes
+
+$$\hat{t}_1^n = \arg\max_{t_1^n} \frac{P(w_1^n \mid t_1^n) \cdot P(t_1^n)}{P(w_1^n)}$$
+
+Como $P(w_1^n)$ es constante para todos los candidatos:
+
+$$\hat{t}_1^n = \arg\max_{t_1^n} \underbrace{P(w_1^n \mid t_1^n)}_{\text{verosimilitud}} \cdot \underbrace{P(t_1^n)}_{\text{prior}}$$
+
+## Las Dos Componentes {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Prior: $P(t_1^n)$
+**¿Qué secuencias de etiquetas son probables?**
+
+Usamos un **modelo n-gram de etiquetas** (bigrama):
+
+$$P(t_1^n) \approx \prod_{i=1}^{n} P(t_i \mid t_{i-1})$$
+
+**Ejemplo:** $P(\text{DET, NOUN, VERB})$ es alta, $P(\text{VERB, DET, VERB})$ es baja.
+
+Estas son las **probabilidades de transición**.
+
+:::
+::: {.column width="50%"}
+
+### Verosimilitud: $P(w_1^n \mid t_1^n)$
+**¿Qué tan probable es observar estas palabras dadas las etiquetas?**
+
+Asumimos independencia:
+
+$$P(w_1^n \mid t_1^n) \approx \prod_{i=1}^{n} P(w_i \mid t_i)$$
+
+**Ejemplo:** $P(\text{"gato"} \mid \text{NOUN})$ es alta, $P(\text{"gato"} \mid \text{VERB})$ es baja.
+
+Estas son las **probabilidades de emisión**.
+
+:::
+:::
+
+. . .
+
+::: {.callout-note}
+## Resultado
+$$\hat{t}_1^n = \arg\max_{t_1^n} \prod_{i=1}^{n} \underbrace{P(w_i \mid t_i)}_{\text{emisión}} \cdot \underbrace{P(t_i \mid t_{i-1})}_{\text{transición}}$$
+¡Esta es exactamente la formulación de un **HMM**!
+:::
+
+# Bloque 3: Modelos Ocultos de Markov {background-color="#03045e"}
+
+## Definición Formal {.smaller}
+
+Un **Modelo Oculto de Markov** (HMM) se define por 5 componentes:
+
+$$\lambda = (S, V, A, B, \pi)$$
+
+| Componente | Símbolo | Descripción |
+|:-----------|:-------:|:-----------|
+| Estados ocultos | $S = \{s_1, \dots, s_N\}$ | Las categorías POS (DET, NOUN, VERB, ...) |
+| Vocabulario | $V = \{v_1, \dots, v_M\}$ | Las palabras observables |
+| Prob. de transición | $A = \{a_{ij}\}$ | $P(t_j \mid t_i)$ — de estado $i$ a estado $j$ |
+| Prob. de emisión | $B = \{b_j(k)\}$ | $P(w_k \mid t_j)$ — palabra $k$ dado estado $j$ |
+| Prob. inicial | $\pi = \{\pi_i\}$ | $P(t_i \mid \langle s \rangle)$ — probabilidad de empezar en estado $i$ |
+
+. . .
+
+::: {.callout-important}
+## ¿Por qué "oculto"?
+- **Observable:** las palabras $w_1, w_2, \dots, w_n$ (las vemos)
+- **Oculto:** las etiquetas $t_1, t_2, \dots, t_n$ (las queremos descubrir)
+:::
+
+## Visualización del HMM {.smaller}
+
+```{mermaid}
+graph LR
+    subgraph Estados Ocultos
+        T1["DET"] --> T2["NOUN"]
+        T2 --> T3["VERB"]
+        T3 --> T4["NOUN"]
+    end
+    
+    T1 -.->|"P(el|DET)=0.4"| W1["el"]
+    T2 -.->|"P(gato|NOUN)=0.1"| W2["gato"]
+    T3 -.->|"P(come|VERB)=0.3"| W3["come"]
+    T4 -.->|"P(pescado|NOUN)=0.05"| W4["pescado"]
+    
+    style T1 fill:#0077b6,color:#fff
+    style T2 fill:#0077b6,color:#fff
+    style T3 fill:#0077b6,color:#fff
+    style T4 fill:#0077b6,color:#fff
+    style W1 fill:#cfe2ff,color:#000
+    style W2 fill:#cfe2ff,color:#000
+    style W3 fill:#cfe2ff,color:#000
+    style W4 fill:#cfe2ff,color:#000
+```
+
+::: {.columns}
+::: {.column width="50%"}
+
+**Flechas horizontales** → Transiciones entre estados ocultos $P(t_i \mid t_{i-1})$
+
+:::
+::: {.column width="50%"}
+
+**Flechas verticales** → Emisiones: $P(w_i \mid t_i)$
+
+:::
+:::
+
+## Supuestos del HMM {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### 1. Supuesto de Markov (primer orden)
+
+La probabilidad de un estado depende **solo del estado anterior**:
+
+$$P(t_i \mid t_1, \dots, t_{i-1}) = P(t_i \mid t_{i-1})$$
+
+Es el mismo supuesto que usamos en los bigramas de la Sesión 1.
+
+:::
+::: {.column width="50%"}
+
+### 2. Independencia de salida
+
+La probabilidad de una palabra depende **solo de su etiqueta**:
+
+$$P(w_i \mid t_1, \dots, t_n, w_1, \dots, w_n) = P(w_i \mid t_i)$$
+
+"gato" depende de que sea NOUN, no importa qué palabra vino antes.
+
+:::
+:::
+
+. . .
+
+::: {.callout-warning}
+## Limitaciones de estos supuestos
+- Las palabras **sí** dependen de palabras vecinas (contexto)
+- Las etiquetas pueden depender de **más contexto** que solo la etiqueta anterior
+- Estos supuestos son simplificaciones, pero funcionan sorprendentemente bien en la práctica
+:::
+
+## Ejemplo: Matrices de un Mini-HMM {.smaller}
+
+**Estados:** $S = \{\text{DET, NOUN, VERB}\}$ | **Vocabulario:** $V = \{\text{el, gato, come, pescado}\}$
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Matriz de Transición $A$
+
+| | DET | NOUN | VERB |
+|:---|:---:|:----:|:----:|
+| **$\langle s \rangle$** | 0.8 | 0.1 | 0.1 |
+| **DET** | 0.0 | 0.9 | 0.1 |
+| **NOUN** | 0.1 | 0.1 | 0.8 |
+| **VERB** | 0.4 | 0.5 | 0.1 |
+
+Cada fila suma 1.
+
+:::
+::: {.column width="50%"}
+
+### Matriz de Emisión $B$
+
+| | el | gato | come | pescado |
+|:---|:---:|:----:|:----:|:-------:|
+| **DET** | 0.7 | 0.0 | 0.0 | 0.0 |
+| **NOUN** | 0.0 | 0.4 | 0.0 | 0.5 |
+| **VERB** | 0.0 | 0.0 | 0.8 | 0.0 |
+
+(Probabilidades simplificadas; las filas suman 1 en un modelo completo.)
+
+:::
+:::
+
+. . .
+
+::: {.callout-tip}
+## Observación
+Las matrices de transición son como los **bigramas de etiquetas**, y las de emisión son como **diccionarios probabilísticos**.
+:::
+
+# Bloque 4: Los 3 Problemas Fundamentales {background-color="#0077b6"}
+
+## Los 3 Problemas de un HMM {.smaller}
+
+| # | Problema | Pregunta | Algoritmo |
+|:--|:---------|:---------|:----------|
+| 1 | **Evaluación** (Likelihood) | ¿Cuál es $P(W \mid \lambda)$? ¿Qué tan probable es observar esta secuencia de palabras dado el modelo? | Forward Algorithm |
+| 2 | **Decodificación** | ¿Cuál es la mejor secuencia de estados ocultos $\hat{t}_1^n$? | **Viterbi** 🎯 |
+| 3 | **Aprendizaje** | ¿Cómo ajustar los parámetros $A$, $B$, $\pi$ a partir de datos? | Baum-Welch (EM) |
+
+. . .
+
+::: {.callout-important}
+## Hoy nos enfocamos en el Problema 2: Decodificación
+Para POS tagging, lo que nos interesa es: dada una oración, **¿cuál es la mejor secuencia de etiquetas?**
+
+Para el Problema 3 (Aprendizaje), en la práctica con datos etiquetados simplemente **contamos** (como hacíamos con modelos n-gram). Baum-Welch se usa cuando **no tenemos etiquetas**.
+:::
+
+## Entrenamiento Supervisado (Conteo) {.smaller}
+
+Si tenemos un corpus **anotado con POS tags**, entrenar un HMM es simplemente **contar**:
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Probabilidades de transición
+
+$$P(t_j \mid t_i) = \frac{C(t_i, t_j)}{C(t_i)}$$
+
+¿Cuántas veces la etiqueta $t_j$ sigue a $t_i$?
+
+:::
+::: {.column width="50%"}
+
+### Probabilidades de emisión
+
+$$P(w_k \mid t_j) = \frac{C(t_j, w_k)}{C(t_j)}$$
+
+¿Cuántas veces la palabra $w_k$ aparece con la etiqueta $t_j$?
+
+:::
+:::
+
+. . .
+
+::: {.callout-tip}
+## Estimación MLE — Igual que en modelos n-gram
+Es exactamente la misma idea de **Maximum Likelihood Estimation** que vimos en la Sesión 1. La diferencia es que ahora contamos bigramas de **etiquetas** en vez de bigramas de **palabras**.
+:::
+
+## Entrenamiento: Ejemplo en Python {.smaller}
+
+```{python}
+#| code-fold: false
+from collections import Counter, defaultdict
+
+# Corpus anotado (mini ejemplo)
+corpus_anotado = [
+    [("el", "DET"), ("gato", "NOUN"), ("come", "VERB"), ("pescado", "NOUN")],
+    [("el", "DET"), ("perro", "NOUN"), ("bebe", "VERB"), ("agua", "NOUN")],
+    [("un", "DET"), ("gato", "NOUN"), ("duerme", "VERB")],
+    [("el", "DET"), ("gato", "NOUN"), ("come", "VERB"), ("carne", "NOUN")],
+    [("la", "DET"), ("gata", "NOUN"), ("bebe", "VERB"), ("leche", "NOUN")],
+]
+
+# Contar transiciones y emisiones
+trans_count = Counter()  # C(t_i, t_j)
+emis_count = Counter()   # C(t_j, w_k)
+tag_count = Counter()    # C(t_i)
+
+for oracion in corpus_anotado:
+    tags = ["<s>"] + [tag for _, tag in oracion] + ["</s>"]
+    for i in range(len(tags) - 1):
+        trans_count[(tags[i], tags[i+1])] += 1
+        tag_count[tags[i]] += 1
+    for palabra, tag in oracion:
+        emis_count[(tag, palabra)] += 1
+
+# Calcular probabilidades de transición
+print("=== Probabilidades de Transición P(t_j | t_i) ===")
+for (t_i, t_j), conteo in sorted(trans_count.items()):
+    prob = conteo / tag_count[t_i]
+    print(f"  P({t_j:>5} | {t_i:<5}) = {conteo}/{tag_count[t_i]} = {prob:.3f}")
+```
+
+## Probabilidades de Emisión {.smaller}
+
+```{python}
+#| code-fold: false
+# Calcular probabilidades de emisión
+print("=== Probabilidades de Emisión P(w | t) ===")
+tag_count_emis = Counter()
+for _, tag in [pair for sent in corpus_anotado for pair in sent]:
+    tag_count_emis[tag] += 1
+
+for tag in sorted(set(t for t, _ in emis_count)):
+    print(f"\n  {tag}:")
+    for (t, w), conteo in sorted(emis_count.items()):
+        if t == tag:
+            prob = conteo / tag_count_emis[tag]
+            print(f"    P({w:<10} | {tag}) = {conteo}/{tag_count_emis[tag]} = {prob:.3f}")
+```
+
+## El Problema de Decodificación {.smaller}
+
+Dada la oración "el gato come", queremos:
+
+$$\hat{t}_1^3 = \arg\max_{t_1, t_2, t_3} \prod_{i=1}^{3} P(w_i \mid t_i) \cdot P(t_i \mid t_{i-1})$$
+
+. . .
+
+### ¿Enfoque de fuerza bruta?
+
+Con 3 posibles etiquetas y 3 palabras: $3^3 = 27$ secuencias candidatas.
+
+Con 17 etiquetas UPOS y una oración de 20 palabras: $17^{20} \approx 4 \times 10^{24}$ 🤯
+
+. . .
+
+::: {.callout-warning}
+## ¡Imposible por fuerza bruta!
+Necesitamos un algoritmo eficiente. Aquí es donde entra **Viterbi**.
+:::
+
+# Bloque 5: El Algoritmo de Viterbi {background-color="#023e8a"}
+
+## La Idea de Viterbi {.smaller}
+
+El algoritmo de Viterbi usa **programación dinámica** para encontrar la secuencia óptima de estados en tiempo $O(T \cdot N^2)$ donde:
+
+- $T$ = longitud de la oración
+- $N$ = número de etiquetas POS
+
+. . .
+
+### Intuición
+
+En vez de evaluar $N^T$ secuencias completas, calculamos en cada paso:
+
+> "¿Cuál es el **mejor camino** que llega a cada estado en el tiempo $t$?"
+
+```{mermaid}
+graph LR
+    subgraph "t=1: el"
+        D1["DET ✓"]
+        N1["NOUN"]
+        V1["VERB"]
+    end
+    subgraph "t=2: gato"
+        D2["DET"]
+        N2["NOUN ✓"]
+        V2["VERB"]
+    end
+    subgraph "t=3: come"
+        D3["DET"]
+        N3["NOUN"]
+        V3["VERB ✓"]
+    end
+    
+    D1 --> N2
+    N2 --> V3
+    
+    style D1 fill:#2a9d8f,color:#fff
+    style N2 fill:#2a9d8f,color:#fff
+    style V3 fill:#2a9d8f,color:#fff
+    style D2 fill:#e0e0e0,color:#888
+    style N1 fill:#e0e0e0,color:#888
+    style V1 fill:#e0e0e0,color:#888
+    style D3 fill:#e0e0e0,color:#888
+    style N3 fill:#e0e0e0,color:#888
+```
+
+## Algoritmo de Viterbi: Paso a Paso {.smaller}
+
+**Definimos** $v_t(j)$ = probabilidad del **mejor camino** que termina en el estado $j$ en el tiempo $t$.
+
+### Inicialización ($t = 1$)
+
+$$v_1(j) = \pi_j \cdot b_j(w_1)$$
+
+### Recursión ($t = 2, \dots, T$)
+
+$$v_t(j) = \max_{i=1}^{N} \left[ v_{t-1}(i) \cdot a_{ij} \cdot b_j(w_t) \right]$$
+
+$$\text{bp}_t(j) = \arg\max_{i=1}^{N} \left[ v_{t-1}(i) \cdot a_{ij} \right]$$
+
+### Terminación
+
+$$\hat{t}_T = \arg\max_{j} v_T(j)$$
+
+### Backtracking
+
+$$\hat{t}_t = \text{bp}_{t+1}(\hat{t}_{t+1}), \quad t = T-1, \dots, 1$$
+
+## Ejemplo a Mano {.smaller}
+
+**Oración:** "el gato come" | **Estados:** {DET, NOUN, VERB}
+
+**Parámetros (simplificados):**
+
+::: {.columns}
+::: {.column width="50%"}
+
+**Transiciones:**
+
+| | DET | NOUN | VERB |
+|:---|:---:|:----:|:----:|
+| $\langle s \rangle$ | 0.8 | 0.1 | 0.1 |
+| DET | 0.0 | 0.9 | 0.1 |
+| NOUN | 0.1 | 0.1 | 0.8 |
+| VERB | 0.4 | 0.5 | 0.1 |
+
+:::
+::: {.column width="50%"}
+
+**Emisiones:**
+
+| | el | gato | come |
+|:---|:---:|:----:|:----:|
+| DET | 0.6 | 0.0 | 0.0 |
+| NOUN | 0.0 | 0.5 | 0.0 |
+| VERB | 0.0 | 0.0 | 0.7 |
+
+:::
+:::
+
+## Ejemplo a Mano: Paso 1 — Inicialización {.smaller}
+
+### $w_1$ = "el": ¿Con qué etiqueta empieza la oración?
+
+Aplicamos: $v_1(j) = \pi_j \cdot b_j(w_1)$
+
+| Estado $j$ | $\pi_j$ (prob. inicial) | $b_j(\text{el})$ (emisión) | $v_1(j) = \pi_j \times b_j$ | Resultado |
+|:-----------|:-----------------------:|:--------------------------:|:---------------------------:|:---------:|
+| DET | 0.8 | 0.6 | $0.8 \times 0.6$ | **0.48** |
+| NOUN | 0.1 | 0.0 | $0.1 \times 0.0$ | 0.00 |
+| VERB | 0.1 | 0.0 | $0.1 \times 0.0$ | 0.00 |
+
+. . .
+
+::: {.callout-tip}
+## Interpretación
+"el" solo puede ser emitido por DET (emisión > 0), así que solo DET sobrevive con $v_1 = 0.48$. Los otros estados quedan en 0.
+:::
+
+## Ejemplo a Mano: Paso 2 — Recursión {.smaller}
+
+### $w_2$ = "gato": Para cada estado, ¿quién es el mejor predecesor?
+
+Para cada estado $j$, hacemos una **competencia** entre todos los caminos que llegan a él:
+
+**Estado NOUN** (el único interesante porque $b_{\text{NOUN}}(\text{gato}) = 0.5 > 0$):
+
+| Corredor desde... | $v_1(i) \cdot a_{i,\text{NOUN}}$ | Score |
+|:-------------------|:----------------------------------|:------|
+| DET | $0.48 \times 0.9 = 0.432$ | 🏆 **Ganador** |
+| NOUN | $0.00 \times 0.1 = 0.000$ | |
+| VERB | $0.00 \times 0.5 = 0.000$ | |
+
+Ganador: **DET** con score 0.432. Backpointer: $\text{bp}_2(\text{NOUN}) = \text{DET}$
+
+Multiplicamos por emisión: $v_2(\text{NOUN}) = 0.432 \times 0.5 = \mathbf{0.216}$
+
+. . .
+
+**Tabla completa del Paso 2:**
+
+| Estado $j$ | Mejor predecesor | Score transición | $\times$ Emisión | $v_2(j)$ | bp |
+|:-----------|:----------------:|:----------------:|:-----------------:|:---------:|:---|
+| DET | — | $\max(0.48 \cdot 0.0, \dots) = 0$ | $\times 0.0$ | 0.000 | — |
+| NOUN | DET | $0.48 \times 0.9 = 0.432$ | $\times 0.5$ | **0.216** | DET |
+| VERB | DET | $0.48 \times 0.1 = 0.048$ | $\times 0.0$ | 0.000 | — |
+
+## Ejemplo a Mano: Paso 3 — Recursión {.smaller}
+
+### $w_3$ = "come": misma competencia para cada estado
+
+| Estado $j$ | Mejor predecesor | Score transición | $\times$ Emisión | $v_3(j)$ | bp |
+|:-----------|:----------------:|:----------------:|:-----------------:|:---------:|:---|
+| DET | NOUN | $0.216 \times 0.1 = 0.022$ | $\times 0.0$ | 0.000 | — |
+| NOUN | NOUN | $0.216 \times 0.1 = 0.022$ | $\times 0.0$ | 0.000 | — |
+| VERB | NOUN | $0.216 \times 0.8 = 0.173$ | $\times 0.7$ | **0.121** | NOUN |
+
+. . .
+
+::: {.callout-note}
+## Observación
+Incluso DET y NOUN reciben score de transición > 0 desde NOUN, pero sus **emisiones** para "come" son 0, así que quedan eliminados. La emisión actúa como un **filtro**: no importa qué tan bueno sea el camino si la palabra no encaja con la etiqueta.
+:::
+
+## Ejemplo a Mano: Terminación {.smaller}
+
+### ¿Cuál es el mejor estado final?
+
+Aplicamos: $\hat{t}_T = \arg\max_j \; v_T(j)$
+
+| Estado $j$ | $v_3(j)$ | |
+|:-----------|:--------:|:---|
+| DET | 0.000 | |
+| NOUN | 0.000 | |
+| VERB | **0.121** | ⭐ Ganador |
+
+$$\hat{t}_3 = \text{VERB}, \quad P^* = 0.121$$
+
+. . .
+
+::: {.callout-important}
+## ¿Por qué es un paso separado?
+Durante la recursión, mantenemos el mejor score para **cada** estado. Recién en la terminación decidimos cuál de todos los estados finales tiene el mejor camino global. Si la oración fuera más larga, podría haber varios estados con $v_T > 0$ compitiendo.
+:::
+
+## Ejemplo a Mano: Backtracking {.smaller}
+
+### Reconstrucción: seguimos las "migas de pan" hacia atrás 🔙
+
+Partimos del ganador en $t=3$ y seguimos los backpointers:
+
+```{mermaid}
+graph RL
+    V3["t=3: VERB ⭐"] -->|"bp = NOUN"| N2["t=2: NOUN"]
+    N2 -->|"bp = DET"| D1["t=1: DET"]
+    
+    style V3 fill:#2a9d8f,color:#fff
+    style N2 fill:#2a9d8f,color:#fff
+    style D1 fill:#2a9d8f,color:#fff
+```
+
+. . .
+
+| Paso | $\hat{t}_t$ | ¿Cómo lo obtuvimos? |
+|:-----|:------------|:--------------------|
+| $t=3$ | **VERB** | Terminación: $\arg\max_j v_3(j)$ |
+| $t=2$ | **NOUN** | $\text{bp}_3(\text{VERB}) = \text{NOUN}$ |
+| $t=1$ | **DET** | $\text{bp}_2(\text{NOUN}) = \text{DET}$ |
+
+. . .
+
+**Secuencia óptima:** DET → NOUN → VERB
+
+| el | gato | come |
+|:--:|:----:|:----:|
+| DET ✅ | NOUN ✅ | VERB ✅ |
+
+## Trellis Completo: Vista de Pájaro {.smaller}
+
+Toda la información de Viterbi se resume en esta **tabla trellis**:
+
+|  | $t=1$: "el" | $t=2$: "gato" | $t=3$: "come" |
+|:---|:---:|:---:|:---:|
+| **DET** | **0.480** | 0.000 | 0.000 |
+| **NOUN** | 0.000 | **0.216** ← DET | 0.000 |
+| **VERB** | 0.000 | 0.000 | **0.121** ← NOUN ⭐ |
+
+. . .
+
+::: {.callout-tip}
+## ¡Funciona!
+Viterbi llenó $T \times N = 3 \times 3 = 9$ celdas, cada una requiriendo $N = 3$ comparaciones = **27 operaciones**. Con fuerza bruta tendríamos que evaluar $N^T = 3^3 = 27$ **caminos completos** (cada uno de longitud 3 = 81 operaciones).
+
+Para problemas reales ($N = 17$ etiquetas, $T = 20$ palabras):
+
+- **Viterbi:** $T \times N^2 = 20 \times 289 = 5{,}780$ operaciones ✅
+- **Fuerza bruta:** $N^T = 17^{20} \approx 4 \times 10^{24}$ caminos 💀
+:::
+
+## Viterbi en Log-Espacio: Evitando el Underflow {.smaller}
+
+### El problema (igual que en Sesión 2)
+
+Con una oración de 20 palabras, multiplicamos ~20 probabilidades < 1: $v_{20}(j) = 0.3 \times 0.1 \times 0.4 \times \cdots \approx 10^{-15}$ → **underflow numérico** 💥
+
+### La solución: trabajar en log-espacio
+
+Reemplazamos **productos** por **sumas de logaritmos**:
+
+$$\log v_t(j) = \max_i \left[ \log v_{t-1}(i) + \log a_{ij} \right] + \log b_j(w_t)$$
+
+- ✅ No hay underflow (sumamos números negativos manejables)
+- ✅ El $\arg\max$ no cambia (log es monótona creciente)
+- ✅ Misma secuencia óptima, diferente representación
+
+| | Espacio original | Log-espacio |
+|:--|:---------------:|:-----------:|
+| **Operación** | $\max(v \cdot a) \cdot b$ | $\max(\log v + \log a) + \log b$ |
+| **Ejemplo** ($t=20$) | $3.2 \times 10^{-15}$ | $-14.5$ |
+| **Riesgo de underflow** | ⚠️ Sí | ✅ No |
+
+::: {.callout-note}
+## Conexión con Sesión 2
+Es exactamente la misma idea que usamos para calcular la **perplejidad** con log-probabilidades. En NLP, casi siempre trabajamos en log-espacio.
+:::
+
+# Bloque 6: Implementación en Python {background-color="#0077b6"}
+
+## HMM Completo en Python {.smaller}
+
+```{python}
+import numpy as np
+
+class HMM_POS_Tagger:
+    """Modelo Oculto de Markov para etiquetado POS."""
+    
+    def __init__(self, smoothing=1e-6):
+        self.smoothing = smoothing
+        self.tags = set()
+        self.vocab = set()
+        self.trans_count = Counter()
+        self.emis_count = Counter()
+        self.tag_count = Counter()
+    
+    def entrenar(self, corpus_anotado):
+        """Entrena el HMM contando transiciones y emisiones."""
+        for oracion in corpus_anotado:
+            tags = ["<s>"] + [tag for _, tag in oracion]
+            for i in range(len(tags) - 1):
+                self.trans_count[(tags[i], tags[i+1])] += 1
+                self.tag_count[tags[i]] += 1
+            for palabra, tag in oracion:
+                self.emis_count[(tag, palabra)] += 1
+                self.tags.add(tag)
+                self.vocab.add(palabra)
+        self.tags = sorted(self.tags)
+        self.tag_to_idx = {t: i for i, t in enumerate(self.tags)}
+    
+    def prob_transicion(self, t_prev, t_curr):
+        """P(t_curr | t_prev) con suavizado."""
+        num = self.trans_count[(t_prev, t_curr)] + self.smoothing
+        den = self.tag_count[t_prev] + self.smoothing * len(self.tags)
+        return num / den
+    
+    def prob_emision(self, tag, palabra):
+        """P(palabra | tag) con suavizado."""
+        num = self.emis_count[(tag, palabra)] + self.smoothing
+        den = sum(self.emis_count[(tag, w)] for w in self.vocab) + self.smoothing * (len(self.vocab) + 1)
+        return num / den
+    
+    def viterbi(self, palabras):
+        """Algoritmo de Viterbi en LOG-ESPACIO para evitar underflow."""
+        T = len(palabras)
+        N = len(self.tags)
+        
+        # Matrices de Viterbi (en log) y backpointers
+        log_v = np.full((T, N), -np.inf)  # -inf en log = 0 en prob
+        bp = np.zeros((T, N), dtype=int)
+        
+        # Inicialización (t=0): log(π_j) + log(b_j(w_1))
+        for j, tag in enumerate(self.tags):
+            log_v[0, j] = (np.log(self.prob_transicion("<s>", tag))
+                         + np.log(self.prob_emision(tag, palabras[0])))
+        
+        # Recursión: log_v[t,j] = max_i(log_v[t-1,i] + log(a_ij)) + log(b_j(w_t))
+        for t in range(1, T):
+            for j, tag_j in enumerate(self.tags):
+                scores = np.array([
+                    log_v[t-1, i] + np.log(self.prob_transicion(tag_i, tag_j))
+                    for i, tag_i in enumerate(self.tags)
+                ])
+                bp[t, j] = np.argmax(scores)
+                log_v[t, j] = scores[bp[t, j]] + np.log(self.prob_emision(tag_j, palabras[t]))
+        
+        # Terminación: mejor estado final
+        best_last = np.argmax(log_v[T-1])
+        
+        # Backtracking
+        best_path = [best_last]
+        for t in range(T-1, 0, -1):
+            best_path.append(bp[t, best_path[-1]])
+        best_path.reverse()
+        
+        return [self.tags[i] for i in best_path]
+
+# Entrenar el modelo
+hmm = HMM_POS_Tagger()
+hmm.entrenar(corpus_anotado)
+
+# Etiquetar oraciones de prueba
+tests = [
+    "el gato come pescado",
+    "un perro bebe agua",
+    "la gata duerme",
+    "el gato bebe leche",
+]
+
+print("=== Resultados de POS Tagging con HMM ===\n")
+for oracion in tests:
+    palabras = oracion.split()
+    tags = hmm.viterbi(palabras)
+    resultado = " | ".join(f"{w}/{t}" for w, t in zip(palabras, tags))
+    print(f"  {oracion}")
+    print(f"  → {resultado}\n")
+```
+
+## Evaluación del Modelo {.smaller}
+
+```{python}
+#| code-fold: false
+# Evaluar en el corpus de entrenamiento (para verificar)
+correctas = 0
+total = 0
+
+for oracion in corpus_anotado:
+    palabras = [w for w, _ in oracion]
+    tags_gold = [t for _, t in oracion]
+    tags_pred = hmm.viterbi(palabras)
+    
+    for gold, pred in zip(tags_gold, tags_pred):
+        if gold == pred:
+            correctas += 1
+        total += 1
+
+accuracy = correctas / total * 100
+print(f"Accuracy en corpus de entrenamiento: {correctas}/{total} = {accuracy:.1f}%")
+```
+
+. . .
+
+::: {.callout-note}
+## Nota
+La accuracy en el corpus de entrenamiento debería ser muy alta. Lo importante es cómo generaliza a **datos no vistos** (palabras desconocidas, combinaciones nuevas).
+:::
+
+## HMM con spaCy (Mundo Real) {.smaller}
+
+En la práctica, no implementamos HMM desde cero. Herramientas como **spaCy** usan modelos más avanzados, pero podemos comparar:
+
+```{python}
+import spacy
+
+try:
+    nlp = spacy.load("es_core_news_sm")
+except OSError:
+    print("Descargando modelo de spaCy para español...")
+    spacy.cli.download("es_core_news_sm")
+    nlp = spacy.load("es_core_news_sm")
+
+oraciones = [
+    "El gato come pescado fresco",
+    "Bajo la mesa hay un gato bajo",
+    "Yo como pizza y ella come ensalada",
+    "El canto del ave es hermoso",
+]
+
+print("=== POS Tagging con spaCy ===\n")
+for oracion in oraciones:
+    doc = nlp(oracion)
+    resultado = " | ".join(f"{t.text}/{t.pos_}" for t in doc)
+    print(f"  {oracion}")
+    print(f"  → {resultado}\n")
+```
+
+## Comparación: Nuestro HMM vs. spaCy {.smaller}
+
+```{python}
+# Comparar en una oración del vocabulario de entrenamiento
+oracion_comun = "el gato come pescado"
+palabras = oracion_comun.split()
+
+# Nuestro HMM
+tags_hmm = hmm.viterbi(palabras)
+
+# spaCy
+doc = nlp(oracion_comun)
+tags_spacy = [t.pos_ for t in doc]
+
+print(f"Oración: \"{oracion_comun}\"\n")
+print(f"{'Palabra':<12} {'HMM':>8} {'spaCy':>8}")
+print("-" * 30)
+for w, t_hmm, t_spacy in zip(palabras, tags_hmm, tags_spacy):
+    match = "✅" if t_hmm == t_spacy else "❌"
+    print(f"{w:<12} {t_hmm:>8} {t_spacy:>8} {match}")
+```
+
+. . .
+
+::: {.callout-tip}
+## Modelos modernos
+spaCy usa redes neuronales (no HMM), pero la intuición es la misma: **aprender patrones de secuencias de etiquetas y sus relaciones con las palabras**.
+:::
+
+## Palabras Desconocidas (OOV) {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### El problema
+
+¿Qué pasa si aparece una palabra que **nunca vimos** en entrenamiento?
+
+$$P(\text{"elefante"} \mid t) = 0 \quad \forall t$$
+
+¡La misma catástrofe del cero que vimos con modelos n-gram!
+
+:::
+::: {.column width="50%"}
+
+### Soluciones (aplicamos suavizado)
+
+1. **Suavizado:** Ya lo hicimos con `smoothing=1e-6`
+2. **Características morfológicas:**
+   - Termina en "-ción" → NOUN
+   - Termina en "-mente" → ADV
+   - Empieza con mayúscula → PROPN
+3. **Token `<UNK>`:** Reemplazar palabras raras por un token especial durante el entrenamiento
+
+:::
+:::
+
+. . .
+
+::: {.callout-note}
+## Conexión
+Igual que en la Sesión 2 usamos suavizado para modelos n-gram de palabras, aquí lo usamos para las probabilidades de emisión del HMM. **¡La misma idea, diferente aplicación!**
+:::
+
+# Resumen {background-color="#0077b6"}
+
+## Lo Que Aprendimos Hoy {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Conceptos
+
+- **POS Tagging** asigna categorías gramaticales a palabras
+- Los **HMM** modelan secuencias de estados ocultos (tags) con observaciones (palabras)
+- Un HMM tiene: estados, vocabulario, transiciones $A$, emisiones $B$, e iniciales $\pi$
+- El entrenamiento supervisado es simplemente **contar** (como modelos n-gram)
+
+:::
+::: {.column width="50%"}
+
+### Algoritmos
+
+- **Viterbi** encuentra la mejor secuencia de tags usando programación dinámica
+- Complejidad: $O(T \cdot N^2)$ vs. fuerza bruta $O(N^T)$
+- El **suavizado** resuelve el problema de palabras/transiciones no vistas
+
+:::
+:::
+
+## Fórmulas Clave {.smaller}
+
+| Concepto | Fórmula |
+|:---------|:--------|
+| **Objetivo** | $\hat{t}_1^n = \arg\max_{t_1^n} \prod_i P(w_i \mid t_i) \cdot P(t_i \mid t_{i-1})$ |
+| **Transición** | $P(t_j \mid t_i) = \frac{C(t_i, t_j)}{C(t_i)}$ |
+| **Emisión** | $P(w_k \mid t_j) = \frac{C(t_j, w_k)}{C(t_j)}$ |
+| **Viterbi init** | $v_1(j) = \pi_j \cdot b_j(w_1)$ |
+| **Viterbi recursión** | $v_t(j) = \max_i [v_{t-1}(i) \cdot a_{ij}] \cdot b_j(w_t)$ |
+| **Backtracking** | $\hat{t}_t = \text{bp}_{t+1}(\hat{t}_{t+1})$ |
+
+## Mapa del Curso: ¿Dónde Estamos? {.smaller}
+
+```{mermaid}
+graph LR
+    A["Semana 1<br>Preprocesamiento<br>Regex, Tokenización"] --> B["Semana 2<br>Representación<br>BoW, TF-IDF, PMI"]
+    B --> C["Semana 3<br>Modelo de Lenguaje<br>N-gram, PP, Suavizado"]
+    C --> D["S3: HMM<br>POS Tagging<br>Viterbi ✅"]
+    D --> E["Semana 4<br>Word2Vec<br>GloVe, FastText"]
+    
+    style D fill:#2a9d8f,color:#fff,stroke:#fff,stroke-width:2px
+    style E fill:#e9c46a,color:#000
+```
+
+::: {.callout-note}
+## Conexión con lo que viene
+- **Semana 4:** De representaciones discretas (One-hot, BoW) a **representaciones densas** (Word2Vec, GloVe)
+- Los embeddings resolverán muchas limitaciones que vimos (dispersión, falta de semántica)
+- HMM → CRF → BiLSTM-CRF → Transformers: la evolución del etiquetado de secuencias
+:::
+
+## Para la Próxima Sesión 📚
+
+::: {.callout-note}
+## Semana 4, Sesión 1: Word2Vec
+
+- Skip-gram y CBOW
+- Aprender representaciones de palabras desde corpus no anotados
+- ¡De vectores dispersos a vectores densos!
+:::
+
+**Lectura:**
+
+- Jurafsky & Martin, Cap. 6: *Vector Semantics and Embeddings*
+- Mikolov et al. (2013): [Efficient Estimation of Word Representations in Vector Space](https://arxiv.org/abs/1301.3781)
+
+**Recordatorio:**
+
+- 🧮 **Quiz 3** la próxima sesión: cubre modelos n-gram (S1), perplejidad y suavizado (S2), y HMM/Viterbi (S3)
+
+# ¿Preguntas? 🙋 {background-color="#03045e"}
+
+:::{.r-fit-text}
+**¡Gracias!**
+:::
+
+📧 fsuarez@ucb.edu.bo
+
+🔗 Materiales: [github.com/fjsuarez/ucb-nlp](https://github.com/fjsuarez/ucb-nlp)
