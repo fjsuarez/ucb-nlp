@@ -19,6 +19,7 @@ format: html
 ### Semana 3
 - [Modelos de Lenguaje N-gram y Regla de la Cadena](slides/semana03/s1_ngram_lm.qmd)
 - [Evaluación: Perplejidad y Técnicas de Suavizado](slides/semana03/s2_perplejidad_suavizado.qmd)
+- [Modelos Ocultos de Markov (HMM) para Etiquetado POS](slides/semana03/s3_hmm_pos.qmd)
 
 ## Información general
 - [Programa del Curso](programa.qmd)
