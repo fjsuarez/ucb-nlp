@@ -5,6 +5,7 @@ project:
   type: website
   resources:
     - CNAME
+    - tareas/**/*.ipynb
   render:
     - "*.qmd"
     - "slides/**/*.qmd"

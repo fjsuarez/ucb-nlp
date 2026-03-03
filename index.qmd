@@ -26,5 +26,9 @@ format: html
 - [GloVe y FastText: Embeddings de Subpalabras](slides/semana04/s2_glove_fasttext.qmd)
 - [Visualización de Datos de Alta Dimensión: t-SNE y PCA](slides/semana04/s3_visualizacion.qmd)
 
+## Tareas
+
+- [Tarea 1: Analizador de Sentimiento con TF-IDF + Regresión Logística](tareas/tarea01/tarea01_sentimiento.ipynb) — Entrega: Semana 4
+
 ## Información general
 - [Programa del Curso](programa.qmd)
