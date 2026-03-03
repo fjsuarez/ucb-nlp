@@ -24,6 +24,7 @@ format: html
 ### Semana 4
 - [Word2Vec: Skip-gram y CBOW](slides/semana04/s1_word2vec.qmd)
 - [GloVe y FastText: Embeddings de Subpalabras](slides/semana04/s2_glove_fasttext.qmd)
+- [Visualización de Datos de Alta Dimensión: t-SNE y PCA](slides/semana04/s3_visualizacion.qmd)
 
 ## Información general
 - [Programa del Curso](programa.qmd)
