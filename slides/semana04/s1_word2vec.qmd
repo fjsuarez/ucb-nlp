@@ -1,0 +1,1055 @@
+---
+title: "La Revolución Vectorial"
+subtitle: "S1: Word2Vec — Skip-gram y CBOW"
+author: "Prof. Francisco Suárez"
+institute: "Universidad Católica Boliviana"
+date: "2026-03-03"
+format:
+  revealjs:
+    theme: sky
+    transition: slide
+    slide-number: true
+    chalkboard: true
+    code-fold: true
+    code-tools: true
+    highlight-style: github
+    footer: "NLP y Análisis Semántico | Semana 4"
+    logo: ""
+    incremental: false
+    scrollable: true
+execute:
+  echo: true
+  warning: false
+---
+
+## Agenda de Hoy {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+**Primera Parte**
+
+1. 🔙 Repaso: Limitaciones de las representaciones dispersas
+2. 💡 La hipótesis distribucional
+3. 🧠 Representaciones densas: Word Embeddings
+
+:::
+::: {.column width="50%"}
+**Segunda Parte**
+
+4. 🎯 Word2Vec: CBOW y Skip-gram
+5. ⚡ Entrenamiento eficiente: Negative Sampling
+6. 🛠️ Implementación con Gensim
+
+:::
+:::
+
+# Bloque 1: De Vectores Dispersos a Densos {background-color="#0077b6"}
+
+## ¿Dónde Quedamos? {.smaller}
+
+En las semanas anteriores aprendimos varias formas de representar palabras:
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Representaciones dispersas
+
+| Método | Dimensión | Tipo |
+|:-------|:---------:|:----:|
+| One-hot | $|V|$ | Binario |
+| BoW | $|V|$ | Conteos |
+| TF-IDF | $|V|$ | Pesos |
+
+:::
+::: {.column width="50%"}
+
+### Problemas
+
+- **Dimensión enorme**: $|V| \sim 50{,}000+$
+- **Dispersos**: casi todos los valores son 0
+- **Sin similitud**: vectores one-hot son todos ortogonales
+
+$$\text{sim}(\vec{v}_{\text{gato}}, \vec{v}_{\text{perro}}) = 0$$
+
+:::
+:::
+
+. . .
+
+::: {.callout-warning}
+## El Gran Problema
+Estas representaciones **no capturan relaciones semánticas** entre palabras. "gato" y "perro" están tan lejos como "gato" y "constitución". 😤
+:::
+
+## El Sueño: Vectores con Significado {.smaller}
+
+¿Y si pudiéramos tener vectores donde...?
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Propiedades deseadas
+
+- **Dimensión baja**: 100-300 en vez de 50,000
+- **Densos**: todos los valores son números reales
+- **Semánticos**: palabras similares → vectores cercanos
+
+:::
+::: {.column width="50%"}
+
+### Ejemplo ideal
+
+$$\vec{v}_{\text{gato}} = [0.23, -0.11, 0.87, \ldots]$$
+$$\vec{v}_{\text{perro}} = [0.25, -0.09, 0.82, \ldots]$$
+$$\vec{v}_{\text{constitución}} = [-0.71, 0.45, 0.12, \ldots]$$
+
+$$\text{sim}(\vec{v}_{\text{gato}}, \vec{v}_{\text{perro}}) \approx 0.92$$
+$$\text{sim}(\vec{v}_{\text{gato}}, \vec{v}_{\text{constitución}}) \approx 0.05$$
+
+:::
+:::
+
+. . .
+
+::: {.callout-tip}
+## ¡Esto es exactamente lo que hacen los **Word Embeddings**! 🎉
+:::
+
+# Bloque 2: La Hipótesis Distribucional {background-color="#023e8a"}
+
+## "You Shall Know a Word by the Company It Keeps" {.smaller}
+
+> **J.R. Firth (1957):** *"You shall know a word by the company it keeps."*
+
+. . .
+
+La **hipótesis distribucional** establece que:
+
+> Las palabras que aparecen en **contextos similares** tienden a tener **significados similares**.
+
+. . .
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Ejemplo
+
+- "El **gato** se subió al árbol"
+- "El **perro** se subió al sofá"
+- "Mi **gato** come pescado"
+- "Mi **perro** come carne"
+
+:::
+::: {.column width="50%"}
+
+### Observación
+
+"gato" y "perro" aparecen en contextos muy similares:
+
+- Después de "El", "Mi"
+- Antes de "se subió", "come"
+- Con palabras como "come", "duerme"
+
+→ **Deben tener significados relacionados** 🐱🐶
+
+:::
+:::
+
+## De la Intuición a los Números {.smaller}
+
+¿Cómo convertimos esta idea en vectores?
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Enfoque clásico: Matriz de co-ocurrencia
+
+Construir una matriz $M$ donde $M_{ij}$ = cuántas veces la palabra $i$ aparece cerca de la palabra $j$.
+
+| | gato | perro | come | árbol |
+|:--------|:----:|:-----:|:----:|:-----:|
+| **el** | 5 | 4 | 0 | 2 |
+| **come** | 3 | 3 | 0 | 0 |
+| **grande** | 1 | 2 | 0 | 1 |
+
+:::
+::: {.column width="50%"}
+
+### Problema
+
+- La matriz sigue siendo **enorme** ($|V| \times |V|$)
+- Muy **dispersa**
+- Necesitamos **comprimir** esta información
+
+. . .
+
+### Solución: Aprender vectores densos
+
+En vez de usar la matriz directamente, **aprender** vectores de baja dimensión que **predigan** los patrones de co-ocurrencia.
+
+→ **¡Esto es Word2Vec!** 🚀
+
+:::
+:::
+
+# Bloque 3: Word2Vec — La Idea Central {background-color="#0077b6"}
+
+## Word2Vec (Mikolov et al., 2013) {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### La idea clave
+
+> En vez de contar co-ocurrencias, **entrenar una red neuronal** para predecir palabras a partir de su contexto (o viceversa).
+
+Los **pesos aprendidos** de la red neuronal son los **word embeddings**.
+
+:::
+::: {.column width="50%"}
+
+### Dos arquitecturas
+
+1. **CBOW** (Continuous Bag of Words)
+   - Predice la palabra **central** a partir del contexto
+
+2. **Skip-gram**
+   - Predice el **contexto** a partir de la palabra central
+
+:::
+:::
+
+. . .
+
+::: {.callout-note}
+## Dato Histórico
+Tomáš Mikolov publicó Word2Vec en 2013 mientras trabajaba en Google. El paper "Efficient Estimation of Word Representations in Vector Space" revolucionó el NLP y marcó el inicio de la era de los embeddings.
+:::
+
+## Ventana de Contexto {.smaller}
+
+Antes de ver las arquitecturas, necesitamos definir la **ventana de contexto** $c$:
+
+. . .
+
+**Ejemplo con $c = 2$:**
+
+> "El gato **come** pescado fresco"
+
+| Rol | Palabras |
+|:----|:---------|
+| Contexto izquierdo | "El", "gato" |
+| **Palabra central** | **"come"** |
+| Contexto derecho | "pescado", "fresco" |
+
+. . .
+
+La ventana se **desliza** por todo el corpus generando pares de entrenamiento:
+
+| Palabra central | Contexto ($c = 2$) |
+|:---------------|:------------------|
+| El | gato, come |
+| gato | El, come, pescado |
+| **come** | **El, gato, pescado, fresco** |
+| pescado | gato, come, fresco |
+| fresco | come, pescado |
+
+# Bloque 4: CBOW — Continuous Bag of Words {background-color="#023e8a"}
+
+## Arquitectura CBOW {.smaller}
+
+> **Objetivo:** Predecir la palabra **central** dado su **contexto**.
+
+. . .
+
+```{mermaid}
+%%| fig-width: 8
+flowchart LR
+    subgraph Entrada ["Contexto (c=2)"]
+        w1["El"]
+        w2["gato"]
+        w3["pescado"]
+        w4["fresco"]
+    end
+
+    subgraph Proyección ["Capa de Proyección"]
+        avg["Promedio de<br>embeddings"]
+    end
+
+    subgraph Salida ["Capa de Salida"]
+        pred["Softmax<br>P(w|contexto)"]
+    end
+
+    w1 --> avg
+    w2 --> avg
+    w3 --> avg
+    w4 --> avg
+    avg --> pred
+    pred --> target["come ✓"]
+```
+
+## CBOW: Paso a Paso {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### 1. Buscar embeddings
+
+Cada palabra del contexto se convierte en un vector de dimensión $d$:
+
+$$\vec{v}_{\text{El}}, \vec{v}_{\text{gato}}, \vec{v}_{\text{pescado}}, \vec{v}_{\text{fresco}} \in \mathbb{R}^d$$
+
+### 2. Promediar
+
+$$\vec{h} = \frac{1}{2c} \sum_{j \in \text{contexto}} \vec{v}_j$$
+
+:::
+::: {.column width="50%"}
+
+### 3. Calcular scores
+
+Se multiplica por una segunda matriz de pesos $W' \in \mathbb{R}^{d \times |V|}$:
+
+$$\vec{z} = W'^T \vec{h}$$
+
+### 4. Softmax
+
+$$P(w_t \mid \text{contexto}) = \frac{e^{z_{w_t}}}{\sum_{j=1}^{|V|} e^{z_j}}$$
+
+:::
+:::
+
+. . .
+
+::: {.callout-important}
+## La Clave
+La red tiene **dos matrices de pesos**: $W \in \mathbb{R}^{|V| \times d}$ (embeddings de entrada) y $W' \in \mathbb{R}^{d \times |V|}$ (embeddings de salida). Generalmente usamos $W$ como nuestros word embeddings finales.
+:::
+
+## CBOW: Función de Pérdida {.smaller}
+
+El objetivo es **maximizar** la probabilidad de predecir la palabra correcta:
+
+$$\mathcal{L} = -\sum_{t=1}^{T} \log P(w_t \mid w_{t-c}, \ldots, w_{t-1}, w_{t+1}, \ldots, w_{t+c})$$
+
+. . .
+
+::: {.columns}
+::: {.column width="50%"}
+
+### En palabras simples
+
+- Para cada posición $t$ en el corpus
+- El modelo ve las $2c$ palabras alrededor
+- Intenta predecir la palabra del centro
+- Se ajustan los pesos para minimizar el error
+
+:::
+::: {.column width="50%"}
+
+### Analogía
+
+Es como un examen de comprensión lectora:
+
+> "El ____ come pescado fresco"
+
+El modelo aprende que **"gato"**, **"perro"**, **"niño"** son buenas respuestas, pero **"mesa"** o **"rápido"** no. 📝
+
+:::
+:::
+
+# Bloque 5: Skip-gram {background-color="#0077b6"}
+
+## Arquitectura Skip-gram {.smaller}
+
+> **Objetivo:** Predecir las palabras del **contexto** dada la palabra **central**.
+
+. . .
+
+Es exactamente lo **opuesto** de CBOW:
+
+```{mermaid}
+%%| fig-width: 8
+flowchart LR
+    subgraph Entrada ["Palabra Central"]
+        center["come"]
+    end
+
+    subgraph Proyección ["Embedding"]
+        emb["v_come ∈ ℝ^d"]
+    end
+
+    subgraph Salida ["Predicciones de Contexto"]
+        p1["P(El | come)"]
+        p2["P(gato | come)"]
+        p3["P(pescado | come)"]
+        p4["P(fresco | come)"]
+    end
+
+    center --> emb
+    emb --> p1
+    emb --> p2
+    emb --> p3
+    emb --> p4
+```
+
+## Skip-gram: Paso a Paso {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### 1. Buscar embedding
+
+La palabra central se convierte en un vector:
+
+$$\vec{v}_{\text{come}} \in \mathbb{R}^d$$
+
+### 2. Calcular scores para CADA palabra del vocabulario
+
+$$\vec{z} = W'^T \vec{v}_{\text{come}}$$
+
+:::
+::: {.column width="50%"}
+
+### 3. Softmax (para cada palabra de contexto)
+
+$$P(w_c \mid w_t) = \frac{e^{\vec{u}_{w_c}^T \vec{v}_{w_t}}}{\sum_{j=1}^{|V|} e^{\vec{u}_j^T \vec{v}_{w_t}}}$$
+
+donde $\vec{u}_{w_c}$ es el vector de la palabra de contexto en la matriz $W'$.
+
+:::
+:::
+
+. . .
+
+### Función de pérdida Skip-gram
+
+$$\mathcal{L} = -\sum_{t=1}^{T} \sum_{\substack{-c \leq j \leq c \\ j \neq 0}} \log P(w_{t+j} \mid w_t)$$
+
+## CBOW vs. Skip-gram {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### CBOW
+
+| Aspecto | Detalle |
+|:--------|:--------|
+| **Entrada** | Contexto (múltiples palabras) |
+| **Salida** | Palabra central (1 palabra) |
+| **Velocidad** | Más rápido ⚡ |
+| **Datos escasos** | Peor rendimiento |
+| **Mejor para** | Corpus grandes, palabras frecuentes |
+
+:::
+::: {.column width="50%"}
+
+### Skip-gram
+
+| Aspecto | Detalle |
+|:--------|:--------|
+| **Entrada** | Palabra central (1 palabra) |
+| **Salida** | Contexto (múltiples palabras) |
+| **Velocidad** | Más lento 🐢 |
+| **Datos escasos** | Mejor rendimiento ✅ |
+| **Mejor para** | Corpus pequeños, palabras raras |
+
+:::
+:::
+
+. . .
+
+::: {.callout-tip}
+## En la práctica
+**Skip-gram con Negative Sampling (SGNS)** es la configuración más popular y la que usaremos. Funciona bien incluso con corpus moderados.
+:::
+
+# Bloque 6: El Problema del Softmax {background-color="#023e8a"}
+
+## ¿Por Qué el Softmax es Costoso? {.smaller}
+
+Recordemos la fórmula del softmax:
+
+$$P(w_c \mid w_t) = \frac{e^{\vec{u}_{w_c}^T \vec{v}_{w_t}}}{\sum_{j=1}^{|V|} e^{\vec{u}_j^T \vec{v}_{w_t}}}$$
+
+. . .
+
+::: {.columns}
+::: {.column width="50%"}
+
+### El problema
+
+El **denominador** requiere sumar sobre **todas** las palabras del vocabulario:
+
+$$\sum_{j=1}^{|V|} e^{\vec{u}_j^T \vec{v}_{w_t}}$$
+
+Si $|V| = 100{,}000$, ¡cada predicción requiere **100,000 multiplicaciones**!
+
+:::
+::: {.column width="50%"}
+
+### Costo computacional
+
+| $|V|$ | Operaciones/predicción |
+|------:|:----------------------:|
+| 10,000 | 10K |
+| 100,000 | 100K |
+| 1,000,000 | 1M 😱 |
+
+Esto hace el entrenamiento **prohibitivamente lento**.
+
+:::
+:::
+
+. . .
+
+::: {.callout-important}
+## Necesitamos una solución más eficiente
+¿Podemos evitar calcular el softmax completo? → **¡Sí! Negative Sampling**
+:::
+
+## Negative Sampling (Muestreo Negativo) {.smaller}
+
+> **Idea:** En vez de un problema de clasificación sobre $|V|$ clases, convertirlo en **varios problemas de clasificación binaria**.
+
+. . .
+
+::: {.columns}
+::: {.column width="50%"}
+
+### El truco
+
+Para cada par **(palabra central, palabra de contexto)**:
+
+1. **Ejemplo positivo:** el par real del corpus → etiqueta = 1
+2. **Ejemplos negativos:** muestrear $k$ palabras **aleatorias** del vocabulario → etiqueta = 0
+
+:::
+::: {.column width="50%"}
+
+### Ejemplo con $k = 3$
+
+Palabra central: **"come"**, contexto: **"gato"**
+
+| Par | Etiqueta |
+|:----|:--------:|
+| (come, **gato**) | ✅ 1 (positivo) |
+| (come, constitución) | ❌ 0 (negativo) |
+| (come, rápido) | ❌ 0 (negativo) |
+| (come, Bolivia) | ❌ 0 (negativo) |
+
+:::
+:::
+
+## Negative Sampling: La Matemática {.smaller}
+
+### Nuevo objetivo
+
+En vez de softmax, usamos **regresión logística (sigmoide)**:
+
+. . .
+
+$$\mathcal{L} = -\left[\log \sigma(\vec{u}_{w_c}^T \vec{v}_{w_t}) + \sum_{i=1}^{k} \log \sigma(-\vec{u}_{w_i}^T \vec{v}_{w_t})\right]$$
+
+donde $\sigma(x) = \frac{1}{1 + e^{-x}}$ es la función sigmoide.
+
+. . .
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Primer término (positivo)
+
+$$\log \sigma(\vec{u}_{w_c}^T \vec{v}_{w_t})$$
+
+"Haz que el producto punto entre la palabra central y la de contexto sea **grande**"
+
+:::
+::: {.column width="50%"}
+
+### Segundo término (negativos)
+
+$$\sum_{i=1}^{k} \log \sigma(-\vec{u}_{w_i}^T \vec{v}_{w_t})$$
+
+"Haz que el producto punto entre la palabra central y las palabras aleatorias sea **pequeño**"
+
+:::
+:::
+
+. . .
+
+::: {.callout-tip}
+## Complejidad
+Softmax: $O(|V|)$ por predicción → Neg. Sampling: $O(k)$ por predicción, donde $k \sim 5{-}15$. ¡**Reducción masiva**! 🚀
+:::
+
+## ¿Cómo se Muestrean los Negativos? {.smaller}
+
+No se muestrean uniformemente. Se usa una distribución basada en la **frecuencia** de cada palabra:
+
+$$P_{\text{neg}}(w) = \frac{f(w)^{3/4}}{\sum_{j=1}^{|V|} f(w_j)^{3/4}}$$
+
+. . .
+
+::: {.columns}
+::: {.column width="50%"}
+
+### ¿Por qué el exponente $3/4$?
+
+- $f(w)^1$: favorece demasiado las palabras frecuentes
+- $f(w)^0 = 1$: muestreo uniforme (ignora frecuencia)
+- $f(w)^{3/4}$: **punto medio** — las palabras raras se muestrean más que con la distribución original, pero no tanto como con muestreo uniforme
+
+:::
+::: {.column width="50%"}
+
+### Ejemplo
+
+| Palabra | $f(w)$ | $f(w)^{3/4}$ |
+|:--------|-------:|:-------:|
+| "el" | 0.05 | 0.030 |
+| "gato" | 0.001 | 0.0018 |
+| "quasar" | 0.00001 | 0.00006 |
+
+Sin $3/4$: "el" es 5000x más probable que "quasar"
+
+Con $3/4$: "el" es solo 500x más probable
+
+:::
+:::
+
+# Bloque 7: Propiedades Mágicas de los Embeddings {background-color="#0077b6"}
+
+## Aritmética de Palabras {.smaller}
+
+Una de las propiedades más sorprendentes de Word2Vec:
+
+. . .
+
+$$\vec{v}_{\text{rey}} - \vec{v}_{\text{hombre}} + \vec{v}_{\text{mujer}} \approx \vec{v}_{\text{reina}}$$
+
+. . .
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Más ejemplos
+
+| Operación | Resultado |
+|:----------|:---------|
+| París - Francia + España | ≈ Madrid |
+| grande - bueno + malo | ≈ terrible |
+| caminar - caminó + corrió | ≈ correr |
+| hermano - hombre + mujer | ≈ hermana |
+
+:::
+::: {.column width="50%"}
+
+### ¿Por qué funciona?
+
+Los embeddings capturan **relaciones lineales**:
+
+$$\vec{v}_{\text{rey}} - \vec{v}_{\text{reina}} \approx \vec{v}_{\text{hombre}} - \vec{v}_{\text{mujer}}$$
+
+Esta diferencia codifica el concepto de **"género"** como una dirección en el espacio vectorial.
+
+:::
+:::
+
+. . .
+
+::: {.callout-note}
+## Formalización
+La operación se realiza como: encontrar la palabra $w^*$ tal que:
+$$w^* = \arg\max_{w \in V} \text{cos\_sim}(\vec{v}_w, \vec{v}_{\text{rey}} - \vec{v}_{\text{hombre}} + \vec{v}_{\text{mujer}})$$
+:::
+
+## Similitud entre Palabras {.smaller}
+
+La **similitud coseno** entre vectores captura relaciones semánticas:
+
+$$\text{cos\_sim}(\vec{a}, \vec{b}) = \frac{\vec{a} \cdot \vec{b}}{||\vec{a}|| \cdot ||\vec{b}||}$$
+
+. . .
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Similitudes altas
+
+| Par | Similitud |
+|:----|:---------:|
+| (gato, perro) | ~0.76 |
+| (rey, reina) | ~0.73 |
+| (Madrid, España) | ~0.68 |
+| (bueno, excelente) | ~0.72 |
+
+:::
+::: {.column width="50%"}
+
+### Similitudes bajas
+
+| Par | Similitud |
+|:----|:---------:|
+| (gato, democracia) | ~0.05 |
+| (rey, banana) | ~0.02 |
+| (Madrid, correr) | ~0.08 |
+| (bueno, mesa) | ~0.11 |
+
+:::
+:::
+
+. . .
+
+::: {.callout-tip}
+## ¿Por qué coseno y no distancia euclidiana?
+La similitud coseno mide el **ángulo** entre vectores, ignorando la magnitud. Es más robusta porque vectores de palabras frecuentes tienden a tener mayor norma.
+:::
+
+## ¿Qué Capturan las Dimensiones? {.smaller}
+
+Cada dimensión del embedding captura un **aspecto semántico latente**:
+
+. . .
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Dimensiones interpretables (hipotéticas)
+
+| Dim. | Concepto | rey | reina | gato |
+|:----:|:---------|:---:|:-----:|:----:|
+| 23 | Realeza | 0.9 | 0.8 | 0.0 |
+| 47 | Género (M→F) | -0.7 | 0.6 | 0.1 |
+| 89 | Animal | 0.1 | 0.1 | 0.9 |
+| 112 | Tamaño | 0.5 | 0.3 | -0.3 |
+
+:::
+::: {.column width="50%"}
+
+### Realidad
+
+- Las dimensiones **no son directamente interpretables**
+- Son combinaciones complejas de muchos conceptos
+- Pero las **relaciones** entre vectores sí capturan semántica real
+- Esto es similar a los componentes principales en PCA (¡lo veremos en S3!)
+
+:::
+:::
+
+# Bloque 8: Hiperparámetros de Word2Vec {background-color="#023e8a"}
+
+## Hiperparámetros Clave {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Dimensión del embedding ($d$)
+
+| Valor | Uso |
+|:------|:----|
+| 50-100 | Tareas simples, corpus pequeños |
+| 200-300 | Uso general ✅ |
+| 500+ | Corpus muy grandes |
+
+### Tamaño de ventana ($c$)
+
+| Valor | Captura |
+|:------|:-------|
+| 2-5 | Relaciones **sintácticas** (similares en gramática) |
+| 5-10 | Relaciones **semánticas** (similares en significado) |
+
+:::
+::: {.column width="50%"}
+
+### Negative samples ($k$)
+
+| Valor | Uso |
+|:------|:----|
+| 2-5 | Corpus grandes |
+| 5-20 | Corpus pequeños ✅ |
+
+### Otros
+
+| Parámetro | Típico |
+|:----------|:-------|
+| Learning rate ($\alpha$) | 0.025 → 0.0001 |
+| Épocas | 5-15 |
+| Min count | 5 (ignorar palabras con fewer occurrences) |
+| Subsampling | $t = 10^{-5}$ |
+
+:::
+:::
+
+. . .
+
+::: {.callout-tip}
+## Subsampling de palabras frecuentes
+Palabras como "el", "de", "que" no aportan mucha información contextual. Word2Vec las descarta con probabilidad $P_{\text{discard}}(w) = 1 - \sqrt{\frac{t}{f(w)}}$.
+:::
+
+# Bloque 9: Implementación con Gensim {background-color="#0077b6"}
+
+## Entrenando Word2Vec desde Cero {.smaller}
+
+```{python}
+#| code-fold: false
+from gensim.models import Word2Vec
+
+# Corpus de ejemplo (lista de oraciones tokenizadas)
+corpus = [
+    ["el", "gato", "come", "pescado", "fresco"],
+    ["el", "perro", "come", "carne", "roja"],
+    ["mi", "gato", "duerme", "en", "el", "sofá"],
+    ["mi", "perro", "duerme", "en", "la", "cama"],
+    ["el", "gato", "negro", "persigue", "al", "ratón"],
+    ["el", "perro", "grande", "persigue", "al", "gato"],
+    ["el", "niño", "come", "una", "manzana", "roja"],
+    ["la", "niña", "come", "una", "naranja", "fresca"],
+    ["el", "gato", "juega", "con", "la", "pelota"],
+    ["el", "perro", "juega", "con", "un", "hueso"],
+    ["el", "gato", "bebe", "leche", "fresca"],
+    ["el", "perro", "bebe", "agua", "fría"],
+    ["un", "gato", "pequeño", "maúlla", "fuerte"],
+    ["un", "perro", "pequeño", "ladra", "fuerte"],
+    ["la", "niña", "acaricia", "al", "gato", "negro"],
+    ["el", "niño", "acaricia", "al", "perro", "grande"],
+]
+
+# Entrenar modelo Skip-gram
+modelo = Word2Vec(
+    sentences=corpus,
+    vector_size=50,     # Dimensión del embedding (d)
+    window=3,           # Tamaño de ventana (c)
+    min_count=1,        # Frecuencia mínima
+    sg=1,               # 1 = Skip-gram, 0 = CBOW
+    negative=5,         # Número de negative samples (k)
+    epochs=200,         # Más épocas porque el corpus es pequeño
+    seed=42
+)
+
+print(f"Vocabulario: {len(modelo.wv)} palabras")
+print(f"Dimensión: {modelo.wv.vector_size}")
+```
+
+## Explorando los Embeddings {.smaller}
+
+```{python}
+#| code-fold: false
+import numpy as np
+
+# Vector de una palabra
+vec_gato = modelo.wv["gato"]
+print(f"Vector de 'gato' (primeros 10 dims):\n{vec_gato[:10].round(3)}")
+print(f"Norma: {np.linalg.norm(vec_gato):.3f}")
+```
+
+. . .
+
+```{python}
+#| code-fold: false
+# Palabras más similares
+print("\nPalabras más similares a 'gato':")
+for palabra, sim in modelo.wv.most_similar("gato", topn=5):
+    print(f"  {palabra:15s} {sim:.4f}")
+```
+
+## Similitud entre Pares {.smaller}
+
+```{python}
+#| code-fold: false
+# Pares de comparación
+pares = [
+    ("gato", "perro"),
+    ("niño", "niña"),
+    ("come", "bebe"),
+    ("gato", "come"),
+    ("grande", "pequeño"),
+]
+
+print("Similitud coseno entre pares:")
+print("-" * 40)
+for w1, w2 in pares:
+    sim = modelo.wv.similarity(w1, w2)
+    barra = "█" * int(abs(sim) * 20)
+    print(f"  ({w1:10s}, {w2:10s}): {sim:+.4f} {barra}")
+```
+
+. . .
+
+::: {.callout-note}
+## Observación
+Con un corpus tan pequeño los resultados no serán perfectos, pero ya se empiezan a ver patrones: "gato" y "perro" deberían tener similitud alta por sus contextos compartidos.
+:::
+
+## Aritmética de Vectores {.smaller}
+
+```{python}
+#| code-fold: false
+# Analogía: niño - niña + gato ≈ ?
+try:
+    resultado = modelo.wv.most_similar(
+        positive=["niño", "gato"],
+        negative=["niña"],
+        topn=3
+    )
+    print("niño - niña + gato ≈ ?")
+    for palabra, sim in resultado:
+        print(f"  {palabra:15s} {sim:.4f}")
+except KeyError as e:
+    print(f"Palabra no encontrada: {e}")
+
+print()
+
+# Palabra que no encaja
+try:
+    raro = modelo.wv.doesnt_match(["gato", "perro", "manzana"])
+    print(f"¿Cuál no encaja en [gato, perro, manzana]? → '{raro}'")
+except Exception:
+    print("Vocabulario insuficiente para doesnt_match")
+```
+
+## Usando Embeddings Pre-entrenados {.smaller}
+
+En la práctica, es común usar embeddings **pre-entrenados** en corpus muy grandes:
+
+```{python}
+#| eval: false
+#| code-fold: false
+import gensim.downloader as api
+
+# Descargar Word2Vec pre-entrenado en Google News (1.5GB)
+# ¡Esto toma varios minutos y mucha RAM!
+modelo_google = api.load("word2vec-google-news-300")
+
+# Ahora sí vemos la magia
+print(modelo_google.most_similar("king"))
+# [('kings', 0.71), ('queen', 0.65), ('prince', 0.63), ...]
+
+# Analogía: king - man + woman ≈ queen
+resultado = modelo_google.most_similar(
+    positive=["king", "woman"],
+    negative=["man"],
+    topn=1
+)
+print(resultado)  # [('queen', 0.71)]
+```
+
+. . .
+
+::: {.callout-tip}
+## Modelos pre-entrenados disponibles en Gensim
+- `word2vec-google-news-300`: 3M palabras, 300 dims (inglés)
+- `glove-wiki-gigaword-100`: 400K palabras, 100 dims (inglés)
+- `fasttext-wiki-news-subwords-300`: 1M palabras, 300 dims (inglés)
+
+Para español: modelos de la [SBWCE](https://crscardellino.ar/SBWCE/) o de [FastText](https://fasttext.cc/docs/en/crawl-vectors.html).
+:::
+
+# Bloque 10: Resumen y Conexiones {background-color="#023e8a"}
+
+## El Panorama Completo {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Lo que aprendimos hoy
+
+1. **Hipótesis distribucional**: el significado viene del contexto
+2. **CBOW**: contexto → palabra central
+3. **Skip-gram**: palabra central → contexto
+4. **Negative Sampling**: eficiencia computacional
+5. **Propiedades**: analogías, similitud, clustering
+
+:::
+::: {.column width="50%"}
+
+### Mapa del viaje
+
+| Semana | Representación | Tipo |
+|:------:|:--------------|:----:|
+| 1-2 | One-hot, BoW, TF-IDF | Disperso |
+| **4** | **Word2Vec** | **Denso** ✅ |
+| **4 (S2)** | **GloVe, FastText** | **Denso** |
+| **4 (S3)** | **Visualización (t-SNE, PCA)** | — |
+
+:::
+:::
+
+. . .
+
+::: {.callout-important}
+## Próxima sesión: GloVe y FastText
+- **GloVe**: Combina lo mejor de la factorización de matrices y Word2Vec
+- **FastText**: Resuelve el problema de palabras fuera del vocabulario (OOV) usando **subpalabras**
+:::
+
+## Resumen de Fórmulas Clave {.smaller}
+
+| Concepto | Fórmula |
+|:---------|:--------|
+| **Softmax** | $P(w_c \mid w_t) = \frac{e^{\vec{u}_{w_c}^T \vec{v}_{w_t}}}{\sum_j e^{\vec{u}_j^T \vec{v}_{w_t}}}$ |
+| **Negative Sampling** | $\mathcal{L} = -\log \sigma(\vec{u}_{w_c}^T \vec{v}_{w_t}) - \sum_{i=1}^{k} \log \sigma(-\vec{u}_{w_i}^T \vec{v}_{w_t})$ |
+| **Muestreo negativo** | $P_{\text{neg}}(w) = \frac{f(w)^{3/4}}{\sum_j f(w_j)^{3/4}}$ |
+| **Similitud coseno** | $\text{cos\_sim}(\vec{a}, \vec{b}) = \frac{\vec{a} \cdot \vec{b}}{||\vec{a}|| \cdot ||\vec{b}||}$ |
+| **Analogía** | $w^* = \arg\max_w \cos(\vec{v}_w, \vec{v}_a - \vec{v}_b + \vec{v}_c)$ |
+| **Subsampling** | $P_{\text{discard}}(w) = 1 - \sqrt{\frac{t}{f(w)}}$ |
+
+## Para Reflexionar 🤔 {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Ventajas de Word2Vec
+
+- ✅ Captura similitud semántica
+- ✅ Relaciones lineales (analogías)
+- ✅ Dimensión controlable
+- ✅ Entrenamiento eficiente
+- ✅ Transferible a otras tareas
+
+:::
+::: {.column width="50%"}
+
+### Limitaciones
+
+- ❌ **Un vector por palabra**: "banco" (financiero) = "banco" (mueble)
+- ❌ No captura el **orden** de las palabras
+- ❌ Ventana de contexto **fija**
+- ❌ Palabras **OOV** (fuera del vocabulario)
+- ❌ Puede codificar **sesgos** sociales
+
+:::
+:::
+
+. . .
+
+::: {.callout-warning}
+## Sesgo en Word Embeddings
+Word2Vec entrenado en texto de internet puede aprender: $\vec{v}_{\text{doctor}} - \vec{v}_{\text{hombre}} + \vec{v}_{\text{mujer}} \approx \vec{v}_{\text{enfermera}}$. Esto refleja **sesgos de los datos**, no la realidad. Lo exploraremos en Semana 18 (Ética en NLP).
+:::
+
+## Lecturas Recomendadas {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Papers originales
+
+1. Mikolov et al. (2013). *Efficient Estimation of Word Representations in Vector Space.* [arXiv:1301.3781](https://arxiv.org/abs/1301.3781)
+
+2. Mikolov et al. (2013). *Distributed Representations of Words and Phrases and their Compositionality.* [NIPS 2013](https://arxiv.org/abs/1310.4546)
+
+:::
+::: {.column width="50%"}
+
+### Recursos adicionales
+
+3. [Jurafsky & Martin, Ch. 6](https://web.stanford.edu/~jurafsky/slp3/6.pdf) — *Vector Semantics and Embeddings*
+
+4. [Jay Alammar: The Illustrated Word2Vec](https://jalammar.github.io/illustrated-word2vec/) — Excelente visualización interactiva
+
+5. [Gensim Word2Vec Tutorial](https://radimrehurek.com/gensim/auto_examples/tutorials/run_word2vec.html)
+
+:::
+:::

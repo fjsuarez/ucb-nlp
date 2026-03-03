@@ -21,5 +21,8 @@ format: html
 - [Evaluación: Perplejidad y Técnicas de Suavizado](slides/semana03/s2_perplejidad_suavizado.qmd)
 - [Modelos Ocultos de Markov (HMM) para Etiquetado POS](slides/semana03/s3_hmm_pos.qmd)
 
+### Semana 4
+- [Word2Vec: Skip-gram y CBOW](slides/semana04/s1_word2vec.qmd)
+
 ## Información general
 - [Programa del Curso](programa.qmd)
