@@ -1,0 +1,1740 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-html/tabby.min.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/light-border.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-bcbce66894bfa8e7e94e40e0186b9bb8.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
+  <meta name="generator" content="quarto-1.7.29">
+
+  <meta name="author" content="Prof.&nbsp;Francisco Suárez">
+  <meta name="dcterms.date" content="2026-03-07">
+  <title>UCB NLP – La Revolución Vectorial</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+  <link rel="stylesheet" href="../../site_libs/revealjs/dist/reset.css">
+  <link rel="stylesheet" href="../../site_libs/revealjs/dist/reveal.css">
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+      vertical-align: middle;
+    }
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+      }
+    pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+    div.sourceCode
+      { color: #24292e;  }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span { color: #24292e; } /* Normal */
+    code span.al { color: #ff5555; font-weight: bold; } /* Alert */
+    code span.an { color: #6a737d; } /* Annotation */
+    code span.at { color: #d73a49; } /* Attribute */
+    code span.bn { color: #005cc5; } /* BaseN */
+    code span.bu { color: #d73a49; } /* BuiltIn */
+    code span.cf { color: #d73a49; } /* ControlFlow */
+    code span.ch { color: #032f62; } /* Char */
+    code span.cn { color: #005cc5; } /* Constant */
+    code span.co { color: #6a737d; } /* Comment */
+    code span.cv { color: #6a737d; } /* CommentVar */
+    code span.do { color: #6a737d; } /* Documentation */
+    code span.dt { color: #d73a49; } /* DataType */
+    code span.dv { color: #005cc5; } /* DecVal */
+    code span.er { color: #ff5555; text-decoration: underline; } /* Error */
+    code span.ex { color: #d73a49; font-weight: bold; } /* Extension */
+    code span.fl { color: #005cc5; } /* Float */
+    code span.fu { color: #6f42c1; } /* Function */
+    code span.im { color: #032f62; } /* Import */
+    code span.in { color: #6a737d; } /* Information */
+    code span.kw { color: #d73a49; } /* Keyword */
+    code span.op { color: #24292e; } /* Operator */
+    code span.ot { color: #6f42c1; } /* Other */
+    code span.pp { color: #d73a49; } /* Preprocessor */
+    code span.re { color: #6a737d; } /* RegionMarker */
+    code span.sc { color: #005cc5; } /* SpecialChar */
+    code span.ss { color: #032f62; } /* SpecialString */
+    code span.st { color: #032f62; } /* String */
+    code span.va { color: #e36209; } /* Variable */
+    code span.vs { color: #032f62; } /* VerbatimString */
+    code span.wa { color: #ff5555; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="../../site_libs/revealjs/dist/theme/quarto-39d1eab08b8faec97b8adc39508066ea.css">
+  <link href="../../site_libs/revealjs/plugin/quarto-line-highlight/line-highlight.css" rel="stylesheet">
+  <link href="../../site_libs/revealjs/plugin/reveal-menu/menu.css" rel="stylesheet">
+  <link href="../../site_libs/revealjs/plugin/reveal-menu/quarto-menu.css" rel="stylesheet">
+  <link href="../../site_libs/revealjs/plugin/reveal-chalkboard/font-awesome/css/all.css" rel="stylesheet">
+  <link href="../../site_libs/revealjs/plugin/reveal-chalkboard/style.css" rel="stylesheet">
+  <link href="../../site_libs/revealjs/plugin/quarto-support/footer.css" rel="stylesheet">
+  <style type="text/css">
+    .reveal div.sourceCode {
+      margin: 0;
+      overflow: auto;
+    }
+    .reveal div.hanging-indent {
+      margin-left: 1em;
+      text-indent: -1em;
+    }
+    .reveal .slide:not(.center) {
+      height: 100%;
+      overflow-y: auto;
+    }
+    .reveal .slide.scrollable {
+      overflow-y: auto;
+    }
+    .reveal .footnotes {
+      height: 100%;
+      overflow-y: auto;
+    }
+    .reveal .slide .absolute {
+      position: absolute;
+      display: block;
+    }
+    .reveal .footnotes ol {
+      counter-reset: ol;
+      list-style-type: none; 
+      margin-left: 0;
+    }
+    .reveal .footnotes ol li:before {
+      counter-increment: ol;
+      content: counter(ol) ". "; 
+    }
+    .reveal .footnotes ol li > p:first-child {
+      display: inline-block;
+    }
+    .reveal .slide ul,
+    .reveal .slide ol {
+      margin-bottom: 0.5em;
+    }
+    .reveal .slide ul li,
+    .reveal .slide ol li {
+      margin-top: 0.4em;
+      margin-bottom: 0.2em;
+    }
+    .reveal .slide ul[role="tablist"] li {
+      margin-bottom: 0;
+    }
+    .reveal .slide ul li > *:first-child,
+    .reveal .slide ol li > *:first-child {
+      margin-block-start: 0;
+    }
+    .reveal .slide ul li > *:last-child,
+    .reveal .slide ol li > *:last-child {
+      margin-block-end: 0;
+    }
+    .reveal .slide .columns:nth-child(3) {
+      margin-block-start: 0.8em;
+    }
+    .reveal blockquote {
+      box-shadow: none;
+    }
+    .reveal .tippy-content>* {
+      margin-top: 0.2em;
+      margin-bottom: 0.7em;
+    }
+    .reveal .tippy-content>*:last-child {
+      margin-bottom: 0.2em;
+    }
+    .reveal .slide > img.stretch.quarto-figure-center,
+    .reveal .slide > img.r-stretch.quarto-figure-center {
+      display: block;
+      margin-left: auto;
+      margin-right: auto; 
+    }
+    .reveal .slide > img.stretch.quarto-figure-left,
+    .reveal .slide > img.r-stretch.quarto-figure-left  {
+      display: block;
+      margin-left: 0;
+      margin-right: auto; 
+    }
+    .reveal .slide > img.stretch.quarto-figure-right,
+    .reveal .slide > img.r-stretch.quarto-figure-right  {
+      display: block;
+      margin-left: auto;
+      margin-right: 0; 
+    }
+  </style>
+  <script src="../../site_libs/quarto-diagram/mermaid.min.js"></script>
+  <script src="../../site_libs/quarto-diagram/mermaid-init.js"></script>
+  <link href="../../site_libs/quarto-diagram/mermaid.css" rel="stylesheet">
+</head>
+<body class="quarto-light">
+  <div class="reveal">
+    <div class="slides">
+
+<section id="title-slide" class="quarto-title-block center">
+  <h1 class="title">La Revolución Vectorial</h1>
+  <p class="subtitle">S3: Visualización de Datos de Alta Dimensión — t-SNE y PCA</p>
+
+<div class="quarto-title-authors">
+<div class="quarto-title-author">
+<div class="quarto-title-author-name">
+Prof.&nbsp;Francisco Suárez 
+</div>
+        <p class="quarto-title-affiliation">
+            Universidad Católica Boliviana
+          </p>
+    </div>
+</div>
+
+  <p class="date">2026-03-07</p>
+</section>
+<section id="agenda-de-hoy" class="slide level2 smaller scrollable">
+<h2>Agenda de Hoy</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<p><strong>Primera Parte</strong></p>
+<ol type="1">
+<li>🔙 Repaso: Word embeddings de 300 dimensiones</li>
+<li>🤔 La maldición de la dimensionalidad</li>
+<li>📉 PCA: Análisis de Componentes Principales</li>
+</ol>
+</div><div class="column" style="width:50%;">
+<p><strong>Segunda Parte</strong></p>
+<ol start="4" type="1">
+<li>🗺️ t-SNE: Preservando la estructura local</li>
+<li>🆚 PCA vs.&nbsp;t-SNE: ¿Cuándo usar cada uno?</li>
+<li>🛠️ Visualizaciones interactivas de embeddings</li>
+</ol>
+</div></div>
+</section>
+<section>
+<section id="bloque-1-el-problema-de-visualizar" class="title-slide slide level1 center" data-background-color="#0077b6">
+<h1>Bloque 1: El Problema de Visualizar</h1>
+
+</section>
+<section id="dimensiones-vs.-2-ojos" class="slide level2 smaller">
+<h2>300 Dimensiones vs.&nbsp;2 Ojos</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<h3 id="el-problema">El problema</h3>
+<p>Nuestros word embeddings viven en <span class="math inline">\(\mathbb{R}^{300}\)</span>:</p>
+<p><span class="math display">\[\vec{v}_{\text{gato}} = [0.23, -0.11, 0.87, \ldots, 0.42] \in \mathbb{R}^{300}\]</span></p>
+<p>Pero los humanos solo podemos visualizar <strong>2D o 3D</strong>.</p>
+<h3 id="la-pregunta">La pregunta</h3>
+<blockquote>
+<p>¿Cómo <strong>proyectar</strong> 300 dimensiones a 2 dimensiones sin perder la estructura importante?</p>
+</blockquote>
+</div><div class="column" style="width:50%;">
+<h3 id="lo-que-queremos-preservar">Lo que queremos preservar</h3>
+<ul>
+<li>Palabras <strong>similares</strong> deben quedar <strong>cerca</strong></li>
+<li>Palabras <strong>diferentes</strong> deben quedar <strong>lejos</strong></li>
+<li><strong>Clusters</strong> de categorías deben ser visibles</li>
+<li><strong>Relaciones</strong> (analogías) deben ser reconocibles</li>
+</ul>
+<h3 id="lo-que-inevitablemente-perdemos">Lo que inevitablemente perdemos</h3>
+<ul>
+<li>Información precisa de distancia</li>
+<li>Algunas relaciones complejas</li>
+<li>Estructura geométrica exacta</li>
+</ul>
+</div></div>
+</section>
+<section id="la-maldición-de-la-dimensionalidad" class="slide level2 smaller scrollable">
+<h2>La Maldición de la Dimensionalidad</h2>
+<p>En espacios de alta dimensión, nuestra intuición geométrica <strong>falla</strong>:</p>
+<div class="fragment">
+<div class="columns">
+<div class="column" style="width:50%;">
+<h3 id="fenómenos-contraintuitivos">Fenómenos contraintuitivos</h3>
+<ol type="1">
+<li><p><strong>Casi todo está “lejos”</strong>: en <span class="math inline">\(\mathbb{R}^{300}\)</span>, los puntos aleatorios tienden a estar a distancias similares entre sí</p></li>
+<li><p><strong>El volumen se concentra en la superficie</strong>: la mayoría del volumen de una hiperesfera está cerca de su borde</p></li>
+<li><p><strong>La similitud coseno es más útil</strong> que la distancia euclidiana en alta dimensión</p></li>
+</ol>
+</div><div class="column" style="width:50%;">
+<h3 id="ejemplo-numérico">Ejemplo numérico</h3>
+<div id="3478fe8f" class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-2"><a></a></span>
+<span id="cb1-3"><a></a>np.random.seed(<span class="dv">42</span>)</span>
+<span id="cb1-4"><a></a></span>
+<span id="cb1-5"><a></a><span class="co"># Distancias entre puntos aleatorios en diferentes dimensiones</span></span>
+<span id="cb1-6"><a></a><span class="cf">for</span> d <span class="kw">in</span> [<span class="dv">2</span>, <span class="dv">10</span>, <span class="dv">100</span>, <span class="dv">300</span>]:</span>
+<span id="cb1-7"><a></a>    puntos <span class="op">=</span> np.random.randn(<span class="dv">1000</span>, d)</span>
+<span id="cb1-8"><a></a>    distancias <span class="op">=</span> np.linalg.norm(puntos[<span class="dv">0</span>] <span class="op">-</span> puntos[<span class="dv">1</span>:], axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb1-9"><a></a>    <span class="bu">print</span>(<span class="ss">f"d=</span><span class="sc">{</span>d<span class="sc">:3d}</span><span class="ss">: media=</span><span class="sc">{</span>distancias<span class="sc">.</span>mean()<span class="sc">:.2f}</span><span class="ss">, "</span></span>
+<span id="cb1-10"><a></a>          <span class="ss">f"std=</span><span class="sc">{</span>distancias<span class="sc">.</span>std()<span class="sc">:.2f}</span><span class="ss">, "</span></span>
+<span id="cb1-11"><a></a>          <span class="ss">f"ratio=</span><span class="sc">{</span>distancias<span class="sc">.</span>std()<span class="op">/</span>distancias<span class="sc">.</span>mean()<span class="sc">:.3f}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>d=  2: media=1.32, std=0.69, ratio=0.521
+d= 10: media=4.00, std=0.83, ratio=0.209
+d=100: media=13.42, std=0.83, ratio=0.062
+d=300: media=23.66, std=0.86, ratio=0.036</code></pre>
+</div>
+</div>
+</div></div>
+</div>
+<div class="fragment">
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Observación clave</strong></p>
+</div>
+<div class="callout-content">
+<p>A medida que la dimensión crece, la <strong>variación relativa</strong> de las distancias disminuye → todos los puntos parecen estar “igual de lejos”. Por eso necesitamos técnicas especializadas.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="reducción-de-dimensionalidad-panorama-general" class="slide level2 smaller">
+<h2>Reducción de Dimensionalidad: Panorama General</h2>
+<div class="cell" data-reveal="true" data-fig-width="9" data-layout-align="default">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource default number-lines code-with-copy"><code class="sourceCode default"><span id="cb3-1"><a></a>flowchart TB</span>
+<span id="cb3-2"><a></a>    subgraph Lineales ["Métodos Lineales"]</span>
+<span id="cb3-3"><a></a>        PCA["PCA&lt;br&gt;Máxima varianza"]</span>
+<span id="cb3-4"><a></a>        SVD["SVD&lt;br&gt;Factorización de matrices"]</span>
+<span id="cb3-5"><a></a>    end</span>
+<span id="cb3-6"><a></a></span>
+<span id="cb3-7"><a></a>    subgraph NoLineales ["Métodos No Lineales"]</span>
+<span id="cb3-8"><a></a>        TSNE["t-SNE&lt;br&gt;Estructura local"]</span>
+<span id="cb3-9"><a></a>        UMAP["UMAP&lt;br&gt;Estructura + velocidad"]</span>
+<span id="cb3-10"><a></a>    end</span>
+<span id="cb3-11"><a></a></span>
+<span id="cb3-12"><a></a>    HD["Datos en Alta Dimensión&lt;br&gt;ℝ^300"] --&gt; PCA</span>
+<span id="cb3-13"><a></a>    HD --&gt; SVD</span>
+<span id="cb3-14"><a></a>    HD --&gt; TSNE</span>
+<span id="cb3-15"><a></a>    HD --&gt; UMAP</span>
+<span id="cb3-16"><a></a></span>
+<span id="cb3-17"><a></a>    PCA --&gt; VIS["Visualización en 2D/3D"]</span>
+<span id="cb3-18"><a></a>    SVD --&gt; VIS</span>
+<span id="cb3-19"><a></a>    TSNE --&gt; VIS</span>
+<span id="cb3-20"><a></a>    UMAP --&gt; VIS</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<p></p><figure class=""><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart TB
+    subgraph Lineales ["Métodos Lineales"]
+        PCA["PCA&lt;br&gt;Máxima varianza"]
+        SVD["SVD&lt;br&gt;Factorización de matrices"]
+    end
+
+    subgraph NoLineales ["Métodos No Lineales"]
+        TSNE["t-SNE&lt;br&gt;Estructura local"]
+        UMAP["UMAP&lt;br&gt;Estructura + velocidad"]
+    end
+
+    HD["Datos en Alta Dimensión&lt;br&gt;ℝ^300"] --&gt; PCA
+    HD --&gt; SVD
+    HD --&gt; TSNE
+    HD --&gt; UMAP
+
+    PCA --&gt; VIS["Visualización en 2D/3D"]
+    SVD --&gt; VIS
+    TSNE --&gt; VIS
+    UMAP --&gt; VIS
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<div class="fragment">
+<p>Hoy nos enfocaremos en <strong>PCA</strong> y <strong>t-SNE</strong>, los dos más utilizados en NLP.</p>
+</div>
+</section></section>
+<section>
+<section id="bloque-2-pca-análisis-de-componentes-principales" class="title-slide slide level1 center" data-background-color="#023e8a">
+<h1>Bloque 2: PCA — Análisis de Componentes Principales</h1>
+
+</section>
+<section id="pca-la-idea-intuitiva" class="slide level2 smaller scrollable">
+<h2>PCA: La Idea Intuitiva</h2>
+<blockquote>
+<p><strong>PCA</strong> encuentra las <strong>direcciones de máxima varianza</strong> en los datos y proyecta sobre ellas.</p>
+</blockquote>
+<div class="fragment">
+<div class="columns">
+<div class="column" style="width:50%;">
+<h3 id="analogía">Analogía</h3>
+<p>Imagina una nube de puntos alargada en 3D (como un cigarro). PCA encuentra:</p>
+<ol type="1">
+<li><strong>PC1</strong>: el eje largo del cigarro (máxima varianza)</li>
+<li><strong>PC2</strong>: el segundo eje más largo (perpendicular a PC1)</li>
+<li><strong>PC3</strong>: el eje más corto (menor varianza)</li>
+</ol>
+<p>Si proyectas sobre PC1 y PC2, capturas la mayor parte de la información.</p>
+</div><div class="column" style="width:50%;">
+<h3 id="formalmente">Formalmente</h3>
+<ol type="1">
+<li>Centrar los datos: <span class="math inline">\(\tilde{X} = X - \bar{X}\)</span></li>
+<li>Calcular la <strong>matriz de covarianza</strong>: <span class="math inline">\(C = \frac{1}{n}\tilde{X}^T\tilde{X}\)</span></li>
+<li>Encontrar los <strong>eigenvectores</strong> de <span class="math inline">\(C\)</span></li>
+<li>Los eigenvectores con los <strong>eigenvalores más grandes</strong> son los componentes principales</li>
+<li>Proyectar: <span class="math inline">\(Z = \tilde{X} W_k\)</span> donde <span class="math inline">\(W_k\)</span> son los <span class="math inline">\(k\)</span> eigenvectores principales</li>
+</ol>
+</div></div>
+</div>
+</section>
+<section id="pca-paso-a-paso-visual" class="slide level2 smaller">
+<h2>PCA: Paso a Paso Visual</h2>
+<div id="74a5c61b" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb4-2"><a></a><span class="im">from</span> sklearn.decomposition <span class="im">import</span> PCA</span>
+<span id="cb4-3"><a></a></span>
+<span id="cb4-4"><a></a><span class="co"># Crear datos 2D con correlación (para demostración)</span></span>
+<span id="cb4-5"><a></a>np.random.seed(<span class="dv">42</span>)</span>
+<span id="cb4-6"><a></a>n <span class="op">=</span> <span class="dv">200</span></span>
+<span id="cb4-7"><a></a>x <span class="op">=</span> np.random.randn(n)</span>
+<span id="cb4-8"><a></a>y <span class="op">=</span> <span class="fl">0.7</span> <span class="op">*</span> x <span class="op">+</span> <span class="fl">0.3</span> <span class="op">*</span> np.random.randn(n)  <span class="co"># Correlación con ruido</span></span>
+<span id="cb4-9"><a></a>datos_2d <span class="op">=</span> np.column_stack([x, y])</span>
+<span id="cb4-10"><a></a></span>
+<span id="cb4-11"><a></a><span class="co"># Aplicar PCA</span></span>
+<span id="cb4-12"><a></a>pca <span class="op">=</span> PCA(n_components<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb4-13"><a></a>pca.fit(datos_2d)</span>
+<span id="cb4-14"><a></a></span>
+<span id="cb4-15"><a></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">4</span>))</span>
+<span id="cb4-16"><a></a></span>
+<span id="cb4-17"><a></a><span class="co"># Gráfico 1: Datos originales con componentes principales</span></span>
+<span id="cb4-18"><a></a>ax <span class="op">=</span> axes[<span class="dv">0</span>]</span>
+<span id="cb4-19"><a></a>ax.scatter(datos_2d[:, <span class="dv">0</span>], datos_2d[:, <span class="dv">1</span>], alpha<span class="op">=</span><span class="fl">0.4</span>, s<span class="op">=</span><span class="dv">20</span>, color<span class="op">=</span><span class="st">'#0077b6'</span>)</span>
+<span id="cb4-20"><a></a>origin <span class="op">=</span> pca.mean_</span>
+<span id="cb4-21"><a></a></span>
+<span id="cb4-22"><a></a><span class="cf">for</span> i, (comp, var) <span class="kw">in</span> <span class="bu">enumerate</span>(<span class="bu">zip</span>(pca.components_, pca.explained_variance_)):</span>
+<span id="cb4-23"><a></a>    ax.annotate(<span class="st">''</span>, xy<span class="op">=</span>origin <span class="op">+</span> comp <span class="op">*</span> np.sqrt(var) <span class="op">*</span> <span class="dv">2</span>,</span>
+<span id="cb4-24"><a></a>                xytext<span class="op">=</span>origin,</span>
+<span id="cb4-25"><a></a>                arrowprops<span class="op">=</span><span class="bu">dict</span>(arrowstyle<span class="op">=</span><span class="st">'-&gt;'</span>, color<span class="op">=</span>[<span class="st">'#e63946'</span>, <span class="st">'#2a9d8f'</span>][i],</span>
+<span id="cb4-26"><a></a>                               lw<span class="op">=</span><span class="dv">3</span>))</span>
+<span id="cb4-27"><a></a>    ax.text(origin[<span class="dv">0</span>] <span class="op">+</span> comp[<span class="dv">0</span>] <span class="op">*</span> np.sqrt(var) <span class="op">*</span> <span class="fl">2.3</span>,</span>
+<span id="cb4-28"><a></a>            origin[<span class="dv">1</span>] <span class="op">+</span> comp[<span class="dv">1</span>] <span class="op">*</span> np.sqrt(var) <span class="op">*</span> <span class="fl">2.3</span>,</span>
+<span id="cb4-29"><a></a>            <span class="ss">f'PC</span><span class="sc">{</span>i<span class="op">+</span><span class="dv">1</span><span class="sc">}</span><span class="ss"> (</span><span class="sc">{</span>pca<span class="sc">.</span>explained_variance_ratio_[i]<span class="sc">:.1%}</span><span class="ss">)'</span>,</span>
+<span id="cb4-30"><a></a>            fontsize<span class="op">=</span><span class="dv">11</span>, fontweight<span class="op">=</span><span class="st">'bold'</span>,</span>
+<span id="cb4-31"><a></a>            color<span class="op">=</span>[<span class="st">'#e63946'</span>, <span class="st">'#2a9d8f'</span>][i])</span>
+<span id="cb4-32"><a></a></span>
+<span id="cb4-33"><a></a>ax.set_xlabel(<span class="st">'x'</span>, fontsize<span class="op">=</span><span class="dv">11</span>)</span>
+<span id="cb4-34"><a></a>ax.set_ylabel(<span class="st">'y'</span>, fontsize<span class="op">=</span><span class="dv">11</span>)</span>
+<span id="cb4-35"><a></a>ax.set_title(<span class="st">'Datos originales + Componentes Principales'</span>, fontsize<span class="op">=</span><span class="dv">12</span>)</span>
+<span id="cb4-36"><a></a>ax.set_aspect(<span class="st">'equal'</span>)</span>
+<span id="cb4-37"><a></a>ax.grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb4-38"><a></a></span>
+<span id="cb4-39"><a></a><span class="co"># Gráfico 2: Datos proyectados en PC1</span></span>
+<span id="cb4-40"><a></a>datos_pca <span class="op">=</span> pca.transform(datos_2d)</span>
+<span id="cb4-41"><a></a>ax <span class="op">=</span> axes[<span class="dv">1</span>]</span>
+<span id="cb4-42"><a></a>ax.scatter(datos_pca[:, <span class="dv">0</span>], np.zeros(n), alpha<span class="op">=</span><span class="fl">0.4</span>, s<span class="op">=</span><span class="dv">20</span>, color<span class="op">=</span><span class="st">'#e63946'</span>)</span>
+<span id="cb4-43"><a></a>ax.set_xlabel(<span class="st">'PC1'</span>, fontsize<span class="op">=</span><span class="dv">11</span>)</span>
+<span id="cb4-44"><a></a>ax.set_title(<span class="ss">f'Proyección sobre PC1 (</span><span class="sc">{</span>pca<span class="sc">.</span>explained_variance_ratio_[<span class="dv">0</span>]<span class="sc">:.1%}</span><span class="ss"> varianza)'</span>, fontsize<span class="op">=</span><span class="dv">12</span>)</span>
+<span id="cb4-45"><a></a>ax.set_yticks([])</span>
+<span id="cb4-46"><a></a>ax.grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb4-47"><a></a></span>
+<span id="cb4-48"><a></a>plt.tight_layout()</span>
+<span id="cb4-49"><a></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+
+</div>
+<img data-src="s3_visualizacion_files/figure-revealjs/cell-3-output-1.png" class="r-stretch"></section>
+<section id="pca-aplicado-a-word-embeddings" class="slide level2 smaller">
+<h2>PCA Aplicado a Word Embeddings</h2>
+<div id="daad7b4c" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a></a><span class="im">from</span> gensim.models <span class="im">import</span> Word2Vec</span>
+<span id="cb5-2"><a></a></span>
+<span id="cb5-3"><a></a><span class="co"># Corpus con más estructura semántica</span></span>
+<span id="cb5-4"><a></a>corpus <span class="op">=</span> [</span>
+<span id="cb5-5"><a></a>    [<span class="st">"el"</span>, <span class="st">"gato"</span>, <span class="st">"come"</span>, <span class="st">"pescado"</span>, <span class="st">"fresco"</span>],</span>
+<span id="cb5-6"><a></a>    [<span class="st">"el"</span>, <span class="st">"perro"</span>, <span class="st">"come"</span>, <span class="st">"carne"</span>, <span class="st">"roja"</span>],</span>
+<span id="cb5-7"><a></a>    [<span class="st">"mi"</span>, <span class="st">"gato"</span>, <span class="st">"duerme"</span>, <span class="st">"en"</span>, <span class="st">"el"</span>, <span class="st">"sofá"</span>],</span>
+<span id="cb5-8"><a></a>    [<span class="st">"mi"</span>, <span class="st">"perro"</span>, <span class="st">"duerme"</span>, <span class="st">"en"</span>, <span class="st">"la"</span>, <span class="st">"cama"</span>],</span>
+<span id="cb5-9"><a></a>    [<span class="st">"el"</span>, <span class="st">"gato"</span>, <span class="st">"negro"</span>, <span class="st">"persigue"</span>, <span class="st">"al"</span>, <span class="st">"ratón"</span>],</span>
+<span id="cb5-10"><a></a>    [<span class="st">"el"</span>, <span class="st">"perro"</span>, <span class="st">"grande"</span>, <span class="st">"persigue"</span>, <span class="st">"al"</span>, <span class="st">"gato"</span>],</span>
+<span id="cb5-11"><a></a>    [<span class="st">"el"</span>, <span class="st">"niño"</span>, <span class="st">"come"</span>, <span class="st">"una"</span>, <span class="st">"manzana"</span>, <span class="st">"roja"</span>],</span>
+<span id="cb5-12"><a></a>    [<span class="st">"la"</span>, <span class="st">"niña"</span>, <span class="st">"come"</span>, <span class="st">"una"</span>, <span class="st">"naranja"</span>, <span class="st">"fresca"</span>],</span>
+<span id="cb5-13"><a></a>    [<span class="st">"el"</span>, <span class="st">"gato"</span>, <span class="st">"juega"</span>, <span class="st">"con"</span>, <span class="st">"la"</span>, <span class="st">"pelota"</span>],</span>
+<span id="cb5-14"><a></a>    [<span class="st">"el"</span>, <span class="st">"perro"</span>, <span class="st">"juega"</span>, <span class="st">"con"</span>, <span class="st">"un"</span>, <span class="st">"hueso"</span>],</span>
+<span id="cb5-15"><a></a>    [<span class="st">"el"</span>, <span class="st">"gato"</span>, <span class="st">"bebe"</span>, <span class="st">"leche"</span>, <span class="st">"fresca"</span>],</span>
+<span id="cb5-16"><a></a>    [<span class="st">"el"</span>, <span class="st">"perro"</span>, <span class="st">"bebe"</span>, <span class="st">"agua"</span>, <span class="st">"fría"</span>],</span>
+<span id="cb5-17"><a></a>    [<span class="st">"un"</span>, <span class="st">"gato"</span>, <span class="st">"pequeño"</span>, <span class="st">"maúlla"</span>, <span class="st">"fuerte"</span>],</span>
+<span id="cb5-18"><a></a>    [<span class="st">"un"</span>, <span class="st">"perro"</span>, <span class="st">"pequeño"</span>, <span class="st">"ladra"</span>, <span class="st">"fuerte"</span>],</span>
+<span id="cb5-19"><a></a>    [<span class="st">"la"</span>, <span class="st">"niña"</span>, <span class="st">"acaricia"</span>, <span class="st">"al"</span>, <span class="st">"gato"</span>, <span class="st">"negro"</span>],</span>
+<span id="cb5-20"><a></a>    [<span class="st">"el"</span>, <span class="st">"niño"</span>, <span class="st">"acaricia"</span>, <span class="st">"al"</span>, <span class="st">"perro"</span>, <span class="st">"grande"</span>],</span>
+<span id="cb5-21"><a></a>    [<span class="st">"el"</span>, <span class="st">"pez"</span>, <span class="st">"nada"</span>, <span class="st">"en"</span>, <span class="st">"el"</span>, <span class="st">"agua"</span>],</span>
+<span id="cb5-22"><a></a>    [<span class="st">"el"</span>, <span class="st">"pájaro"</span>, <span class="st">"vuela"</span>, <span class="st">"en"</span>, <span class="st">"el"</span>, <span class="st">"cielo"</span>],</span>
+<span id="cb5-23"><a></a>    [<span class="st">"la"</span>, <span class="st">"manzana"</span>, <span class="st">"roja"</span>, <span class="st">"es"</span>, <span class="st">"dulce"</span>],</span>
+<span id="cb5-24"><a></a>    [<span class="st">"la"</span>, <span class="st">"naranja"</span>, <span class="st">"fresca"</span>, <span class="st">"es"</span>, <span class="st">"dulce"</span>],</span>
+<span id="cb5-25"><a></a>]</span>
+<span id="cb5-26"><a></a></span>
+<span id="cb5-27"><a></a>modelo <span class="op">=</span> Word2Vec(sentences<span class="op">=</span>corpus, vector_size<span class="op">=</span><span class="dv">50</span>, window<span class="op">=</span><span class="dv">3</span>,</span>
+<span id="cb5-28"><a></a>                  min_count<span class="op">=</span><span class="dv">1</span>, sg<span class="op">=</span><span class="dv">1</span>, negative<span class="op">=</span><span class="dv">5</span>, epochs<span class="op">=</span><span class="dv">300</span>, seed<span class="op">=</span><span class="dv">42</span>)</span>
+<span id="cb5-29"><a></a></span>
+<span id="cb5-30"><a></a><span class="co"># Seleccionar palabras de interés (por categorías)</span></span>
+<span id="cb5-31"><a></a>categorias <span class="op">=</span> {</span>
+<span id="cb5-32"><a></a>    <span class="st">"🐾 Animales"</span>: [<span class="st">"gato"</span>, <span class="st">"perro"</span>, <span class="st">"ratón"</span>, <span class="st">"pez"</span>, <span class="st">"pájaro"</span>],</span>
+<span id="cb5-33"><a></a>    <span class="st">"🍎 Comida"</span>: [<span class="st">"pescado"</span>, <span class="st">"carne"</span>, <span class="st">"manzana"</span>, <span class="st">"naranja"</span>, <span class="st">"leche"</span>],</span>
+<span id="cb5-34"><a></a>    <span class="st">"👤 Personas"</span>: [<span class="st">"niño"</span>, <span class="st">"niña"</span>],</span>
+<span id="cb5-35"><a></a>    <span class="st">"🏃 Acciones"</span>: [<span class="st">"come"</span>, <span class="st">"bebe"</span>, <span class="st">"duerme"</span>, <span class="st">"juega"</span>, <span class="st">"persigue"</span>],</span>
+<span id="cb5-36"><a></a>    <span class="st">"📏 Adjetivos"</span>: [<span class="st">"grande"</span>, <span class="st">"pequeño"</span>, <span class="st">"negro"</span>, <span class="st">"roja"</span>, <span class="st">"fresca"</span>],</span>
+<span id="cb5-37"><a></a>}</span>
+<span id="cb5-38"><a></a></span>
+<span id="cb5-39"><a></a><span class="co"># Obtener vectores</span></span>
+<span id="cb5-40"><a></a>palabras <span class="op">=</span> []</span>
+<span id="cb5-41"><a></a>vectores <span class="op">=</span> []</span>
+<span id="cb5-42"><a></a>colores <span class="op">=</span> []</span>
+<span id="cb5-43"><a></a>color_map <span class="op">=</span> {<span class="st">'🐾 Animales'</span>: <span class="st">'#e63946'</span>, <span class="st">'🍎 Comida'</span>: <span class="st">'#2a9d8f'</span>,</span>
+<span id="cb5-44"><a></a>             <span class="st">'👤 Personas'</span>: <span class="st">'#e9c46a'</span>, <span class="st">'🏃 Acciones'</span>: <span class="st">'#264653'</span>,</span>
+<span id="cb5-45"><a></a>             <span class="st">'📏 Adjetivos'</span>: <span class="st">'#f4a261'</span>}</span>
+<span id="cb5-46"><a></a></span>
+<span id="cb5-47"><a></a><span class="cf">for</span> cat, words <span class="kw">in</span> categorias.items():</span>
+<span id="cb5-48"><a></a>    <span class="cf">for</span> w <span class="kw">in</span> words:</span>
+<span id="cb5-49"><a></a>        <span class="cf">if</span> w <span class="kw">in</span> modelo.wv:</span>
+<span id="cb5-50"><a></a>            palabras.append(w)</span>
+<span id="cb5-51"><a></a>            vectores.append(modelo.wv[w])</span>
+<span id="cb5-52"><a></a>            colores.append(color_map[cat])</span>
+<span id="cb5-53"><a></a></span>
+<span id="cb5-54"><a></a>vectores <span class="op">=</span> np.array(vectores)</span>
+<span id="cb5-55"><a></a><span class="bu">print</span>(<span class="ss">f"Proyectando </span><span class="sc">{</span><span class="bu">len</span>(palabras)<span class="sc">}</span><span class="ss"> palabras de </span><span class="sc">{</span>vectores<span class="sc">.</span>shape[<span class="dv">1</span>]<span class="sc">}</span><span class="ss">D a 2D con PCA..."</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Proyectando 22 palabras de 50D a 2D con PCA...</code></pre>
+</div>
+</div>
+</section>
+<section id="pca-visualización-de-embeddings" class="slide level2 smaller">
+<h2>PCA: Visualización de Embeddings</h2>
+<div id="b1898907" class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a></a><span class="im">from</span> sklearn.decomposition <span class="im">import</span> PCA</span>
+<span id="cb7-2"><a></a></span>
+<span id="cb7-3"><a></a>pca <span class="op">=</span> PCA(n_components<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb7-4"><a></a>coords_pca <span class="op">=</span> pca.fit_transform(vectores)</span>
+<span id="cb7-5"><a></a></span>
+<span id="cb7-6"><a></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">7</span>))</span>
+<span id="cb7-7"><a></a></span>
+<span id="cb7-8"><a></a><span class="co"># Graficar puntos por categoría</span></span>
+<span id="cb7-9"><a></a><span class="cf">for</span> cat, color <span class="kw">in</span> color_map.items():</span>
+<span id="cb7-10"><a></a>    mask <span class="op">=</span> [c <span class="op">==</span> color <span class="cf">for</span> c <span class="kw">in</span> colores]</span>
+<span id="cb7-11"><a></a>    ax.scatter(coords_pca[mask, <span class="dv">0</span>], coords_pca[mask, <span class="dv">1</span>],</span>
+<span id="cb7-12"><a></a>               c<span class="op">=</span>color, label<span class="op">=</span>cat, s<span class="op">=</span><span class="dv">100</span>, alpha<span class="op">=</span><span class="fl">0.8</span>, edgecolors<span class="op">=</span><span class="st">'white'</span>, linewidth<span class="op">=</span><span class="fl">0.5</span>)</span>
+<span id="cb7-13"><a></a></span>
+<span id="cb7-14"><a></a><span class="co"># Etiquetar cada punto</span></span>
+<span id="cb7-15"><a></a><span class="cf">for</span> i, palabra <span class="kw">in</span> <span class="bu">enumerate</span>(palabras):</span>
+<span id="cb7-16"><a></a>    ax.annotate(palabra, (coords_pca[i, <span class="dv">0</span>], coords_pca[i, <span class="dv">1</span>]),</span>
+<span id="cb7-17"><a></a>                fontsize<span class="op">=</span><span class="dv">9</span>, fontweight<span class="op">=</span><span class="st">'bold'</span>,</span>
+<span id="cb7-18"><a></a>                xytext<span class="op">=</span>(<span class="dv">5</span>, <span class="dv">5</span>), textcoords<span class="op">=</span><span class="st">'offset points'</span>)</span>
+<span id="cb7-19"><a></a></span>
+<span id="cb7-20"><a></a>ax.set_xlabel(<span class="ss">f'PC1 (</span><span class="sc">{</span>pca<span class="sc">.</span>explained_variance_ratio_[<span class="dv">0</span>]<span class="sc">:.1%}</span><span class="ss"> varianza)'</span>, fontsize<span class="op">=</span><span class="dv">12</span>)</span>
+<span id="cb7-21"><a></a>ax.set_ylabel(<span class="ss">f'PC2 (</span><span class="sc">{</span>pca<span class="sc">.</span>explained_variance_ratio_[<span class="dv">1</span>]<span class="sc">:.1%}</span><span class="ss"> varianza)'</span>, fontsize<span class="op">=</span><span class="dv">12</span>)</span>
+<span id="cb7-22"><a></a>ax.set_title(<span class="st">'Word Embeddings — Proyección PCA'</span>, fontsize<span class="op">=</span><span class="dv">14</span>)</span>
+<span id="cb7-23"><a></a>ax.legend(fontsize<span class="op">=</span><span class="dv">10</span>, loc<span class="op">=</span><span class="st">'best'</span>)</span>
+<span id="cb7-24"><a></a>ax.grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb7-25"><a></a>plt.tight_layout()</span>
+<span id="cb7-26"><a></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+
+</div>
+<img data-src="s3_visualizacion_files/figure-revealjs/cell-5-output-1.png" class="r-stretch"><div class="fragment">
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Interpretación</strong></p>
+</div>
+<div class="callout-content">
+<p>Con un corpus pequeño los clusters no serán perfectos, pero se puede observar cierta agrupación por categoría. Con embeddings pre-entrenados en corpus grandes, la separación es mucho más clara.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="varianza-explicada" class="slide level2 smaller">
+<h2>Varianza Explicada</h2>
+<p>Una ventaja de PCA: podemos saber <strong>cuánta información preservamos</strong>:</p>
+<div id="6635a4f5" class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a></a>pca_full <span class="op">=</span> PCA(n_components<span class="op">=</span><span class="bu">min</span>(<span class="bu">len</span>(palabras), vectores.shape[<span class="dv">1</span>]))</span>
+<span id="cb8-2"><a></a>pca_full.fit(vectores)</span>
+<span id="cb8-3"><a></a></span>
+<span id="cb8-4"><a></a>varianza_acum <span class="op">=</span> np.cumsum(pca_full.explained_variance_ratio_)</span>
+<span id="cb8-5"><a></a></span>
+<span id="cb8-6"><a></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">4</span>))</span>
+<span id="cb8-7"><a></a></span>
+<span id="cb8-8"><a></a><span class="co"># Varianza por componente</span></span>
+<span id="cb8-9"><a></a>ax <span class="op">=</span> axes[<span class="dv">0</span>]</span>
+<span id="cb8-10"><a></a>n_show <span class="op">=</span> <span class="bu">min</span>(<span class="dv">20</span>, <span class="bu">len</span>(pca_full.explained_variance_ratio_))</span>
+<span id="cb8-11"><a></a>ax.bar(<span class="bu">range</span>(<span class="dv">1</span>, n_show <span class="op">+</span> <span class="dv">1</span>), pca_full.explained_variance_ratio_[:n_show],</span>
+<span id="cb8-12"><a></a>       color<span class="op">=</span><span class="st">'#0077b6'</span>, alpha<span class="op">=</span><span class="fl">0.7</span>)</span>
+<span id="cb8-13"><a></a>ax.set_xlabel(<span class="st">'Componente Principal'</span>, fontsize<span class="op">=</span><span class="dv">11</span>)</span>
+<span id="cb8-14"><a></a>ax.set_ylabel(<span class="st">'Varianza Explicada'</span>, fontsize<span class="op">=</span><span class="dv">11</span>)</span>
+<span id="cb8-15"><a></a>ax.set_title(<span class="st">'Varianza por Componente'</span>, fontsize<span class="op">=</span><span class="dv">12</span>)</span>
+<span id="cb8-16"><a></a>ax.grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.3</span>, axis<span class="op">=</span><span class="st">'y'</span>)</span>
+<span id="cb8-17"><a></a></span>
+<span id="cb8-18"><a></a><span class="co"># Varianza acumulada</span></span>
+<span id="cb8-19"><a></a>ax <span class="op">=</span> axes[<span class="dv">1</span>]</span>
+<span id="cb8-20"><a></a>ax.plot(<span class="bu">range</span>(<span class="dv">1</span>, <span class="bu">len</span>(varianza_acum) <span class="op">+</span> <span class="dv">1</span>), varianza_acum,</span>
+<span id="cb8-21"><a></a>        <span class="st">'o-'</span>, color<span class="op">=</span><span class="st">'#e63946'</span>, markersize<span class="op">=</span><span class="dv">4</span>)</span>
+<span id="cb8-22"><a></a>ax.axhline(y<span class="op">=</span><span class="fl">0.9</span>, color<span class="op">=</span><span class="st">'gray'</span>, linestyle<span class="op">=</span><span class="st">'--'</span>, alpha<span class="op">=</span><span class="fl">0.7</span>, label<span class="op">=</span><span class="st">'90%'</span>)</span>
+<span id="cb8-23"><a></a>ax.axhline(y<span class="op">=</span><span class="fl">0.95</span>, color<span class="op">=</span><span class="st">'gray'</span>, linestyle<span class="op">=</span><span class="st">':'</span>, alpha<span class="op">=</span><span class="fl">0.7</span>, label<span class="op">=</span><span class="st">'95%'</span>)</span>
+<span id="cb8-24"><a></a></span>
+<span id="cb8-25"><a></a><span class="co"># Encontrar componentes para 90%</span></span>
+<span id="cb8-26"><a></a>n_90 <span class="op">=</span> np.argmax(varianza_acum <span class="op">&gt;=</span> <span class="fl">0.9</span>) <span class="op">+</span> <span class="dv">1</span></span>
+<span id="cb8-27"><a></a>ax.axvline(x<span class="op">=</span>n_90, color<span class="op">=</span><span class="st">'#2a9d8f'</span>, linestyle<span class="op">=</span><span class="st">'--'</span>, alpha<span class="op">=</span><span class="fl">0.7</span>)</span>
+<span id="cb8-28"><a></a>ax.text(n_90 <span class="op">+</span> <span class="fl">0.5</span>, <span class="fl">0.85</span>, <span class="ss">f'</span><span class="sc">{</span>n_90<span class="sc">}</span><span class="ss"> PCs para 90%'</span>, fontsize<span class="op">=</span><span class="dv">10</span>, color<span class="op">=</span><span class="st">'#2a9d8f'</span>)</span>
+<span id="cb8-29"><a></a></span>
+<span id="cb8-30"><a></a>ax.set_xlabel(<span class="st">'Número de Componentes'</span>, fontsize<span class="op">=</span><span class="dv">11</span>)</span>
+<span id="cb8-31"><a></a>ax.set_ylabel(<span class="st">'Varianza Acumulada'</span>, fontsize<span class="op">=</span><span class="dv">11</span>)</span>
+<span id="cb8-32"><a></a>ax.set_title(<span class="st">'Varianza Acumulada'</span>, fontsize<span class="op">=</span><span class="dv">12</span>)</span>
+<span id="cb8-33"><a></a>ax.legend(fontsize<span class="op">=</span><span class="dv">10</span>)</span>
+<span id="cb8-34"><a></a>ax.grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb8-35"><a></a></span>
+<span id="cb8-36"><a></a>plt.tight_layout()</span>
+<span id="cb8-37"><a></a>plt.show()</span>
+<span id="cb8-38"><a></a></span>
+<span id="cb8-39"><a></a><span class="bu">print</span>(<span class="ss">f"Con 2 componentes: </span><span class="sc">{</span>varianza_acum[<span class="dv">1</span>]<span class="sc">:.1%}</span><span class="ss"> de varianza explicada"</span>)</span>
+<span id="cb8-40"><a></a><span class="bu">print</span>(<span class="ss">f"Componentes para 90%: </span><span class="sc">{</span>n_90<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+
+<div class="cell-output cell-output-stdout">
+<pre><code>Con 2 componentes: 87.1% de varianza explicada
+Componentes para 90%: 4</code></pre>
+</div>
+</div>
+<img data-src="s3_visualizacion_files/figure-revealjs/cell-6-output-1.png" class="r-stretch"></section>
+<section id="limitaciones-de-pca" class="slide level2 smaller scrollable">
+<h2>Limitaciones de PCA</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<h3 id="problemas">Problemas</h3>
+<ol type="1">
+<li><strong>Solo captura relaciones lineales</strong>
+<ul>
+<li>No puede “desdoblar” variedades (manifolds) no lineales</li>
+</ul></li>
+<li><strong>Optimiza varianza global</strong>
+<ul>
+<li>Puede sacrificar estructura local por preservar distancias grandes</li>
+</ul></li>
+<li><strong>Sensible a outliers</strong>
+<ul>
+<li>Un punto muy lejano puede distorsionar toda la proyección</li>
+</ul></li>
+</ol>
+</div><div class="column" style="width:50%;">
+<h3 id="ejemplo-el-problema-del-swiss-roll">Ejemplo: El problema del “Swiss Roll”</h3>
+<p>Datos en 3D enrollados como un brazo de gitano. PCA los aplasta:</p>
+<div id="50c1c4e9" class="cell" data-execution_count="6">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a></a><span class="im">from</span> sklearn.datasets <span class="im">import</span> make_swiss_roll</span>
+<span id="cb10-2"><a></a></span>
+<span id="cb10-3"><a></a>X_swiss, color_swiss <span class="op">=</span> make_swiss_roll(n_samples<span class="op">=</span><span class="dv">1000</span>, noise<span class="op">=</span><span class="fl">0.5</span>, random_state<span class="op">=</span><span class="dv">42</span>)</span>
+<span id="cb10-4"><a></a></span>
+<span id="cb10-5"><a></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">11</span>, <span class="dv">4</span>))</span>
+<span id="cb10-6"><a></a></span>
+<span id="cb10-7"><a></a><span class="co"># PCA</span></span>
+<span id="cb10-8"><a></a>pca_swiss <span class="op">=</span> PCA(n_components<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb10-9"><a></a>X_pca_swiss <span class="op">=</span> pca_swiss.fit_transform(X_swiss)</span>
+<span id="cb10-10"><a></a>axes[<span class="dv">0</span>].scatter(X_pca_swiss[:, <span class="dv">0</span>], X_pca_swiss[:, <span class="dv">1</span>],</span>
+<span id="cb10-11"><a></a>                c<span class="op">=</span>color_swiss, cmap<span class="op">=</span><span class="st">'Spectral'</span>, s<span class="op">=</span><span class="dv">10</span>, alpha<span class="op">=</span><span class="fl">0.6</span>)</span>
+<span id="cb10-12"><a></a>axes[<span class="dv">0</span>].set_title(<span class="st">'PCA del Swiss Roll'</span>, fontsize<span class="op">=</span><span class="dv">12</span>)</span>
+<span id="cb10-13"><a></a>axes[<span class="dv">0</span>].set_xlabel(<span class="st">'PC1'</span>)</span>
+<span id="cb10-14"><a></a>axes[<span class="dv">0</span>].set_ylabel(<span class="st">'PC2'</span>)</span>
+<span id="cb10-15"><a></a></span>
+<span id="cb10-16"><a></a><span class="co"># Lo que querríamos</span></span>
+<span id="cb10-17"><a></a><span class="im">from</span> sklearn.manifold <span class="im">import</span> TSNE</span>
+<span id="cb10-18"><a></a>tsne_swiss <span class="op">=</span> TSNE(n_components<span class="op">=</span><span class="dv">2</span>, perplexity<span class="op">=</span><span class="dv">30</span>, random_state<span class="op">=</span><span class="dv">42</span>)</span>
+<span id="cb10-19"><a></a>X_tsne_swiss <span class="op">=</span> tsne_swiss.fit_transform(X_swiss)</span>
+<span id="cb10-20"><a></a>axes[<span class="dv">1</span>].scatter(X_tsne_swiss[:, <span class="dv">0</span>], X_tsne_swiss[:, <span class="dv">1</span>],</span>
+<span id="cb10-21"><a></a>                c<span class="op">=</span>color_swiss, cmap<span class="op">=</span><span class="st">'Spectral'</span>, s<span class="op">=</span><span class="dv">10</span>, alpha<span class="op">=</span><span class="fl">0.6</span>)</span>
+<span id="cb10-22"><a></a>axes[<span class="dv">1</span>].set_title(<span class="st">'t-SNE del Swiss Roll'</span>, fontsize<span class="op">=</span><span class="dv">12</span>)</span>
+<span id="cb10-23"><a></a>axes[<span class="dv">1</span>].set_xlabel(<span class="st">'t-SNE 1'</span>)</span>
+<span id="cb10-24"><a></a>axes[<span class="dv">1</span>].set_ylabel(<span class="st">'t-SNE 2'</span>)</span>
+<span id="cb10-25"><a></a></span>
+<span id="cb10-26"><a></a>plt.tight_layout()</span>
+<span id="cb10-27"><a></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div>
+<figure>
+<p><img data-src="s3_visualizacion_files/figure-revealjs/cell-7-output-1.png"></p>
+</figure>
+</div>
+</div>
+</div>
+</div></div>
+<div class="fragment">
+<div class="callout callout-important callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Conclusión</strong></p>
+</div>
+<div class="callout-content">
+<p>PCA es bueno para una primera exploración, pero para visualizar <strong>clusters no lineales</strong> necesitamos algo más potente → <strong>t-SNE</strong>.</p>
+</div>
+</div>
+</div>
+</div>
+</section></section>
+<section>
+<section id="bloque-3-t-sne" class="title-slide slide level1 center" data-background-color="#0077b6">
+<h1>Bloque 3: t-SNE</h1>
+
+</section>
+<section id="t-sne-la-idea-intuitiva" class="slide level2 smaller scrollable">
+<h2>t-SNE: La Idea Intuitiva</h2>
+<blockquote>
+<p><strong>t-SNE</strong> = t-distributed <strong>S</strong>tochastic <strong>N</strong>eighbor <strong>E</strong>mbedding (van der Maaten &amp; Hinton, 2008)</p>
+</blockquote>
+<div class="fragment">
+<div class="columns">
+<div class="column" style="width:50%;">
+<h3 id="filosofía">Filosofía</h3>
+<blockquote>
+<p>“Si dos puntos son <strong>vecinos cercanos</strong> en alta dimensión, que lo sean también en baja dimensión.”</p>
+</blockquote>
+<p>t-SNE se enfoca en <strong>preservar la estructura local</strong> (vecindades), no la global.</p>
+</div><div class="column" style="width:50%;">
+<h3 id="intuición">Intuición</h3>
+<ol type="1">
+<li>En <span class="math inline">\(\mathbb{R}^{300}\)</span>: calcular qué tan “cercano” es cada par de puntos (distribución de probabilidad)</li>
+<li>En <span class="math inline">\(\mathbb{R}^2\)</span>: colocar puntos aleatoriamente</li>
+<li><strong>Mover</strong> los puntos en 2D hasta que las vecindades se parezcan a las de 300D</li>
+<li>Minimizar la diferencia (divergencia KL)</li>
+</ol>
+</div></div>
+</div>
+</section>
+<section id="t-sne-la-matemática" class="slide level2 smaller">
+<h2>t-SNE: La Matemática</h2>
+<h3 id="paso-1-probabilidades-en-alta-dimensión">Paso 1: Probabilidades en alta dimensión</h3>
+<p>Para cada par <span class="math inline">\((i, j)\)</span>, definir la probabilidad de que <span class="math inline">\(j\)</span> sea “vecino” de <span class="math inline">\(i\)</span>:</p>
+<p><span class="math display">\[p_{j|i} = \frac{\exp\left(-\frac{||\vec{x}_i - \vec{x}_j||^2}{2\sigma_i^2}\right)}{\sum_{k \neq i} \exp\left(-\frac{||\vec{x}_i - \vec{x}_k||^2}{2\sigma_i^2}\right)}\]</span></p>
+<p>. . .</p>
+<p>Se simetriza: <span class="math inline">\(p_{ij} = \frac{p_{j|i} + p_{i|j}}{2n}\)</span></p>
+<p>. . .</p>
+<h3 id="paso-2-probabilidades-en-baja-dimensión">Paso 2: Probabilidades en baja dimensión</h3>
+<p>Usar una <strong>distribución t de Student</strong> (con 1 grado de libertad = distribución de Cauchy):</p>
+<p><span class="math display">\[q_{ij} = \frac{\left(1 + ||\vec{y}_i - \vec{y}_j||^2\right)^{-1}}{\sum_{k \neq l}\left(1 + ||\vec{y}_k - \vec{y}_l||^2\right)^{-1}}\]</span></p>
+<h3 id="paso-3-minimizar-la-divergencia-kl">Paso 3: Minimizar la divergencia KL</h3>
+<p><span class="math display">\[\text{KL}(P || Q) = \sum_{i \neq j} p_{ij} \log \frac{p_{ij}}{q_{ij}}\]</span></p>
+</section>
+<section id="por-qué-la-distribución-t" class="slide level2 smaller">
+<h2>¿Por Qué la Distribución t?</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<h3 id="el-problema-del-crowding">El problema del “crowding”</h3>
+<p>Al proyectar de alta a baja dimensión, hay <strong>menos espacio</strong> disponible.</p>
+<p>En <span class="math inline">\(\mathbb{R}^{300}\)</span>: un punto puede tener muchos vecinos equidistantes.</p>
+<p>En <span class="math inline">\(\mathbb{R}^2\)</span>: no caben todos a la misma distancia → se “apiñan” (crowding).</p>
+</div><div class="column" style="width:50%;">
+<h3 id="la-solución">La solución</h3>
+<p>La distribución t tiene <strong>colas más pesadas</strong> que la gaussiana:</p>
+<div id="865d4d42" class="cell" data-execution_count="7">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a></a>x <span class="op">=</span> np.linspace(<span class="op">-</span><span class="dv">5</span>, <span class="dv">5</span>, <span class="dv">500</span>)</span>
+<span id="cb11-2"><a></a>gauss <span class="op">=</span> np.exp(<span class="op">-</span>x<span class="op">**</span><span class="dv">2</span> <span class="op">/</span> <span class="dv">2</span>) <span class="op">/</span> np.sqrt(<span class="dv">2</span> <span class="op">*</span> np.pi)</span>
+<span id="cb11-3"><a></a>t_dist <span class="op">=</span> <span class="dv">1</span> <span class="op">/</span> (np.pi <span class="op">*</span> (<span class="dv">1</span> <span class="op">+</span> x<span class="op">**</span><span class="dv">2</span>))  <span class="co"># Cauchy = t con df=1</span></span>
+<span id="cb11-4"><a></a></span>
+<span id="cb11-5"><a></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">8</span>, <span class="fl">3.5</span>))</span>
+<span id="cb11-6"><a></a>plt.plot(x, gauss, label<span class="op">=</span><span class="st">'Gaussiana'</span>, linewidth<span class="op">=</span><span class="dv">2</span>, color<span class="op">=</span><span class="st">'#0077b6'</span>)</span>
+<span id="cb11-7"><a></a>plt.plot(x, t_dist, label<span class="op">=</span><span class="st">'t de Student (df=1)'</span>, linewidth<span class="op">=</span><span class="dv">2</span>,</span>
+<span id="cb11-8"><a></a>         color<span class="op">=</span><span class="st">'#e63946'</span>, linestyle<span class="op">=</span><span class="st">'--'</span>)</span>
+<span id="cb11-9"><a></a>plt.fill_between(x, t_dist, alpha<span class="op">=</span><span class="fl">0.1</span>, color<span class="op">=</span><span class="st">'#e63946'</span>)</span>
+<span id="cb11-10"><a></a>plt.xlabel(<span class="st">'Distancia'</span>, fontsize<span class="op">=</span><span class="dv">11</span>)</span>
+<span id="cb11-11"><a></a>plt.ylabel(<span class="st">'Densidad'</span>, fontsize<span class="op">=</span><span class="dv">11</span>)</span>
+<span id="cb11-12"><a></a>plt.title(<span class="st">'Colas más pesadas → más espacio para separar clusters'</span>, fontsize<span class="op">=</span><span class="dv">12</span>)</span>
+<span id="cb11-13"><a></a>plt.legend(fontsize<span class="op">=</span><span class="dv">11</span>)</span>
+<span id="cb11-14"><a></a>plt.grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb11-15"><a></a>plt.tight_layout()</span>
+<span id="cb11-16"><a></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div>
+<figure>
+<p><img data-src="s3_visualizacion_files/figure-revealjs/cell-8-output-1.png"></p>
+</figure>
+</div>
+</div>
+</div>
+</div></div>
+<div class="fragment">
+<div class="callout callout-tip callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Consecuencia de las colas pesadas</strong></p>
+</div>
+<div class="callout-content">
+<p>Puntos moderadamente distantes en alta dimensión pueden quedar <strong>más separados</strong> en 2D. Esto evita el apiñamiento y produce clusters más claros.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="el-hiperparámetro-clave-perplexity" class="slide level2 smaller">
+<h2>El Hiperparámetro Clave: Perplexity</h2>
+<p>La <strong>perplejidad</strong> en t-SNE controla cuántos vecinos “efectivos” considera cada punto:</p>
+<div class="fragment">
+<div class="columns">
+<div class="column" style="width:50%;">
+<h3 id="definición">Definición</h3>
+<p><span class="math display">\[\text{Perplexity} = 2^{H(P_i)}\]</span></p>
+<p>donde <span class="math inline">\(H(P_i) = -\sum_j p_{j|i} \log_2 p_{j|i}\)</span> es la entropía de la distribución condicional.</p>
+<h3 id="valores-típicos">Valores típicos</h3>
+<table class="caption-top">
+<thead>
+<tr class="header">
+<th style="text-align: center;">Perplexity</th>
+<th style="text-align: left;">Efecto</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">5-10</td>
+<td style="text-align: left;">Estructura muy local, clusters pequeños</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">30</td>
+<td style="text-align: left;">Valor por defecto, buen balance ✅</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">50-100</td>
+<td style="text-align: left;">Estructura más global</td>
+</tr>
+</tbody>
+</table>
+</div><div class="column" style="width:50%;">
+<h3 id="efecto-visual">Efecto visual</h3>
+<div id="8b9608b1" class="cell" data-execution_count="8">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a></a><span class="im">from</span> sklearn.manifold <span class="im">import</span> TSNE</span>
+<span id="cb12-2"><a></a><span class="im">from</span> sklearn.datasets <span class="im">import</span> make_blobs</span>
+<span id="cb12-3"><a></a></span>
+<span id="cb12-4"><a></a>X_blobs, y_blobs <span class="op">=</span> make_blobs(n_samples<span class="op">=</span><span class="dv">300</span>, centers<span class="op">=</span><span class="dv">4</span>,</span>
+<span id="cb12-5"><a></a>                               cluster_std<span class="op">=</span><span class="fl">1.0</span>, random_state<span class="op">=</span><span class="dv">42</span>)</span>
+<span id="cb12-6"><a></a></span>
+<span id="cb12-7"><a></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">14</span>, <span class="dv">4</span>))</span>
+<span id="cb12-8"><a></a>perplexities <span class="op">=</span> [<span class="dv">5</span>, <span class="dv">30</span>, <span class="dv">100</span>]</span>
+<span id="cb12-9"><a></a></span>
+<span id="cb12-10"><a></a><span class="cf">for</span> ax, perp <span class="kw">in</span> <span class="bu">zip</span>(axes, perplexities):</span>
+<span id="cb12-11"><a></a>    tsne <span class="op">=</span> TSNE(n_components<span class="op">=</span><span class="dv">2</span>, perplexity<span class="op">=</span>perp, random_state<span class="op">=</span><span class="dv">42</span>, max_iter<span class="op">=</span><span class="dv">1000</span>)</span>
+<span id="cb12-12"><a></a>    coords <span class="op">=</span> tsne.fit_transform(X_blobs)</span>
+<span id="cb12-13"><a></a>    ax.scatter(coords[:, <span class="dv">0</span>], coords[:, <span class="dv">1</span>], c<span class="op">=</span>y_blobs,</span>
+<span id="cb12-14"><a></a>               cmap<span class="op">=</span><span class="st">'Set1'</span>, s<span class="op">=</span><span class="dv">20</span>, alpha<span class="op">=</span><span class="fl">0.7</span>)</span>
+<span id="cb12-15"><a></a>    ax.set_title(<span class="ss">f'Perplexity = </span><span class="sc">{</span>perp<span class="sc">}</span><span class="ss">'</span>, fontsize<span class="op">=</span><span class="dv">12</span>)</span>
+<span id="cb12-16"><a></a>    ax.set_xticks([])</span>
+<span id="cb12-17"><a></a>    ax.set_yticks([])</span>
+<span id="cb12-18"><a></a></span>
+<span id="cb12-19"><a></a>plt.suptitle(<span class="st">'Efecto de la perplejidad en t-SNE'</span>, fontsize<span class="op">=</span><span class="dv">13</span>, y<span class="op">=</span><span class="fl">1.02</span>)</span>
+<span id="cb12-20"><a></a>plt.tight_layout()</span>
+<span id="cb12-21"><a></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div>
+<figure>
+<p><img data-src="s3_visualizacion_files/figure-revealjs/cell-9-output-1.png"></p>
+</figure>
+</div>
+</div>
+</div>
+</div></div>
+</div>
+<div class="fragment">
+<div class="callout callout-warning callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Regla práctica</strong></p>
+</div>
+<div class="callout-content">
+<p><code>perplexity</code> ≈ <span class="math inline">\(\sqrt{n}\)</span> donde <span class="math inline">\(n\)</span> es el número de puntos. Para nuestros embeddings con ~30 palabras, <code>perplexity=5-10</code> funciona bien.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="t-sne-aplicado-a-word-embeddings" class="slide level2 smaller">
+<h2>t-SNE Aplicado a Word Embeddings</h2>
+<div id="65f2638b" class="cell" data-execution_count="9">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a></a><span class="im">from</span> sklearn.manifold <span class="im">import</span> TSNE</span>
+<span id="cb13-2"><a></a></span>
+<span id="cb13-3"><a></a><span class="co"># Usar los mismos vectores que con PCA</span></span>
+<span id="cb13-4"><a></a>tsne <span class="op">=</span> TSNE(n_components<span class="op">=</span><span class="dv">2</span>, perplexity<span class="op">=</span><span class="dv">5</span>, random_state<span class="op">=</span><span class="dv">42</span>,</span>
+<span id="cb13-5"><a></a>            max_iter<span class="op">=</span><span class="dv">2000</span>, learning_rate<span class="op">=</span><span class="st">'auto'</span>, init<span class="op">=</span><span class="st">'pca'</span>)</span>
+<span id="cb13-6"><a></a>coords_tsne <span class="op">=</span> tsne.fit_transform(vectores)</span>
+<span id="cb13-7"><a></a></span>
+<span id="cb13-8"><a></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">16</span>, <span class="dv">6</span>))</span>
+<span id="cb13-9"><a></a></span>
+<span id="cb13-10"><a></a><span class="co"># PCA</span></span>
+<span id="cb13-11"><a></a>ax <span class="op">=</span> axes[<span class="dv">0</span>]</span>
+<span id="cb13-12"><a></a><span class="cf">for</span> cat, color <span class="kw">in</span> color_map.items():</span>
+<span id="cb13-13"><a></a>    mask <span class="op">=</span> [c <span class="op">==</span> color <span class="cf">for</span> c <span class="kw">in</span> colores]</span>
+<span id="cb13-14"><a></a>    ax.scatter(coords_pca[mask, <span class="dv">0</span>], coords_pca[mask, <span class="dv">1</span>],</span>
+<span id="cb13-15"><a></a>               c<span class="op">=</span>color, label<span class="op">=</span>cat, s<span class="op">=</span><span class="dv">100</span>, alpha<span class="op">=</span><span class="fl">0.8</span>, edgecolors<span class="op">=</span><span class="st">'white'</span>, linewidth<span class="op">=</span><span class="fl">0.5</span>)</span>
+<span id="cb13-16"><a></a><span class="cf">for</span> i, palabra <span class="kw">in</span> <span class="bu">enumerate</span>(palabras):</span>
+<span id="cb13-17"><a></a>    ax.annotate(palabra, (coords_pca[i, <span class="dv">0</span>], coords_pca[i, <span class="dv">1</span>]),</span>
+<span id="cb13-18"><a></a>                fontsize<span class="op">=</span><span class="dv">8</span>, fontweight<span class="op">=</span><span class="st">'bold'</span>, xytext<span class="op">=</span>(<span class="dv">5</span>, <span class="dv">5</span>), textcoords<span class="op">=</span><span class="st">'offset points'</span>)</span>
+<span id="cb13-19"><a></a>ax.set_title(<span class="st">'PCA'</span>, fontsize<span class="op">=</span><span class="dv">14</span>)</span>
+<span id="cb13-20"><a></a>ax.legend(fontsize<span class="op">=</span><span class="dv">9</span>, loc<span class="op">=</span><span class="st">'best'</span>)</span>
+<span id="cb13-21"><a></a>ax.grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb13-22"><a></a></span>
+<span id="cb13-23"><a></a><span class="co"># t-SNE</span></span>
+<span id="cb13-24"><a></a>ax <span class="op">=</span> axes[<span class="dv">1</span>]</span>
+<span id="cb13-25"><a></a><span class="cf">for</span> cat, color <span class="kw">in</span> color_map.items():</span>
+<span id="cb13-26"><a></a>    mask <span class="op">=</span> [c <span class="op">==</span> color <span class="cf">for</span> c <span class="kw">in</span> colores]</span>
+<span id="cb13-27"><a></a>    ax.scatter(coords_tsne[mask, <span class="dv">0</span>], coords_tsne[mask, <span class="dv">1</span>],</span>
+<span id="cb13-28"><a></a>               c<span class="op">=</span>color, label<span class="op">=</span>cat, s<span class="op">=</span><span class="dv">100</span>, alpha<span class="op">=</span><span class="fl">0.8</span>, edgecolors<span class="op">=</span><span class="st">'white'</span>, linewidth<span class="op">=</span><span class="fl">0.5</span>)</span>
+<span id="cb13-29"><a></a><span class="cf">for</span> i, palabra <span class="kw">in</span> <span class="bu">enumerate</span>(palabras):</span>
+<span id="cb13-30"><a></a>    ax.annotate(palabra, (coords_tsne[i, <span class="dv">0</span>], coords_tsne[i, <span class="dv">1</span>]),</span>
+<span id="cb13-31"><a></a>                fontsize<span class="op">=</span><span class="dv">8</span>, fontweight<span class="op">=</span><span class="st">'bold'</span>, xytext<span class="op">=</span>(<span class="dv">5</span>, <span class="dv">5</span>), textcoords<span class="op">=</span><span class="st">'offset points'</span>)</span>
+<span id="cb13-32"><a></a>ax.set_title(<span class="st">'t-SNE'</span>, fontsize<span class="op">=</span><span class="dv">14</span>)</span>
+<span id="cb13-33"><a></a>ax.legend(fontsize<span class="op">=</span><span class="dv">9</span>, loc<span class="op">=</span><span class="st">'best'</span>)</span>
+<span id="cb13-34"><a></a>ax.grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb13-35"><a></a></span>
+<span id="cb13-36"><a></a>plt.suptitle(<span class="st">'Word Embeddings: PCA vs. t-SNE'</span>, fontsize<span class="op">=</span><span class="dv">15</span>, y<span class="op">=</span><span class="fl">1.02</span>)</span>
+<span id="cb13-37"><a></a>plt.tight_layout()</span>
+<span id="cb13-38"><a></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+
+</div>
+<img data-src="s3_visualizacion_files/figure-revealjs/cell-10-output-1.png" class="r-stretch"></section></section>
+<section>
+<section id="bloque-4-errores-comunes-al-interpretar-t-sne" class="title-slide slide level1 center" data-background-color="#023e8a">
+<h1>Bloque 4: Errores Comunes al Interpretar t-SNE</h1>
+
+</section>
+<section id="cuidado-con-t-sne" class="slide level2 smaller scrollable">
+<h2>Cuidado con t-SNE ⚠️</h2>
+<p>t-SNE produce visualizaciones hermosas, pero hay <strong>trampas</strong>:</p>
+<div class="fragment">
+<div class="columns">
+<div class="column" style="width:50%;">
+<h3 id="lo-que-no-puedes-concluir">❌ Lo que NO puedes concluir</h3>
+<ol type="1">
+<li><strong>Las distancias entre clusters no son significativas</strong>
+<ul>
+<li>Que un cluster esté lejos de otro no dice nada sobre su “distancia real”</li>
+</ul></li>
+<li><strong>El tamaño de los clusters no es significativo</strong>
+<ul>
+<li>t-SNE puede expandir clusters densos y comprimir clusters dispersos</li>
+</ul></li>
+<li><strong>Es no determinístico</strong>
+<ul>
+<li>Diferentes ejecuciones dan mapas diferentes (depende de <code>random_state</code>)</li>
+</ul></li>
+</ol>
+</div><div class="column" style="width:50%;">
+<h3 id="lo-que-sí-puedes-concluir">✅ Lo que SÍ puedes concluir</h3>
+<ol type="1">
+<li><strong>La estructura local es confiable</strong>
+<ul>
+<li>Si dos puntos están juntos, probablemente están cerca en alta dimensión</li>
+</ul></li>
+<li><strong>La existencia de clusters</strong>
+<ul>
+<li>Si ves clusters separados, probablemente existen</li>
+</ul></li>
+<li><strong>Membresía en clusters</strong>
+<ul>
+<li>Qué puntos pertenecen a qué cluster es confiable</li>
+</ul></li>
+</ol>
+</div></div>
+</div>
+<div class="fragment">
+<div class="callout callout-important callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Regla de oro</strong></p>
+</div>
+<div class="callout-content">
+<p>t-SNE te dice <strong>quién</strong> está con <strong>quién</strong>, pero NO te dice <strong>qué tan lejos</strong> están los grupos entre sí.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="efecto-de-hiperparámetros" class="slide level2 smaller">
+<h2>Efecto de Hiperparámetros</h2>
+<div id="ab19b8cb" class="cell" data-execution_count="10">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">15</span>, <span class="dv">9</span>))</span>
+<span id="cb14-2"><a></a>configs <span class="op">=</span> [</span>
+<span id="cb14-3"><a></a>    (<span class="dv">5</span>, <span class="dv">500</span>), (<span class="dv">5</span>, <span class="dv">2000</span>), (<span class="dv">5</span>, <span class="dv">5000</span>),</span>
+<span id="cb14-4"><a></a>    (<span class="dv">8</span>, <span class="dv">500</span>), (<span class="dv">8</span>, <span class="dv">2000</span>), (<span class="dv">8</span>, <span class="dv">5000</span>),</span>
+<span id="cb14-5"><a></a>]</span>
+<span id="cb14-6"><a></a></span>
+<span id="cb14-7"><a></a><span class="cf">for</span> ax, (perp, iters) <span class="kw">in</span> <span class="bu">zip</span>(axes.flat, configs):</span>
+<span id="cb14-8"><a></a>    tsne_test <span class="op">=</span> TSNE(n_components<span class="op">=</span><span class="dv">2</span>, perplexity<span class="op">=</span>perp, random_state<span class="op">=</span><span class="dv">42</span>,</span>
+<span id="cb14-9"><a></a>                     max_iter<span class="op">=</span>iters, learning_rate<span class="op">=</span><span class="st">'auto'</span>, init<span class="op">=</span><span class="st">'pca'</span>)</span>
+<span id="cb14-10"><a></a>    coords <span class="op">=</span> tsne_test.fit_transform(vectores)</span>
+<span id="cb14-11"><a></a></span>
+<span id="cb14-12"><a></a>    <span class="cf">for</span> cat, color <span class="kw">in</span> color_map.items():</span>
+<span id="cb14-13"><a></a>        mask <span class="op">=</span> [c <span class="op">==</span> color <span class="cf">for</span> c <span class="kw">in</span> colores]</span>
+<span id="cb14-14"><a></a>        ax.scatter(coords[mask, <span class="dv">0</span>], coords[mask, <span class="dv">1</span>],</span>
+<span id="cb14-15"><a></a>                   c<span class="op">=</span>color, s<span class="op">=</span><span class="dv">60</span>, alpha<span class="op">=</span><span class="fl">0.8</span>)</span>
+<span id="cb14-16"><a></a>    <span class="cf">for</span> i, palabra <span class="kw">in</span> <span class="bu">enumerate</span>(palabras):</span>
+<span id="cb14-17"><a></a>        ax.annotate(palabra, (coords[i, <span class="dv">0</span>], coords[i, <span class="dv">1</span>]),</span>
+<span id="cb14-18"><a></a>                    fontsize<span class="op">=</span><span class="dv">6</span>, xytext<span class="op">=</span>(<span class="dv">3</span>, <span class="dv">3</span>), textcoords<span class="op">=</span><span class="st">'offset points'</span>)</span>
+<span id="cb14-19"><a></a></span>
+<span id="cb14-20"><a></a>    ax.set_title(<span class="ss">f'perp=</span><span class="sc">{</span>perp<span class="sc">}</span><span class="ss">, iter=</span><span class="sc">{</span>iters<span class="sc">}</span><span class="ss">'</span>, fontsize<span class="op">=</span><span class="dv">11</span>)</span>
+<span id="cb14-21"><a></a>    ax.set_xticks([])</span>
+<span id="cb14-22"><a></a>    ax.set_yticks([])</span>
+<span id="cb14-23"><a></a></span>
+<span id="cb14-24"><a></a>plt.suptitle(<span class="st">'t-SNE: Efecto de perplejidad e iteraciones'</span>, fontsize<span class="op">=</span><span class="dv">14</span>, y<span class="op">=</span><span class="fl">1.01</span>)</span>
+<span id="cb14-25"><a></a>plt.tight_layout()</span>
+<span id="cb14-26"><a></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+
+</div>
+<img data-src="s3_visualizacion_files/figure-revealjs/cell-11-output-1.png" class="r-stretch"><div class="fragment">
+<div class="callout callout-tip callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Consejo práctico</strong></p>
+</div>
+<div class="callout-content">
+<p>Siempre prueba con <strong>varios valores de perplejidad</strong> y <strong>suficientes iteraciones</strong> (≥1000). Si dos ejecuciones dan resultados muy diferentes, no confíes demasiado en ninguna.</p>
+</div>
+</div>
+</div>
+</div>
+</section></section>
+<section>
+<section id="bloque-5-pca-vs.-t-sne" class="title-slide slide level1 center" data-background-color="#0077b6">
+<h1>Bloque 5: PCA vs.&nbsp;t-SNE</h1>
+
+</section>
+<section id="comparación-directa" class="slide level2 smaller">
+<h2>Comparación Directa</h2>
+<table class="caption-top">
+<colgroup>
+<col style="width: 42%">
+<col style="width: 23%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Aspecto</th>
+<th style="text-align: left;">PCA</th>
+<th style="text-align: left;">t-SNE</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>Tipo</strong></td>
+<td style="text-align: left;">Lineal</td>
+<td style="text-align: left;">No lineal</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Preserva</strong></td>
+<td style="text-align: left;">Varianza global</td>
+<td style="text-align: left;">Vecindades locales</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Determinístico</strong></td>
+<td style="text-align: left;">✅ Sí</td>
+<td style="text-align: left;">❌ No (aleatorio)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Velocidad</strong></td>
+<td style="text-align: left;">Muy rápido <span class="math inline">\(O(nd^2)\)</span></td>
+<td style="text-align: left;">Lento <span class="math inline">\(O(n^2)\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Escalabilidad</strong></td>
+<td style="text-align: left;">✅ Millones de puntos</td>
+<td style="text-align: left;">⚠️ Miles de puntos</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Inversa</strong></td>
+<td style="text-align: left;">✅ Puede reconstruir</td>
+<td style="text-align: left;">❌ No tiene inversa</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Distancias</strong></td>
+<td style="text-align: left;">Significativas</td>
+<td style="text-align: left;">❌ No significativas entre clusters</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Varianza explicada</strong></td>
+<td style="text-align: left;">✅ Cuantificable</td>
+<td style="text-align: left;">❌ No aplica</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Hiperparámetros</strong></td>
+<td style="text-align: left;">Ninguno (solo <span class="math inline">\(k\)</span>)</td>
+<td style="text-align: left;">Perplexity, lr, max_iter</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Mejor para</strong></td>
+<td style="text-align: left;">Exploración inicial, preproceso</td>
+<td style="text-align: left;">Visualización de clusters</td>
+</tr>
+</tbody>
+</table>
+<div class="fragment">
+<div class="callout callout-tip callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>¿Cuándo usar cuál?</strong></p>
+</div>
+<div class="callout-content">
+<ul>
+<li><strong>PCA primero</strong>: para entender cuántas dimensiones “importan” y como preproceso</li>
+<li><strong>t-SNE después</strong>: para visualizar clusters y vecindades en 2D</li>
+<li><strong>Combinación</strong>: PCA a 50 dims → t-SNE a 2 dims (¡más rápido y estable!)</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="bonus-umap" class="slide level2 smaller">
+<h2>Bonus: UMAP</h2>
+<blockquote>
+<p><strong>UMAP</strong> (Uniform Manifold Approximation and Projection) es una alternativa moderna a t-SNE.</p>
+</blockquote>
+<div class="fragment">
+<div class="columns">
+<div class="column" style="width:50%;">
+<h3 id="ventajas-sobre-t-sne">Ventajas sobre t-SNE</h3>
+<ul>
+<li><strong>Más rápido</strong>: <span class="math inline">\(O(n^{1.14})\)</span> vs.&nbsp;<span class="math inline">\(O(n^2)\)</span></li>
+<li><strong>Preserva estructura global</strong> además de local</li>
+<li><strong>Determinístico</strong> (con semilla fija)</li>
+<li><strong>Escalable</strong>: funciona con millones de puntos</li>
+</ul>
+</div><div class="column" style="width:50%;">
+<h3 id="uso">Uso</h3>
+<div class="sourceCode" id="cb15"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a></a><span class="co"># pip install umap-learn</span></span>
+<span id="cb15-2"><a></a><span class="im">from</span> umap <span class="im">import</span> UMAP</span>
+<span id="cb15-3"><a></a></span>
+<span id="cb15-4"><a></a>reducer <span class="op">=</span> UMAP(n_components<span class="op">=</span><span class="dv">2</span>,</span>
+<span id="cb15-5"><a></a>               n_neighbors<span class="op">=</span><span class="dv">15</span>,</span>
+<span id="cb15-6"><a></a>               min_dist<span class="op">=</span><span class="fl">0.1</span>,</span>
+<span id="cb15-7"><a></a>               random_state<span class="op">=</span><span class="dv">42</span>)</span>
+<span id="cb15-8"><a></a>coords_umap <span class="op">=</span> reducer.fit_transform(vectores)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div></div>
+</div>
+<div class="fragment">
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>En la práctica</strong></p>
+</div>
+<div class="callout-content">
+<p>UMAP está reemplazando a t-SNE en muchas aplicaciones. Si trabajas con datasets grandes (&gt;10,000 puntos), UMAP es la mejor opción. Para este curso, t-SNE es suficiente.</p>
+</div>
+</div>
+</div>
+</div>
+</section></section>
+<section>
+<section id="bloque-6-flujo-de-trabajo-completo" class="title-slide slide level1 center" data-background-color="#023e8a">
+<h1>Bloque 6: Flujo de Trabajo Completo</h1>
+
+</section>
+<section id="pipeline-de-visualización-de-embeddings" class="slide level2 smaller">
+<h2>Pipeline de Visualización de Embeddings</h2>
+<div id="5c22284e" class="cell" data-execution_count="11">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a></a><span class="co"># Pipeline completo: Entrenar → Seleccionar → Reducir → Visualizar</span></span>
+<span id="cb16-2"><a></a></span>
+<span id="cb16-3"><a></a><span class="im">from</span> gensim.models <span class="im">import</span> Word2Vec</span>
+<span id="cb16-4"><a></a><span class="im">from</span> sklearn.decomposition <span class="im">import</span> PCA</span>
+<span id="cb16-5"><a></a><span class="im">from</span> sklearn.manifold <span class="im">import</span> TSNE</span>
+<span id="cb16-6"><a></a><span class="im">from</span> sklearn.preprocessing <span class="im">import</span> StandardScaler</span>
+<span id="cb16-7"><a></a></span>
+<span id="cb16-8"><a></a><span class="co"># 1. Ya tenemos el modelo entrenado (modelo)</span></span>
+<span id="cb16-9"><a></a><span class="co"># 2. Seleccionar palabras de interés</span></span>
+<span id="cb16-10"><a></a>palabras_sel <span class="op">=</span> [w <span class="cf">for</span> w <span class="kw">in</span> modelo.wv.index_to_key</span>
+<span id="cb16-11"><a></a>                <span class="cf">if</span> modelo.wv.get_vecattr(w, <span class="st">"count"</span>) <span class="op">&gt;=</span> <span class="dv">1</span>][:<span class="dv">25</span>]</span>
+<span id="cb16-12"><a></a></span>
+<span id="cb16-13"><a></a><span class="co"># 3. Obtener vectores</span></span>
+<span id="cb16-14"><a></a>vecs <span class="op">=</span> np.array([modelo.wv[w] <span class="cf">for</span> w <span class="kw">in</span> palabras_sel])</span>
+<span id="cb16-15"><a></a></span>
+<span id="cb16-16"><a></a><span class="co"># 4. Estandarizar (recomendado antes de PCA/t-SNE)</span></span>
+<span id="cb16-17"><a></a>scaler <span class="op">=</span> StandardScaler()</span>
+<span id="cb16-18"><a></a>vecs_std <span class="op">=</span> scaler.fit_transform(vecs)</span>
+<span id="cb16-19"><a></a></span>
+<span id="cb16-20"><a></a><span class="co"># 5. PCA como preproceso (reducir a 20 dims antes de t-SNE)</span></span>
+<span id="cb16-21"><a></a>n_pca <span class="op">=</span> <span class="bu">min</span>(<span class="dv">20</span>, vecs_std.shape[<span class="dv">0</span>] <span class="op">-</span> <span class="dv">1</span>, vecs_std.shape[<span class="dv">1</span>])</span>
+<span id="cb16-22"><a></a>pca_pre <span class="op">=</span> PCA(n_components<span class="op">=</span>n_pca)</span>
+<span id="cb16-23"><a></a>vecs_pca <span class="op">=</span> pca_pre.fit_transform(vecs_std)</span>
+<span id="cb16-24"><a></a><span class="bu">print</span>(<span class="ss">f"PCA: </span><span class="sc">{</span>vecs_std<span class="sc">.</span>shape[<span class="dv">1</span>]<span class="sc">}</span><span class="ss">D → </span><span class="sc">{</span>n_pca<span class="sc">}</span><span class="ss">D "</span></span>
+<span id="cb16-25"><a></a>      <span class="ss">f"(</span><span class="sc">{</span><span class="bu">sum</span>(pca_pre.explained_variance_ratio_)<span class="sc">:.1%}</span><span class="ss"> varianza)"</span>)</span>
+<span id="cb16-26"><a></a></span>
+<span id="cb16-27"><a></a><span class="co"># 6. t-SNE final</span></span>
+<span id="cb16-28"><a></a>tsne_final <span class="op">=</span> TSNE(n_components<span class="op">=</span><span class="dv">2</span>, perplexity<span class="op">=</span><span class="bu">min</span>(<span class="dv">8</span>, <span class="bu">len</span>(palabras_sel)<span class="op">//</span><span class="dv">3</span>),</span>
+<span id="cb16-29"><a></a>                  random_state<span class="op">=</span><span class="dv">42</span>, max_iter<span class="op">=</span><span class="dv">2000</span>, learning_rate<span class="op">=</span><span class="st">'auto'</span>, init<span class="op">=</span><span class="st">'pca'</span>)</span>
+<span id="cb16-30"><a></a>coords_final <span class="op">=</span> tsne_final.fit_transform(vecs_pca)</span>
+<span id="cb16-31"><a></a></span>
+<span id="cb16-32"><a></a><span class="co"># 7. Visualizar</span></span>
+<span id="cb16-33"><a></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">7</span>))</span>
+<span id="cb16-34"><a></a>ax.scatter(coords_final[:, <span class="dv">0</span>], coords_final[:, <span class="dv">1</span>],</span>
+<span id="cb16-35"><a></a>           c<span class="op">=</span><span class="st">'#0077b6'</span>, s<span class="op">=</span><span class="dv">100</span>, alpha<span class="op">=</span><span class="fl">0.7</span>, edgecolors<span class="op">=</span><span class="st">'white'</span>, linewidth<span class="op">=</span><span class="fl">0.5</span>)</span>
+<span id="cb16-36"><a></a></span>
+<span id="cb16-37"><a></a><span class="cf">for</span> i, w <span class="kw">in</span> <span class="bu">enumerate</span>(palabras_sel):</span>
+<span id="cb16-38"><a></a>    ax.annotate(w, (coords_final[i, <span class="dv">0</span>], coords_final[i, <span class="dv">1</span>]),</span>
+<span id="cb16-39"><a></a>                fontsize<span class="op">=</span><span class="dv">9</span>, fontweight<span class="op">=</span><span class="st">'bold'</span>,</span>
+<span id="cb16-40"><a></a>                xytext<span class="op">=</span>(<span class="dv">6</span>, <span class="dv">6</span>), textcoords<span class="op">=</span><span class="st">'offset points'</span>,</span>
+<span id="cb16-41"><a></a>                bbox<span class="op">=</span><span class="bu">dict</span>(boxstyle<span class="op">=</span><span class="st">'round,pad=0.2'</span>, facecolor<span class="op">=</span><span class="st">'lightyellow'</span>,</span>
+<span id="cb16-42"><a></a>                          alpha<span class="op">=</span><span class="fl">0.7</span>, edgecolor<span class="op">=</span><span class="st">'gray'</span>, linewidth<span class="op">=</span><span class="fl">0.5</span>))</span>
+<span id="cb16-43"><a></a></span>
+<span id="cb16-44"><a></a>ax.set_title(<span class="st">'Pipeline completo: Word2Vec → PCA → t-SNE'</span>, fontsize<span class="op">=</span><span class="dv">14</span>)</span>
+<span id="cb16-45"><a></a>ax.set_xlabel(<span class="st">'t-SNE 1'</span>, fontsize<span class="op">=</span><span class="dv">11</span>)</span>
+<span id="cb16-46"><a></a>ax.set_ylabel(<span class="st">'t-SNE 2'</span>, fontsize<span class="op">=</span><span class="dv">11</span>)</span>
+<span id="cb16-47"><a></a>ax.grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.2</span>)</span>
+<span id="cb16-48"><a></a>plt.tight_layout()</span>
+<span id="cb16-49"><a></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>PCA: 50D → 20D (99.2% varianza)</code></pre>
+</div>
+
+</div>
+<img data-src="s3_visualizacion_files/figure-revealjs/cell-12-output-2.png" class="r-stretch"></section></section>
+<section>
+<section id="bloque-7-resumen-y-conexiones" class="title-slide slide level1 center" data-background-color="#0077b6">
+<h1>Bloque 7: Resumen y Conexiones</h1>
+
+</section>
+<section id="resumen-de-la-semana-4" class="slide level2 smaller">
+<h2>Resumen de la Semana 4</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<h3 id="s1-word2vec">S1: Word2Vec</h3>
+<ul>
+<li>CBOW y Skip-gram</li>
+<li>Negative Sampling</li>
+<li>Propiedades (analogías, similitud)</li>
+</ul>
+<h3 id="s2-glove-y-fasttext">S2: GloVe y FastText</h3>
+<ul>
+<li>GloVe: co-ocurrencia global</li>
+<li>FastText: subpalabras y OOV</li>
+<li>Comparación de los tres modelos</li>
+</ul>
+</div><div class="column" style="width:50%;">
+<h3 id="s3-visualización-hoy">S3: Visualización (hoy)</h3>
+<ul>
+<li><strong>PCA</strong>: reducción lineal, varianza explicada</li>
+<li><strong>t-SNE</strong>: reducción no lineal, clusters locales</li>
+<li><strong>Advertencias</strong>: no sobreinterpretar distancias entre clusters</li>
+<li><strong>Pipeline</strong>: estandarizar → PCA → t-SNE</li>
+</ul>
+<h3 id="próxima-semana-redes-neuronales">Próxima semana: Redes Neuronales</h3>
+<p>La Semana 5 marca el inicio de las <strong>redes neuronales para NLP</strong>: perceptrones, retropropagación y clasificación de texto con MLPs.</p>
+</div></div>
+</section>
+<section id="fórmulas-clave-de-hoy" class="slide level2 smaller">
+<h2>Fórmulas Clave de Hoy</h2>
+<table class="caption-top">
+<colgroup>
+<col style="width: 52%">
+<col style="width: 47%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Concepto</th>
+<th style="text-align: left;">Fórmula</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>PCA — Covarianza</strong></td>
+<td style="text-align: left;"><span class="math inline">\(C = \frac{1}{n}\tilde{X}^T \tilde{X}\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>PCA — Proyección</strong></td>
+<td style="text-align: left;"><span class="math inline">\(Z = \tilde{X} W_k\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>PCA — Varianza explicada</strong></td>
+<td style="text-align: left;"><span class="math inline">\(\frac{\lambda_i}{\sum_j \lambda_j}\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>t-SNE — Similaridad HD</strong></td>
+<td style="text-align: left;"><span class="math inline">\(p_{j \mid i} = \frac{\exp(-\|\vec{x}_i - \vec{x}_j\|^2 / 2\sigma_i^2)}{\sum_{k \neq i} \exp(-\|\vec{x}_i - \vec{x}_k\|^2 / 2\sigma_i^2)}\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>t-SNE — Similaridad LD</strong></td>
+<td style="text-align: left;"><span class="math inline">\(q_{ij} = \frac{(1 + \|\vec{y}_i - \vec{y}_j\|^2)^{-1}}{\sum_{k \neq l}(1 + \|\vec{y}_k - \vec{y}_l\|^2)^{-1}}\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>t-SNE — Objetivo</strong></td>
+<td style="text-align: left;"><span class="math inline">\(\text{KL}(P \| Q) = \sum_{i \neq j} p_{ij} \log \frac{p_{ij}}{q_{ij}}\)</span></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="para-reflexionar" class="slide level2 smaller scrollable">
+<h2>Para Reflexionar 🤔</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<h3 id="preguntas-de-discusión">Preguntas de discusión</h3>
+<ol type="1">
+<li><p>Si PCA explica el 95% de la varianza con 10 componentes, ¿significa que los otros 290 son “inútiles”?</p></li>
+<li><p>¿Por qué <strong>no</strong> deberíamos usar t-SNE como preprocesamiento para un clasificador?</p></li>
+<li><p>Si dos ejecuciones de t-SNE producen mapas muy diferentes, ¿qué nos dice eso sobre los datos?</p></li>
+</ol>
+</div><div class="column" style="width:50%;">
+<h3 id="lecturas-recomendadas">Lecturas recomendadas</h3>
+<ol type="1">
+<li><p>Van der Maaten &amp; Hinton (2008). <em>Visualizing Data using t-SNE.</em> <a href="https://www.jmlr.org/papers/v9/vandermaaten08a.html">JMLR</a></p></li>
+<li><p><a href="https://distill.pub/2016/misread-tsne/">How to Use t-SNE Effectively</a> — Distill.pub (interactivo, excelente)</p></li>
+<li><p>McInnes et al.&nbsp;(2018). <em>UMAP: Uniform Manifold Approximation and Projection.</em> <a href="https://arxiv.org/abs/1802.03426">arXiv:1802.03426</a></p></li>
+<li><p><a href="https://web.stanford.edu/~jurafsky/slp3/6.pdf">Jurafsky &amp; Martin, Ch. 6</a> — Visualización de embeddings</p></li>
+</ol>
+</div></div>
+<div class="fragment">
+<div class="callout callout-important callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>📝 Tarea 1: Analizador de Sentimiento</strong></p>
+</div>
+<div class="callout-content">
+<p>Esta semana se entrega la <strong>Tarea 1</strong>: Analizador de sentimiento usando TF-IDF + Regresión Logística. ¡No la dejen para el último día!</p>
+</div>
+</div>
+</div>
+
+
+</div>
+</section></section>
+    </div>
+  <div class="quarto-auto-generated-content" style="display: none;">
+<div class="footer footer-default">
+<p>NLP y Análisis Semántico | Semana 4</p>
+</div>
+</div></div>
+
+  <script>window.backupDefine = window.define; window.define = undefined;</script>
+  <script src="../../site_libs/revealjs/dist/reveal.js"></script>
+  <!-- reveal.js plugins -->
+  <script src="../../site_libs/revealjs/plugin/quarto-line-highlight/line-highlight.js"></script>
+  <script src="../../site_libs/revealjs/plugin/pdf-export/pdfexport.js"></script>
+  <script src="../../site_libs/revealjs/plugin/reveal-menu/menu.js"></script>
+  <script src="../../site_libs/revealjs/plugin/reveal-menu/quarto-menu.js"></script>
+  <script src="../../site_libs/revealjs/plugin/reveal-chalkboard/plugin.js"></script>
+  <script src="../../site_libs/revealjs/plugin/quarto-support/support.js"></script>
+  
+
+  <script src="../../site_libs/revealjs/plugin/notes/notes.js"></script>
+  <script src="../../site_libs/revealjs/plugin/search/search.js"></script>
+  <script src="../../site_libs/revealjs/plugin/zoom/zoom.js"></script>
+  <script src="../../site_libs/revealjs/plugin/math/math.js"></script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script>
+
+  <script>
+
+      // Full list of configuration options available at:
+      // https://revealjs.com/config/
+      Reveal.initialize({
+'controlsAuto': true,
+'previewLinksAuto': false,
+'pdfSeparateFragments': false,
+'autoAnimateEasing': "ease",
+'autoAnimateDuration': 1,
+'autoAnimateUnmatched': true,
+'jumpToSlide': true,
+'menu': {"side":"left","useTextContentForMissingTitles":true,"markers":false,"loadIcons":false,"custom":[{"title":"Tools","icon":"<i class=\"fas fa-gear\"></i>","content":"<ul class=\"slide-menu-items\">\n<li class=\"slide-tool-item active\" data-item=\"0\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.fullscreen(event)\"><kbd>f</kbd> Fullscreen</a></li>\n<li class=\"slide-tool-item\" data-item=\"1\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.speakerMode(event)\"><kbd>s</kbd> Speaker View</a></li>\n<li class=\"slide-tool-item\" data-item=\"2\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.overview(event)\"><kbd>o</kbd> Slide Overview</a></li>\n<li class=\"slide-tool-item\" data-item=\"3\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.togglePdfExport(event)\"><kbd>e</kbd> PDF Export Mode</a></li>\n<li class=\"slide-tool-item\" data-item=\"4\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.toggleScrollView(event)\"><kbd>r</kbd> Scroll View Mode</a></li>\n<li class=\"slide-tool-item\" data-item=\"5\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.toggleChalkboard(event)\"><kbd>b</kbd> Toggle Chalkboard</a></li>\n<li class=\"slide-tool-item\" data-item=\"6\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.toggleNotesCanvas(event)\"><kbd>c</kbd> Toggle Notes Canvas</a></li>\n<li class=\"slide-tool-item\" data-item=\"7\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.downloadDrawings(event)\"><kbd>d</kbd> Download Drawings</a></li>\n<li class=\"slide-tool-item\" data-item=\"8\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.keyboardHelp(event)\"><kbd>?</kbd> Keyboard Help</a></li>\n</ul>"}],"openButton":true},
+'chalkboard': {"buttons":true},
+'smaller': false,
+ 
+        // Display controls in the bottom right corner
+        controls: false,
+
+        // Help the user learn the controls by providing hints, for example by
+        // bouncing the down arrow when they first encounter a vertical slide
+        controlsTutorial: false,
+
+        // Determines where controls appear, "edges" or "bottom-right"
+        controlsLayout: 'edges',
+
+        // Visibility rule for backwards navigation arrows; "faded", "hidden"
+        // or "visible"
+        controlsBackArrows: 'faded',
+
+        // Display a presentation progress bar
+        progress: true,
+
+        // Display the page number of the current slide
+        slideNumber: 'c/t',
+
+        // 'all', 'print', or 'speaker'
+        showSlideNumber: 'all',
+
+        // Add the current slide number to the URL hash so that reloading the
+        // page/copying the URL will return you to the same slide
+        hash: true,
+
+        // Start with 1 for the hash rather than 0
+        hashOneBasedIndex: false,
+
+        // Flags if we should monitor the hash and change slides accordingly
+        respondToHashChanges: true,
+
+        // Push each slide change to the browser history
+        history: true,
+
+        // Enable keyboard shortcuts for navigation
+        keyboard: true,
+
+        // Enable the slide overview mode
+        overview: true,
+
+        // Disables the default reveal.js slide layout (scaling and centering)
+        // so that you can use custom CSS layout
+        disableLayout: false,
+
+        // Vertical centering of slides
+        center: false,
+
+        // Enables touch navigation on devices with touch input
+        touch: true,
+
+        // Loop the presentation
+        loop: false,
+
+        // Change the presentation direction to be RTL
+        rtl: false,
+
+        // see https://revealjs.com/vertical-slides/#navigation-mode
+        navigationMode: 'linear',
+
+        // Randomizes the order of slides each time the presentation loads
+        shuffle: false,
+
+        // Turns fragments on and off globally
+        fragments: true,
+
+        // Flags whether to include the current fragment in the URL,
+        // so that reloading brings you to the same fragment position
+        fragmentInURL: false,
+
+        // Flags if the presentation is running in an embedded mode,
+        // i.e. contained within a limited portion of the screen
+        embedded: false,
+
+        // Flags if we should show a help overlay when the questionmark
+        // key is pressed
+        help: true,
+
+        // Flags if it should be possible to pause the presentation (blackout)
+        pause: true,
+
+        // Flags if speaker notes should be visible to all viewers
+        showNotes: false,
+
+        // Global override for autoplaying embedded media (null/true/false)
+        autoPlayMedia: null,
+
+        // Global override for preloading lazy-loaded iframes (null/true/false)
+        preloadIframes: null,
+
+        // Number of milliseconds between automatically proceeding to the
+        // next slide, disabled when set to 0, this value can be overwritten
+        // by using a data-autoslide attribute on your slides
+        autoSlide: 0,
+
+        // Stop auto-sliding after user input
+        autoSlideStoppable: true,
+
+        // Use this method for navigation when auto-sliding
+        autoSlideMethod: null,
+
+        // Specify the average time in seconds that you think you will spend
+        // presenting each slide. This is used to show a pacing timer in the
+        // speaker view
+        defaultTiming: null,
+
+        // Enable slide navigation via mouse wheel
+        mouseWheel: false,
+
+        // The display mode that will be used to show slides
+        display: 'block',
+
+        // Hide cursor if inactive
+        hideInactiveCursor: true,
+
+        // Time before the cursor is hidden (in ms)
+        hideCursorTime: 5000,
+
+        // Opens links in an iframe preview overlay
+        previewLinks: false,
+
+        // Transition style (none/fade/slide/convex/concave/zoom)
+        transition: 'slide',
+
+        // Transition speed (default/fast/slow)
+        transitionSpeed: 'default',
+
+        // Transition style for full page slide backgrounds
+        // (none/fade/slide/convex/concave/zoom)
+        backgroundTransition: 'none',
+
+        // Number of slides away from the current that are visible
+        viewDistance: 3,
+
+        // Number of slides away from the current that are visible on mobile
+        // devices. It is advisable to set this to a lower number than
+        // viewDistance in order to save resources.
+        mobileViewDistance: 2,
+
+        // The "normal" size of the presentation, aspect ratio will be preserved
+        // when the presentation is scaled to fit different resolutions. Can be
+        // specified using percentage units.
+        width: 1050,
+
+        height: 700,
+
+        // Factor of the display size that should remain empty around the content
+        margin: 0.1,
+
+        math: {
+          mathjax: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/MathJax.js',
+          config: 'TeX-AMS_HTML-full',
+          tex2jax: {
+            inlineMath: [['\\(','\\)']],
+            displayMath: [['\\[','\\]']],
+            balanceBraces: true,
+            processEscapes: false,
+            processRefs: true,
+            processEnvironments: true,
+            preview: 'TeX',
+            skipTags: ['script','noscript','style','textarea','pre','code'],
+            ignoreClass: 'tex2jax_ignore',
+            processClass: 'tex2jax_process'
+          },
+        },
+
+        // reveal.js plugins
+        plugins: [QuartoLineHighlight, PdfExport, RevealMenu, RevealChalkboard, QuartoSupport,
+
+          RevealMath,
+          RevealNotes,
+          RevealSearch,
+          RevealZoom
+        ]
+      });
+    </script>
+    <script id="quarto-html-after-body" type="application/javascript">
+      window.document.addEventListener("DOMContentLoaded", function (event) {
+        const tabsets =  window.document.querySelectorAll(".panel-tabset-tabby")
+        tabsets.forEach(function(tabset) {
+          const tabby = new Tabby('#' + tabset.id);
+        });
+        const isCodeAnnotation = (el) => {
+          for (const clz of el.classList) {
+            if (clz.startsWith('code-annotation-')) {                     
+              return true;
+            }
+          }
+          return false;
+        }
+        const onCopySuccess = function(e) {
+          // button target
+          const button = e.trigger;
+          // don't keep focus
+          button.blur();
+          // flash "checked"
+          button.classList.add('code-copy-button-checked');
+          var currentTitle = button.getAttribute("title");
+          button.setAttribute("title", "Copied!");
+          let tooltip;
+          if (window.bootstrap) {
+            button.setAttribute("data-bs-toggle", "tooltip");
+            button.setAttribute("data-bs-placement", "left");
+            button.setAttribute("data-bs-title", "Copied!");
+            tooltip = new bootstrap.Tooltip(button, 
+              { trigger: "manual", 
+                customClass: "code-copy-button-tooltip",
+                offset: [0, -8]});
+            tooltip.show();    
+          }
+          setTimeout(function() {
+            if (tooltip) {
+              tooltip.hide();
+              button.removeAttribute("data-bs-title");
+              button.removeAttribute("data-bs-toggle");
+              button.removeAttribute("data-bs-placement");
+            }
+            button.setAttribute("title", currentTitle);
+            button.classList.remove('code-copy-button-checked');
+          }, 1000);
+          // clear code selection
+          e.clearSelection();
+        }
+        const getTextToCopy = function(trigger) {
+            const codeEl = trigger.previousElementSibling.cloneNode(true);
+            for (const childEl of codeEl.children) {
+              if (isCodeAnnotation(childEl)) {
+                childEl.remove();
+              }
+            }
+            return codeEl.innerText;
+        }
+        const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+          text: getTextToCopy
+        });
+        clipboard.on('success', onCopySuccess);
+        if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+          const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+            text: getTextToCopy,
+            container: window.document.getElementById('quarto-embedded-source-code-modal')
+          });
+          clipboardModal.on('success', onCopySuccess);
+        }
+          var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+          var mailtoRegex = new RegExp(/^mailto:/);
+            var filterRegex = new RegExp("https:\/\/fjsuarez\.me");
+          var isInternal = (href) => {
+              return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+          }
+          // Inspect non-navigation links and adorn them if external
+         var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+          for (var i=0; i<links.length; i++) {
+            const link = links[i];
+            if (!isInternal(link.href)) {
+              // undo the damage that might have been done by quarto-nav.js in the case of
+              // links that we want to consider external
+              if (link.dataset.originalHref !== undefined) {
+                link.href = link.dataset.originalHref;
+              }
+            }
+          }
+        function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+          const config = {
+            allowHTML: true,
+            maxWidth: 500,
+            delay: 100,
+            arrow: false,
+            appendTo: function(el) {
+                return el.closest('section.slide') || el.parentElement;
+            },
+            interactive: true,
+            interactiveBorder: 10,
+            theme: 'light-border',
+            placement: 'bottom-start',
+          };
+          if (contentFn) {
+            config.content = contentFn;
+          }
+          if (onTriggerFn) {
+            config.onTrigger = onTriggerFn;
+          }
+          if (onUntriggerFn) {
+            config.onUntrigger = onUntriggerFn;
+          }
+            config['offset'] = [0,0];
+            config['maxWidth'] = 700;
+          window.tippy(el, config); 
+        }
+        const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+        for (var i=0; i<noterefs.length; i++) {
+          const ref = noterefs[i];
+          tippyHover(ref, function() {
+            // use id or data attribute instead here
+            let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+            try { href = new URL(href).hash; } catch {}
+            const id = href.replace(/^#\/?/, "");
+            const note = window.document.getElementById(id);
+            if (note) {
+              return note.innerHTML;
+            } else {
+              return "";
+            }
+          });
+        }
+        const findCites = (el) => {
+          const parentEl = el.parentElement;
+          if (parentEl) {
+            const cites = parentEl.dataset.cites;
+            if (cites) {
+              return {
+                el,
+                cites: cites.split(' ')
+              };
+            } else {
+              return findCites(el.parentElement)
+            }
+          } else {
+            return undefined;
+          }
+        };
+        var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+        for (var i=0; i<bibliorefs.length; i++) {
+          const ref = bibliorefs[i];
+          const citeInfo = findCites(ref);
+          if (citeInfo) {
+            tippyHover(citeInfo.el, function() {
+              var popup = window.document.createElement('div');
+              citeInfo.cites.forEach(function(cite) {
+                var citeDiv = window.document.createElement('div');
+                citeDiv.classList.add('hanging-indent');
+                citeDiv.classList.add('csl-entry');
+                var biblioDiv = window.document.getElementById('ref-' + cite);
+                if (biblioDiv) {
+                  citeDiv.innerHTML = biblioDiv.innerHTML;
+                }
+                popup.appendChild(citeDiv);
+              });
+              return popup.innerHTML;
+            });
+          }
+        }
+      });
+      </script>
+    
+
+</body></html>
