@@ -1295,6 +1295,13 @@
     "text": "Introducción a NLP\nExpresiones Regulares\nPreprocesamiento de Texto\n\n\n\n\n\nBolsa de Palabras (BoW) y One-hot Encoding\nTF-IDF: Encontrando lo Relevante\nInformación Mutua Puntual (PMI) y N-gramas\n\n\n\n\n\nModelos de Lenguaje N-gram y Regla de la Cadena\nEvaluación: Perplejidad y Técnicas de Suavizado\nModelos Ocultos de Markov (HMM) para Etiquetado POS\n\n\n\n\n\nWord2Vec: Skip-gram y CBOW\nGloVe y FastText: Embeddings de Subpalabras\nVisualización de Datos de Alta Dimensión: t-SNE y PCA"
   },
   {
+    "objectID": "index.html#tareas",
+    "href": "index.html#tareas",
+    "title": "NLP y Análisis Semántico",
+    "section": "Tareas",
+    "text": "Tareas\n\nTarea 1: Analizador de Sentimiento con TF-IDF + Regresión Logística — Entrega: Semana 4"
+  },
+  {
     "objectID": "index.html#información-general",
     "href": "index.html#información-general",
     "title": "NLP y Análisis Semántico",
