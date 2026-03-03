@@ -23,6 +23,7 @@ format: html
 
 ### Semana 4
 - [Word2Vec: Skip-gram y CBOW](slides/semana04/s1_word2vec.qmd)
+- [GloVe y FastText: Embeddings de Subpalabras](slides/semana04/s2_glove_fasttext.qmd)
 
 ## Información general
 - [Programa del Curso](programa.qmd)

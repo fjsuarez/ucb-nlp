@@ -1,0 +1,972 @@
+---
+title: "La Revolución Vectorial"
+subtitle: "S2: GloVe y FastText — Embeddings de Subpalabras"
+author: "Prof. Francisco Suárez"
+institute: "Universidad Católica Boliviana"
+date: "2026-03-04"
+format:
+  revealjs:
+    theme: sky
+    transition: slide
+    slide-number: true
+    chalkboard: true
+    code-fold: true
+    code-tools: true
+    highlight-style: github
+    footer: "NLP y Análisis Semántico | Semana 4"
+    logo: ""
+    incremental: false
+    scrollable: true
+execute:
+  echo: true
+  warning: false
+---
+
+## Agenda de Hoy {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+**Primera Parte**
+
+1. 🔄 Repaso: Word2Vec y sus limitaciones
+2. 🌐 GloVe: Lo mejor de dos mundos
+3. 📐 La matemática detrás de GloVe
+
+:::
+::: {.column width="50%"}
+**Segunda Parte**
+
+4. 🧩 FastText: Embeddings de subpalabras
+5. 🆚 Comparación: Word2Vec vs. GloVe vs. FastText
+6. 🛠️ Implementación práctica
+
+:::
+:::
+
+# Bloque 1: Repaso y Motivación {background-color="#0077b6"}
+
+## ¿Dónde Quedamos? {.smaller}
+
+En la sesión anterior aprendimos **Word2Vec**:
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Lo que logramos
+
+- ✅ Vectores **densos** de baja dimensión
+- ✅ Palabras similares → vectores cercanos
+- ✅ Aritmética de palabras (rey - hombre + mujer ≈ reina)
+- ✅ Entrenamiento eficiente con Negative Sampling
+
+:::
+::: {.column width="50%"}
+
+### Lo que nos falta resolver
+
+- ❌ Word2Vec usa **ventanas locales** — no aprovecha estadísticas globales del corpus
+- ❌ **Una palabra = un vector** — no maneja polisemia
+- ❌ **Palabras fuera del vocabulario (OOV)** — si no vio la palabra, no tiene vector
+
+:::
+:::
+
+. . .
+
+::: {.callout-note}
+## Hoy veremos dos modelos que atacan estos problemas
+- **GloVe** → Aprovecha estadísticas **globales** de co-ocurrencia
+- **FastText** → Resuelve el problema de **OOV** usando subpalabras
+:::
+
+## Dos Filosofías para Aprender Embeddings {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Métodos basados en conteo
+
+- Construir una **matriz de co-ocurrencia** global
+- Aplicar **factorización** (SVD, NMF)
+- Ejemplo: LSA (Latent Semantic Analysis)
+
+**Ventaja:** Captura estadísticas globales
+
+**Desventaja:** Las matrices son enormes y dispersas
+
+:::
+::: {.column width="50%"}
+
+### Métodos basados en predicción
+
+- Entrenar una red neuronal para **predecir** palabras
+- El embedding es un subproducto del entrenamiento
+- Ejemplo: **Word2Vec**
+
+**Ventaja:** Captura patrones locales, analogías
+
+**Desventaja:** Solo ve ventanas locales, no todo el corpus
+
+:::
+:::
+
+. . .
+
+::: {.callout-tip}
+## La pregunta clave
+¿Podemos combinar lo mejor de ambos? → **¡Sí! Eso es GloVe.**
+:::
+
+# Bloque 2: GloVe — Global Vectors {background-color="#023e8a"}
+
+## GloVe (Pennington et al., 2014) {.smaller}
+
+> **GloVe = Global Vectors for Word Representation**
+
+. . .
+
+::: {.columns}
+::: {.column width="50%"}
+
+### La idea central
+
+GloVe aprende embeddings que codifican directamente la información de la **matriz de co-ocurrencia global**.
+
+En vez de predecir palabras vecinas (como Word2Vec), GloVe se pregunta:
+
+> ¿Puedo aprender vectores tales que su **producto punto** sea igual al **logaritmo** de su co-ocurrencia?
+
+:::
+::: {.column width="50%"}
+
+### Publicación
+
+- **Autores:** Jeffrey Pennington, Richard Socher, Christopher Manning (Stanford)
+- **Año:** 2014
+- **Paper:** *GloVe: Global Vectors for Word Representation* (EMNLP 2014)
+- **Insight clave:** Las **razones** de co-ocurrencia son más informativas que los conteos brutos
+
+:::
+:::
+
+## Matriz de Co-ocurrencia {.smaller}
+
+### Paso 1: Construir la matriz $X$
+
+$X_{ij}$ = número de veces que la palabra $j$ aparece en el **contexto** de la palabra $i$ (en todo el corpus).
+
+. . .
+
+**Ejemplo con ventana $c = 1$:**
+
+> Corpus: "el gato come . el perro come . el gato duerme ."
+
+| | el | gato | perro | come | duerme | . |
+|:------|:--:|:----:|:-----:|:----:|:------:|:-:|
+| **el** | 0 | 2 | 1 | 0 | 0 | 0 |
+| **gato** | 2 | 0 | 0 | 1 | 1 | 0 |
+| **perro** | 1 | 0 | 0 | 1 | 0 | 0 |
+| **come** | 0 | 1 | 1 | 0 | 0 | 2 |
+| **duerme** | 0 | 1 | 0 | 0 | 0 | 1 |
+| **.** | 0 | 0 | 0 | 2 | 1 | 0 |
+
+. . .
+
+::: {.callout-note}
+La matriz es **simétrica** ($X_{ij} = X_{ji}$) si usamos una ventana simétrica.
+:::
+
+## El Insight Clave: Razones de Co-ocurrencia {.smaller}
+
+Lo que hace a GloVe diferente es que se enfoca en las **razones** entre probabilidades de co-ocurrencia:
+
+. . .
+
+Definimos: $P_{ij} = P(j \mid i) = \frac{X_{ij}}{X_i}$ donde $X_i = \sum_k X_{ik}$
+
+::: {.columns}
+::: {.column width="55%"}
+
+### Ejemplo (datos reales de un corpus grande)
+
+Consideremos las palabras **hielo** y **vapor**:
+
+| Palabra $k$ | $P(k \mid \text{hielo})$ | $P(k \mid \text{vapor})$ | Razón |
+|:------------|:---:|:---:|:-----:|
+| sólido | $1.9 \times 10^{-4}$ | $2.2 \times 10^{-5}$ | **8.9** |
+| gas | $6.6 \times 10^{-5}$ | $7.8 \times 10^{-4}$ | **0.085** |
+| agua | $3.0 \times 10^{-3}$ | $2.2 \times 10^{-3}$ | **1.36** |
+| moda | $1.7 \times 10^{-5}$ | $1.8 \times 10^{-5}$ | **0.96** |
+
+:::
+::: {.column width="45%"}
+
+### Interpretación
+
+$$\frac{P(k \mid \text{hielo})}{P(k \mid \text{vapor})}$$
+
+- **Grande** (≫ 1): $k$ está más asociada con "hielo"
+- **Pequeña** (≪ 1): $k$ está más asociada con "vapor"
+- **Cercana a 1**: $k$ es igualmente relevante (o irrelevante) para ambas
+
+:::
+:::
+
+. . .
+
+::: {.callout-important}
+## La clave
+Las razones de co-ocurrencia **discriminan** mejor que las probabilidades simples. GloVe aprende vectores que codifican estas razones.
+:::
+
+## La Función Objetivo de GloVe {.smaller}
+
+GloVe quiere que los vectores aprendidos satisfagan:
+
+$$\vec{w}_i^T \vec{\tilde{w}}_j + b_i + \tilde{b}_j = \log(X_{ij})$$
+
+. . .
+
+donde:
+
+- $\vec{w}_i$ — vector de la palabra $i$ (embedding principal)
+- $\vec{\tilde{w}}_j$ — vector de la palabra $j$ (embedding de contexto)
+- $b_i, \tilde{b}_j$ — sesgos (bias) escalares
+- $X_{ij}$ — conteo de co-ocurrencia
+
+. . .
+
+### Función de pérdida completa
+
+$$J = \sum_{i,j=1}^{|V|} f(X_{ij}) \left(\vec{w}_i^T \vec{\tilde{w}}_j + b_i + \tilde{b}_j - \log X_{ij}\right)^2$$
+
+. . .
+
+::: {.callout-note}
+## Notación
+$f(X_{ij})$ es una **función de ponderación** que controla la importancia de cada par.
+:::
+
+## La Función de Ponderación $f(x)$ {.smaller}
+
+No todas las co-ocurrencias son igualmente importantes:
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Definición
+
+$$f(x) = \begin{cases} (x / x_{\max})^\alpha & \text{si } x < x_{\max} \\ 1 & \text{si } x \geq x_{\max} \end{cases}$$
+
+Con valores típicos: $x_{\max} = 100$, $\alpha = 3/4$.
+
+:::
+::: {.column width="50%"}
+
+### ¿Por qué?
+
+- **Co-ocurrencias raras** ($X_{ij}$ pequeño): peso bajo — podrían ser ruido
+- **Co-ocurrencias muy frecuentes** ($X_{ij}$ grande): peso limitado a 1 — no deben dominar
+- **Co-ocurrencias cero** ($X_{ij} = 0$): $f(0) = 0$ — se ignoran completamente (¡y $\log 0$ no se calcula!)
+
+:::
+:::
+
+. . .
+
+```{python}
+#| code-fold: false
+import numpy as np
+import matplotlib.pyplot as plt
+
+x = np.linspace(0, 150, 300)
+x_max = 100
+alpha = 3/4
+
+f_x = np.where(x < x_max, (x / x_max) ** alpha, 1.0)
+
+plt.figure(figsize=(8, 3))
+plt.plot(x, f_x, linewidth=2, color='#0077b6')
+plt.axvline(x=x_max, color='gray', linestyle='--', alpha=0.7, label=f'$x_{{max}} = {x_max}$')
+plt.xlabel('$X_{ij}$', fontsize=12)
+plt.ylabel('$f(X_{ij})$', fontsize=12)
+plt.title('Función de ponderación de GloVe', fontsize=13)
+plt.legend(fontsize=11)
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
+```
+
+## GloVe vs. Word2Vec: Resumen {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Word2Vec
+
+| Aspecto | Detalle |
+|:--------|:--------|
+| **Tipo** | Predictivo (red neuronal) |
+| **Datos** | Ventanas locales |
+| **Objetivo** | Predecir palabras vecinas |
+| **Entrenamiento** | SGD sobre pares (w, contexto) |
+| **Estadísticas** | Locales |
+
+:::
+::: {.column width="50%"}
+
+### GloVe
+
+| Aspecto | Detalle |
+|:--------|:--------|
+| **Tipo** | Basado en conteo + optimización |
+| **Datos** | Matriz de co-ocurrencia **global** |
+| **Objetivo** | $\vec{w}_i^T \vec{\tilde{w}}_j \approx \log X_{ij}$ |
+| **Entrenamiento** | Mínimos cuadrados ponderados |
+| **Estadísticas** | Globales ✅ |
+
+:::
+:::
+
+. . .
+
+::: {.callout-tip}
+## En la práctica
+Ambos producen embeddings de calidad comparable. GloVe tiende a ser mejor con corpus grandes y Word2Vec con corpus pequeños. La elección suele depender de la disponibilidad de modelos pre-entrenados.
+:::
+
+# Bloque 3: FastText — Más Allá de las Palabras {background-color="#0077b6"}
+
+## El Problema de las Palabras Desconocidas (OOV) {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### El escenario
+
+Entrenas Word2Vec o GloVe con un corpus. Luego aparece una palabra nueva:
+
+- "**desconfigurar**" — no estaba en el vocabulario
+- "**electrodomésticos**" — tampoco
+- "**bolivianísimo**" — menos
+
+### El resultado
+
+```python
+modelo_w2v["desconfigurar"]
+# KeyError: "word 'desconfigurar' not in vocabulary"
+```
+
+😱 **¡No hay vector!**
+
+:::
+::: {.column width="50%"}
+
+### ¿Por qué es grave?
+
+- Los idiomas son **productivos**: siempre hay palabras nuevas
+- **Errores ortográficos**: "computdora" vs. "computadora"
+- **Morfología rica**: especialmente en español
+  - caminar → caminando, caminé, caminaremos, caminable...
+- **Dominios especializados**: terminología técnica nueva
+
+. . .
+
+### La observación clave
+
+> "**desconfigurar**" contiene "**des-**" + "**configurar**". Si el modelo entendiera los **componentes**, podría inferir el significado. 💡
+
+:::
+:::
+
+## FastText (Bojanowski et al., 2017) {.smaller}
+
+> **Idea central:** Representar cada palabra como la **suma de sus n-gramas de caracteres**.
+
+. . .
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Publicación
+
+- **Autores:** Piotr Bojanowski, Edouard Grave, Armand Joulin, Tomáš Mikolov (Facebook AI Research)
+- **Año:** 2017
+- **Paper:** *Enriching Word Vectors with Subword Information*
+- **Basado en:** Skip-gram de Word2Vec
+
+:::
+::: {.column width="50%"}
+
+### La innovación
+
+En vez de aprender **un vector por palabra**, FastText aprende **vectores para n-gramas de caracteres** y compone el embedding de la palabra como su **suma**.
+
+:::
+:::
+
+. . .
+
+::: {.callout-important}
+## El cambio fundamental
+Word2Vec/GloVe: la unidad mínima es la **palabra**
+
+FastText: la unidad mínima es el **n-grama de caracteres** (subpalabra)
+:::
+
+## N-gramas de Caracteres {.smaller}
+
+### ¿Cómo funciona?
+
+1. Agregar marcadores de inicio `<` y fin `>` a cada palabra
+2. Extraer todos los n-gramas de caracteres (típicamente $n \in [3, 6]$)
+3. El vector de la palabra = **suma** de los vectores de sus n-gramas
+
+. . .
+
+**Ejemplo: "gatos"** con $n \in [3, 5]$:
+
+| $n$ | N-gramas |
+|:---:|:---------|
+| 3 | `<ga`, `gat`, `ato`, `tos`, `os>` |
+| 4 | `<gat`, `gato`, `atos`, `tos>` |
+| 5 | `<gato`, `gatos`, `atos>` |
+
+. . .
+
+Además, la **palabra completa** `<gatos>` también tiene su propio vector.
+
+$$\vec{v}_{\text{gatos}} = \vec{v}_{\text{<ga}} + \vec{v}_{\text{gat}} + \vec{v}_{\text{ato}} + \cdots + \vec{v}_{\text{<gatos>}}$$
+
+## ¿Por Qué Funciona? {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Compartir subpalabras
+
+Palabras **morfológicamente relacionadas** comparten n-gramas:
+
+| Palabra | Algunos n-gramas |
+|:--------|:-----------------|
+| **gato** | `<ga`, `gat`, `ato`, `to>` |
+| **gatos** | `<ga`, `gat`, `ato`, `tos` |
+| **gata** | `<ga`, `gat`, `ata`, `ta>` |
+| **gatera** | `<ga`, `gat`, `ate`, `ter` |
+
+Todas comparten `<ga`, `gat` → vectores relacionados automáticamente.
+
+:::
+::: {.column width="50%"}
+
+### Para palabras OOV
+
+Si aparece "**gatuno**" (nunca vista en entrenamiento):
+
+N-gramas: `<ga`, `gat`, `atu`, `tun`, `uno`, `no>`...
+
+- `<ga`, `gat` → compartidos con "gato", "gata"
+- El modelo **infiere** un vector razonable
+
+```python
+modelo_ft["gatuno"]  # ¡Funciona! 🎉
+# Vector inferido a partir de subpalabras
+```
+
+:::
+:::
+
+. . .
+
+::: {.callout-tip}
+## Ventaja para idiomas morfológicamente ricos
+El español, turco, finés, alemán... tienen morfología compleja. FastText captura estas regularidades automáticamente gracias a los n-gramas compartidos.
+:::
+
+## FastText: La Formalización {.smaller}
+
+### Función objetivo
+
+FastText modifica el Skip-gram de Word2Vec. Para cada palabra $w$, sea $\mathcal{G}_w$ el conjunto de sus n-gramas:
+
+$$s(w, c) = \sum_{g \in \mathcal{G}_w} \vec{z}_g^T \vec{v}_c$$
+
+. . .
+
+donde:
+
+- $\vec{z}_g$ — vector del n-grama $g$
+- $\vec{v}_c$ — vector de la palabra de contexto $c$
+- $s(w, c)$ — score de que $c$ sea contexto de $w$
+
+. . .
+
+### Comparación con Skip-gram
+
+| Modelo | Score $s(w, c)$ |
+|:-------|:----------------|
+| **Skip-gram** | $\vec{v}_w^T \vec{u}_c$ |
+| **FastText** | $\sum_{g \in \mathcal{G}_w} \vec{z}_g^T \vec{v}_c$ |
+
+. . .
+
+El entrenamiento usa **Negative Sampling** igual que Word2Vec, solo cambia cómo se computa el score.
+
+## Ejemplo Práctico: Vocabulario OOV {.smaller}
+
+```{python}
+#| code-fold: false
+# Demostración con n-gramas de caracteres
+
+def extraer_ngrams(palabra, min_n=3, max_n=6):
+    """Extraer n-gramas de caracteres de una palabra."""
+    palabra_ext = f"<{palabra}>"
+    ngrams = []
+    for n in range(min_n, max_n + 1):
+        for i in range(len(palabra_ext) - n + 1):
+            ngrams.append(palabra_ext[i:i+n])
+    return ngrams
+
+# Ejemplo
+for palabra in ["gato", "gatos", "gata", "gatuno"]:
+    ngrams = extraer_ngrams(palabra, min_n=3, max_n=4)
+    print(f"'{palabra}' → {ngrams}")
+```
+
+. . .
+
+```{python}
+#| code-fold: false
+# ¿Cuántos n-gramas comparten?
+def ngrams_compartidos(w1, w2, min_n=3, max_n=6):
+    ng1 = set(extraer_ngrams(w1, min_n, max_n))
+    ng2 = set(extraer_ngrams(w2, min_n, max_n))
+    compartidos = ng1 & ng2
+    jaccard = len(compartidos) / len(ng1 | ng2)
+    return compartidos, jaccard
+
+pares = [("gato", "gatos"), ("gato", "gata"), ("gato", "gatuno"), ("gato", "mesa")]
+
+print("\nN-gramas compartidos (n ∈ [3,6]):")
+print("-" * 55)
+for w1, w2 in pares:
+    compartidos, jaccard = ngrams_compartidos(w1, w2)
+    print(f"  ({w1:8s}, {w2:8s}): {len(compartidos):2d} compartidos, "
+          f"Jaccard = {jaccard:.3f}")
+```
+
+# Bloque 4: Comparación de los Tres Modelos {background-color="#023e8a"}
+
+## Word2Vec vs. GloVe vs. FastText {.smaller}
+
+| Aspecto | Word2Vec | GloVe | FastText |
+|:--------|:---------|:------|:---------|
+| **Año** | 2013 | 2014 | 2017 |
+| **Enfoque** | Predictivo (local) | Conteo + optimización (global) | Predictivo + subpalabras |
+| **Unidad mínima** | Palabra | Palabra | N-grama de caracteres |
+| **OOV** | ❌ No soporta | ❌ No soporta | ✅ Infiere vectores |
+| **Morfología** | ❌ Ignora | ❌ Ignora | ✅ Captura |
+| **Velocidad** | Rápido | Rápido | Más lento (más params) |
+| **Tamaño modelo** | Mediano | Mediano | Grande |
+| **Mejor para** | General | Corpus grandes | Idiomas ricos / OOV |
+
+. . .
+
+::: {.callout-note}
+## ¿Cuál usar?
+- **Necesitas manejar OOV**: FastText ✅
+- **Corpus muy grande, solo inglés**: GloVe o Word2Vec
+- **Idioma con morfología rica (español, turco...)**: FastText ✅
+- **Prototipo rápido**: El que tenga pre-entrenado disponible
+:::
+
+## Modelos Pre-entrenados Disponibles {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Inglés
+
+| Modelo | Dimensión | Vocabulario |
+|:-------|:---------:|:-----------:|
+| Word2Vec Google News | 300 | 3M |
+| GloVe Wikipedia | 50-300 | 400K |
+| GloVe Common Crawl | 300 | 2.2M |
+| FastText Wiki | 300 | 1M |
+| FastText Crawl | 300 | 2M |
+
+:::
+::: {.column width="50%"}
+
+### Español 🇧🇴🇪🇸
+
+| Modelo | Dimensión | Fuente |
+|:-------|:---------:|:------:|
+| FastText Wiki+Crawl | 300 | [fasttext.cc](https://fasttext.cc/docs/en/crawl-vectors.html) |
+| SBWCE Word2Vec | 300 | [crscardellino.ar](https://crscardellino.ar/SBWCE/) |
+| GloVe SBWCE | 300 | Stanford NLP |
+| FastText Wiki (es) | 300 | Facebook AI |
+
+:::
+:::
+
+. . .
+
+::: {.callout-tip}
+## Recomendación para este curso
+Para tareas en **español**, recomiendo los embeddings de **FastText** pre-entrenados en Wikipedia + Common Crawl (disponibles en 157 idiomas). Son los más versátiles por su manejo de OOV.
+:::
+
+# Bloque 5: Implementación Práctica {background-color="#0077b6"}
+
+## Entrenando FastText con Gensim {.smaller}
+
+```{python}
+#| code-fold: false
+from gensim.models import FastText
+
+# Mismo corpus que usamos con Word2Vec
+corpus = [
+    ["el", "gato", "come", "pescado", "fresco"],
+    ["el", "perro", "come", "carne", "roja"],
+    ["mi", "gato", "duerme", "en", "el", "sofá"],
+    ["mi", "perro", "duerme", "en", "la", "cama"],
+    ["el", "gato", "negro", "persigue", "al", "ratón"],
+    ["el", "perro", "grande", "persigue", "al", "gato"],
+    ["el", "niño", "come", "una", "manzana", "roja"],
+    ["la", "niña", "come", "una", "naranja", "fresca"],
+    ["el", "gato", "juega", "con", "la", "pelota"],
+    ["el", "perro", "juega", "con", "un", "hueso"],
+    ["el", "gato", "bebe", "leche", "fresca"],
+    ["el", "perro", "bebe", "agua", "fría"],
+    ["un", "gato", "pequeño", "maúlla", "fuerte"],
+    ["un", "perro", "pequeño", "ladra", "fuerte"],
+    ["la", "niña", "acaricia", "al", "gato", "negro"],
+    ["el", "niño", "acaricia", "al", "perro", "grande"],
+]
+
+# Entrenar FastText
+modelo_ft = FastText(
+    sentences=corpus,
+    vector_size=50,
+    window=3,
+    min_count=1,
+    sg=1,              # Skip-gram
+    min_n=3,           # N-grama mínimo
+    max_n=6,           # N-grama máximo
+    epochs=200,
+    seed=42
+)
+
+print(f"Vocabulario: {len(modelo_ft.wv)} palabras")
+print(f"Dimensión: {modelo_ft.wv.vector_size}")
+```
+
+## FastText: Magia con Palabras OOV {.smaller}
+
+```{python}
+#| code-fold: false
+# Palabras que NO están en el vocabulario de entrenamiento
+palabras_oov = ["gatos", "gatito", "perrito", "comida", "fresquito"]
+
+print("Vectores para palabras OOV (inferidos por subpalabras):")
+print("-" * 55)
+for palabra in palabras_oov:
+    en_vocab = palabra in modelo_ft.wv.key_to_index
+    vec = modelo_ft.wv[palabra]  # ¡No da error!
+    norma = np.linalg.norm(vec)
+    print(f"  '{palabra:12s}' en vocab: {str(en_vocab):5s}  "
+          f"norma = {norma:.3f}  primeros 3 dims: {vec[:3].round(3)}")
+```
+
+. . .
+
+```{python}
+#| code-fold: false
+# Similitud de palabras OOV con palabras del vocabulario
+print("\nSimilitud de palabras OOV con 'gato':")
+for palabra in ["gatos", "gatito", "perrito", "comida"]:
+    sim = modelo_ft.wv.similarity("gato", palabra)
+    barra = "█" * int(max(0, sim) * 20)
+    print(f"  sim(gato, {palabra:12s}) = {sim:+.4f} {barra}")
+```
+
+## Word2Vec vs. FastText: Comparación Directa {.smaller}
+
+```{python}
+#| code-fold: false
+from gensim.models import Word2Vec
+
+# Re-entrenar Word2Vec con el mismo corpus
+modelo_w2v = Word2Vec(
+    sentences=corpus,
+    vector_size=50,
+    window=3,
+    min_count=1,
+    sg=1,
+    negative=5,
+    epochs=200,
+    seed=42
+)
+
+# Comparar palabras más similares
+print("Top 5 palabras más similares a 'gato':")
+print(f"\n{'Word2Vec':30s} {'FastText':30s}")
+print("-" * 60)
+
+sims_w2v = modelo_w2v.wv.most_similar("gato", topn=5)
+sims_ft = modelo_ft.wv.most_similar("gato", topn=5)
+
+for i in range(5):
+    w2v_str = f"{sims_w2v[i][0]:12s} ({sims_w2v[i][1]:.3f})"
+    ft_str = f"{sims_ft[i][0]:12s} ({sims_ft[i][1]:.3f})"
+    print(f"  {w2v_str:30s} {ft_str:30s}")
+```
+
+. . .
+
+::: {.callout-note}
+## Observación
+Con un corpus tan pequeño las diferencias son sutiles. En corpus grandes, FastText muestra ventajas claras en palabras raras y morfológicamente complejas.
+:::
+
+## Cargando Embeddings Pre-entrenados {.smaller}
+
+```{python}
+#| eval: false
+#| code-fold: false
+import gensim.downloader as api
+
+# ── GloVe pre-entrenado (inglés) ──
+# Descarga automática desde gensim-data (~66MB para 100d)
+glove = api.load("glove-wiki-gigaword-100")
+
+print("GloVe: palabras similares a 'king'")
+for w, s in glove.most_similar("king", topn=5):
+    print(f"  {w:15s} {s:.4f}")
+
+# Analogía: king - man + woman ≈ ?
+result = glove.most_similar(
+    positive=["king", "woman"],
+    negative=["man"],
+    topn=3
+)
+print(f"\nking - man + woman ≈ {result[0][0]} ({result[0][1]:.4f})")
+
+
+# ── FastText pre-entrenado (español) ──
+# Descargar desde https://fasttext.cc/docs/en/crawl-vectors.html
+# Archivo: cc.es.300.bin (~4.5GB)
+from gensim.models import FastText
+modelo_es = FastText.load_fasttext_format("cc.es.300.bin")
+
+print("\nFastText (es): similares a 'computadora'")
+for w, s in modelo_es.wv.most_similar("computadora", topn=5):
+    print(f"  {w:15s} {s:.4f}")
+
+# ¡Funciona con errores ortográficos!
+print(f"\nsim(computadora, computdora) = "
+      f"{modelo_es.wv.similarity('computadora', 'computdora'):.4f}")
+```
+
+. . .
+
+::: {.callout-tip}
+## Modelos disponibles en `gensim.downloader`
+```python
+import gensim.downloader as api
+print(list(api.info()['models'].keys()))
+# ['fasttext-wiki-news-subwords-300', 'glove-twitter-25',
+#  'glove-wiki-gigaword-50', 'glove-wiki-gigaword-100', ...]
+```
+:::
+
+# Bloque 6: Evaluación de Embeddings {background-color="#023e8a"}
+
+## ¿Cómo Sabemos si los Embeddings son Buenos? {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Evaluación intrínseca
+
+Mide la calidad de los vectores **directamente**:
+
+1. **Analogías de palabras**
+   - "rey : reina :: hombre : mujer"
+   - Dataset: Google Analogy Test Set
+
+2. **Similitud de palabras**
+   - Correlación con juicios humanos
+   - Datasets: WordSim-353, SimLex-999
+
+3. **Categorización**
+   - ¿Se agrupan bien las palabras por categoría?
+
+:::
+::: {.column width="50%"}
+
+### Evaluación extrínseca
+
+Mide el impacto en una **tarea downstream**:
+
+1. **Clasificación de texto**
+   - ¿Mejora la F1 al usar estos embeddings?
+
+2. **NER (Named Entity Recognition)**
+   - ¿Se reconocen mejor las entidades?
+
+3. **Análisis de sentimiento**
+   - ¿Se clasifica mejor la polaridad?
+
+. . .
+
+::: {.callout-tip}
+## En la práctica
+La evaluación **extrínseca** es más importante: ¿los embeddings sirven para **tu** tarea específica?
+:::
+
+:::
+:::
+
+## Dataset de Analogías {.smaller}
+
+```{python}
+#| code-fold: false
+# Evaluación con analogías simples usando nuestro modelo pequeño
+analogias = [
+    # (a, b, c, esperado): a es a b como c es a ?
+    ("gato", "gatos", "perro", "perros"),    # Dificil sin "gatos"/"perros" en vocab
+    ("niño", "niña", "perro", "gata"),       # género
+    ("come", "gato", "bebe", "perro"),       # acción-animal
+]
+
+print("Test de analogías (modelo pequeño):")
+print("-" * 60)
+for a, b, c, esperado in analogias:
+    try:
+        resultado = modelo_ft.wv.most_similar(
+            positive=[b, c], negative=[a], topn=3
+        )
+        predicho = resultado[0][0]
+        correcto = "✅" if predicho == esperado else "❌"
+        print(f"  {a:8s} : {b:8s} :: {c:8s} : ?")
+        print(f"    Esperado: {esperado:10s}  Predicho: {predicho:10s} "
+              f"({resultado[0][1]:.3f}) {correcto}")
+    except KeyError as e:
+        print(f"  {a:8s} : {b:8s} :: {c:8s} : ? → Palabra no encontrada: {e}")
+```
+
+. . .
+
+::: {.callout-warning}
+## Nota
+Con un corpus de 16 oraciones los resultados no serán perfectos. Con un corpus de millones de palabras (como el de Google News), Word2Vec/GloVe/FastText logran ~60-75% en tests de analogías.
+:::
+
+# Bloque 7: Resumen y Conexiones {background-color="#0077b6"}
+
+## El Panorama de los Embeddings Estáticos {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Lo que aprendimos hoy
+
+1. **GloVe**: Combina conteos globales con optimización
+   - Función objetivo: $\vec{w}_i^T \vec{\tilde{w}}_j + b_i + \tilde{b}_j \approx \log X_{ij}$
+   - Razones de co-ocurrencia como señal clave
+
+2. **FastText**: Embeddings de subpalabras
+   - N-gramas de caracteres como unidad mínima
+   - Resuelve el problema OOV
+   - Ideal para idiomas con morfología rica
+
+:::
+::: {.column width="50%"}
+
+### Limitación compartida
+
+Los tres modelos producen **embeddings estáticos**:
+
+> Cada palabra tiene **un único vector**, sin importar el contexto.
+
+"Fui al **banco** a depositar dinero"  
+"Me senté en el **banco** del parque"
+
+$$\vec{v}_{\text{banco}}^{\text{financiero}} = \vec{v}_{\text{banco}}^{\text{mueble}} \quad \text{😢}$$
+
+. . .
+
+::: {.callout-important}
+## Spoiler: Semanas 9-10
+Los **Transformers** (BERT, GPT) resolverán esto con **embeddings contextuales**: un vector diferente para cada uso de la misma palabra.
+:::
+
+:::
+:::
+
+## Fórmulas Clave de Hoy {.smaller}
+
+| Concepto | Fórmula |
+|:---------|:--------|
+| **Co-ocurrencia** | $P_{ij} = P(j \mid i) = \frac{X_{ij}}{X_i}$ |
+| **GloVe objetivo** | $J = \sum_{i,j} f(X_{ij})(\vec{w}_i^T \vec{\tilde{w}}_j + b_i + \tilde{b}_j - \log X_{ij})^2$ |
+| **Ponderación GloVe** | $f(x) = \min\left((x/x_{\max})^\alpha, 1\right)$ |
+| **FastText score** | $s(w, c) = \sum_{g \in \mathcal{G}_w} \vec{z}_g^T \vec{v}_c$ |
+| **Embedding FastText** | $\vec{v}_w = \sum_{g \in \mathcal{G}_w} \vec{z}_g$ |
+
+## Para Reflexionar 🤔 {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Preguntas de discusión
+
+1. ¿Por qué las **razones** de co-ocurrencia ($P_{ik}/P_{jk}$) son más informativas que las probabilidades simples?
+
+2. Si entrenaras embeddings para **español boliviano**, ¿esperarías que "cholita" y "mujer" tengan alta similitud? ¿Qué sesgos podrían aparecer?
+
+3. ¿Cuántos n-gramas de caracteres tiene la palabra "procesamiento" con $n \in [3,6]$?
+
+:::
+::: {.column width="50%"}
+
+### Próxima sesión (S3)
+
+**Visualización de datos de alta dimensión**
+
+- ¿Cómo "ver" vectores de 300 dimensiones?
+- **PCA** (Análisis de Componentes Principales)
+- **t-SNE** (t-distributed Stochastic Neighbor Embedding)
+- Visualizaciones interactivas de embeddings
+
+:::
+:::
+
+## Lecturas Recomendadas {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Papers originales
+
+1. Pennington et al. (2014). *GloVe: Global Vectors for Word Representation.* [EMNLP 2014](https://nlp.stanford.edu/pubs/glove.pdf)
+
+2. Bojanowski et al. (2017). *Enriching Word Vectors with Subword Information.* [TACL 2017](https://arxiv.org/abs/1607.04606)
+
+:::
+::: {.column width="50%"}
+
+### Recursos adicionales
+
+3. [Jurafsky & Martin, Ch. 6](https://web.stanford.edu/~jurafsky/slp3/6.pdf) — Secciones sobre GloVe
+
+4. [Stanford GloVe Project](https://nlp.stanford.edu/projects/glove/) — Modelos pre-entrenados y código
+
+5. [FastText Official](https://fasttext.cc/) — Modelos en 157 idiomas
+
+6. [Jay Alammar: The Illustrated Word2Vec](https://jalammar.github.io/illustrated-word2vec/) — Incluye comparación con GloVe
+
+:::
+:::

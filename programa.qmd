@@ -19,7 +19,7 @@
 | | [S3: Modelos Ocultos de Markov (HMM) para etiquetado POS](slides/semana03/s3_hmm_pos.qmd) | |
 | **4** | **La Revolución Vectorial** | |
 | | [S1: Word2Vec: Skip-gram y CBOW](slides/semana04/s1_word2vec.qmd) | |
-| | S2: GloVe y FastText (embeddings de subpalabras) | |
+| | [S2: GloVe y FastText (embeddings de subpalabras)](slides/semana04/s2_glove_fasttext.qmd) | |
 | | S3: Visualización de datos de alta dimensión (t-SNE y PCA) | **📝 Tarea 1:** Analizador de sentimiento usando TF-IDF + Regresión Logística |
 | **5** | **Redes Neuronales para NLP** | |
 | | S1: Repaso de Perceptrones y Retropropagación | |
