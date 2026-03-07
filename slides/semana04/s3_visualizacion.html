@@ -282,7 +282,7 @@ Prof.&nbsp;Francisco Suárez
 </ol>
 </div><div class="column" style="width:50%;">
 <h3 id="ejemplo-numérico">Ejemplo numérico</h3>
-<div id="3478fe8f" class="cell" data-execution_count="1">
+<div id="b78419f2" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb1-2"><a></a></span>
 <span id="cb1-3"><a></a>np.random.seed(<span class="dv">42</span>)</span>
@@ -414,7 +414,7 @@ d=300: media=23.66, std=0.86, ratio=0.036</code></pre>
 </section>
 <section id="pca-paso-a-paso-visual" class="slide level2 smaller">
 <h2>PCA: Paso a Paso Visual</h2>
-<div id="74a5c61b" class="cell" data-execution_count="2">
+<div id="c1d494d7" class="cell" data-fig-height="4" data-fig-width="12" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb4-2"><a></a><span class="im">from</span> sklearn.decomposition <span class="im">import</span> PCA</span>
 <span id="cb4-3"><a></a></span>
@@ -469,7 +469,7 @@ d=300: media=23.66, std=0.86, ratio=0.036</code></pre>
 <img data-src="s3_visualizacion_files/figure-revealjs/cell-3-output-1.png" class="r-stretch"></section>
 <section id="pca-aplicado-a-word-embeddings" class="slide level2 smaller">
 <h2>PCA Aplicado a Word Embeddings</h2>
-<div id="daad7b4c" class="cell" data-execution_count="3">
+<div id="37ff19c5" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a></a><span class="im">from</span> gensim.models <span class="im">import</span> Word2Vec</span>
 <span id="cb5-2"><a></a></span>
 <span id="cb5-3"><a></a><span class="co"># Corpus con más estructura semántica</span></span>
@@ -532,7 +532,7 @@ d=300: media=23.66, std=0.86, ratio=0.036</code></pre>
 </section>
 <section id="pca-visualización-de-embeddings" class="slide level2 smaller">
 <h2>PCA: Visualización de Embeddings</h2>
-<div id="b1898907" class="cell" data-execution_count="4">
+<div id="ce504ad2" class="cell" data-fig-height="7" data-fig-width="10" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a></a><span class="im">from</span> sklearn.decomposition <span class="im">import</span> PCA</span>
 <span id="cb7-2"><a></a></span>
 <span id="cb7-3"><a></a>pca <span class="op">=</span> PCA(n_components<span class="op">=</span><span class="dv">2</span>)</span>
@@ -580,7 +580,7 @@ d=300: media=23.66, std=0.86, ratio=0.036</code></pre>
 <section id="varianza-explicada" class="slide level2 smaller">
 <h2>Varianza Explicada</h2>
 <p>Una ventaja de PCA: podemos saber <strong>cuánta información preservamos</strong>:</p>
-<div id="6635a4f5" class="cell" data-execution_count="5">
+<div id="9a9f1c35" class="cell" data-fig-height="4" data-fig-width="12" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a></a>pca_full <span class="op">=</span> PCA(n_components<span class="op">=</span><span class="bu">min</span>(<span class="bu">len</span>(palabras), vectores.shape[<span class="dv">1</span>]))</span>
 <span id="cb8-2"><a></a>pca_full.fit(vectores)</span>
 <span id="cb8-3"><a></a></span>
@@ -650,7 +650,7 @@ Componentes para 90%: 4</code></pre>
 </div><div class="column" style="width:50%;">
 <h3 id="ejemplo-el-problema-del-swiss-roll">Ejemplo: El problema del “Swiss Roll”</h3>
 <p>Datos en 3D enrollados como un brazo de gitano. PCA los aplasta:</p>
-<div id="50c1c4e9" class="cell" data-execution_count="6">
+<div id="37e456b5" class="cell" data-fig-height="4" data-fig-width="11" data-execution_count="6">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a></a><span class="im">from</span> sklearn.datasets <span class="im">import</span> make_swiss_roll</span>
@@ -760,7 +760,7 @@ Componentes para 90%: 4</code></pre>
 </div><div class="column" style="width:50%;">
 <h3 id="la-solución">La solución</h3>
 <p>La distribución t tiene <strong>colas más pesadas</strong> que la gaussiana:</p>
-<div id="865d4d42" class="cell" data-execution_count="7">
+<div id="c2cde2f5" class="cell" data-fig-height="3.5" data-fig-width="8" data-execution_count="7">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a></a>x <span class="op">=</span> np.linspace(<span class="op">-</span><span class="dv">5</span>, <span class="dv">5</span>, <span class="dv">500</span>)</span>
@@ -839,9 +839,13 @@ Componentes para 90%: 4</code></pre>
 </table>
 </div><div class="column" style="width:50%;">
 <h3 id="efecto-visual">Efecto visual</h3>
-<div id="8b9608b1" class="cell" data-execution_count="8">
-<details class="code-fold">
-<summary>Code</summary>
+<p>Ver siguiente slide →</p>
+</div></div>
+</div>
+</section>
+<section id="efecto-de-la-perplejidad" class="slide level2 smaller">
+<h2>Efecto de la Perplejidad</h2>
+<div id="e2777d46" class="cell" data-fig-height="4" data-fig-width="14" data-execution_count="8">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a></a><span class="im">from</span> sklearn.manifold <span class="im">import</span> TSNE</span>
 <span id="cb12-2"><a></a><span class="im">from</span> sklearn.datasets <span class="im">import</span> make_blobs</span>
 <span id="cb12-3"><a></a></span>
@@ -863,18 +867,9 @@ Componentes para 90%: 4</code></pre>
 <span id="cb12-19"><a></a>plt.suptitle(<span class="st">'Efecto de la perplejidad en t-SNE'</span>, fontsize<span class="op">=</span><span class="dv">13</span>, y<span class="op">=</span><span class="fl">1.02</span>)</span>
 <span id="cb12-20"><a></a>plt.tight_layout()</span>
 <span id="cb12-21"><a></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
-<div class="cell-output cell-output-display">
-<div>
-<figure>
-<p><img data-src="s3_visualizacion_files/figure-revealjs/cell-9-output-1.png"></p>
-</figure>
+
 </div>
-</div>
-</div>
-</div></div>
-</div>
-<div class="fragment">
+<img data-src="s3_visualizacion_files/figure-revealjs/cell-9-output-1.png" class="r-stretch"><div class="fragment">
 <div class="callout callout-warning callout-titled callout-style-default">
 <div class="callout-body">
 <div class="callout-title">
@@ -892,7 +887,7 @@ Componentes para 90%: 4</code></pre>
 </section>
 <section id="t-sne-aplicado-a-word-embeddings" class="slide level2 smaller">
 <h2>t-SNE Aplicado a Word Embeddings</h2>
-<div id="65f2638b" class="cell" data-execution_count="9">
+<div id="a9e573ff" class="cell" data-fig-height="6" data-fig-width="16" data-execution_count="9">
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a></a><span class="im">from</span> sklearn.manifold <span class="im">import</span> TSNE</span>
 <span id="cb13-2"><a></a></span>
 <span id="cb13-3"><a></a><span class="co"># Usar los mismos vectores que con PCA</span></span>
@@ -996,7 +991,7 @@ Componentes para 90%: 4</code></pre>
 </section>
 <section id="efecto-de-hiperparámetros" class="slide level2 smaller">
 <h2>Efecto de Hiperparámetros</h2>
-<div id="ab19b8cb" class="cell" data-execution_count="10">
+<div id="51b9a192" class="cell" data-fig-height="9" data-fig-width="15" data-execution_count="10">
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">15</span>, <span class="dv">9</span>))</span>
 <span id="cb14-2"><a></a>configs <span class="op">=</span> [</span>
 <span id="cb14-3"><a></a>    (<span class="dv">5</span>, <span class="dv">500</span>), (<span class="dv">5</span>, <span class="dv">2000</span>), (<span class="dv">5</span>, <span class="dv">5000</span>),</span>
@@ -1184,7 +1179,7 @@ Componentes para 90%: 4</code></pre>
 </section>
 <section id="pipeline-de-visualización-de-embeddings" class="slide level2 smaller">
 <h2>Pipeline de Visualización de Embeddings</h2>
-<div id="5c22284e" class="cell" data-execution_count="11">
+<div id="e283389c" class="cell" data-execution_count="11">
 <div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a></a><span class="co"># Pipeline completo: Entrenar → Seleccionar → Reducir → Visualizar</span></span>
 <span id="cb16-2"><a></a></span>
 <span id="cb16-3"><a></a><span class="im">from</span> gensim.models <span class="im">import</span> Word2Vec</span>
@@ -1216,24 +1211,27 @@ Componentes para 90%: 4</code></pre>
 <span id="cb16-29"><a></a>                  random_state<span class="op">=</span><span class="dv">42</span>, max_iter<span class="op">=</span><span class="dv">2000</span>, learning_rate<span class="op">=</span><span class="st">'auto'</span>, init<span class="op">=</span><span class="st">'pca'</span>)</span>
 <span id="cb16-30"><a></a>coords_final <span class="op">=</span> tsne_final.fit_transform(vecs_pca)</span>
 <span id="cb16-31"><a></a></span>
-<span id="cb16-32"><a></a><span class="co"># 7. Visualizar</span></span>
-<span id="cb16-33"><a></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">7</span>))</span>
-<span id="cb16-34"><a></a>ax.scatter(coords_final[:, <span class="dv">0</span>], coords_final[:, <span class="dv">1</span>],</span>
-<span id="cb16-35"><a></a>           c<span class="op">=</span><span class="st">'#0077b6'</span>, s<span class="op">=</span><span class="dv">100</span>, alpha<span class="op">=</span><span class="fl">0.7</span>, edgecolors<span class="op">=</span><span class="st">'white'</span>, linewidth<span class="op">=</span><span class="fl">0.5</span>)</span>
-<span id="cb16-36"><a></a></span>
-<span id="cb16-37"><a></a><span class="cf">for</span> i, w <span class="kw">in</span> <span class="bu">enumerate</span>(palabras_sel):</span>
-<span id="cb16-38"><a></a>    ax.annotate(w, (coords_final[i, <span class="dv">0</span>], coords_final[i, <span class="dv">1</span>]),</span>
-<span id="cb16-39"><a></a>                fontsize<span class="op">=</span><span class="dv">9</span>, fontweight<span class="op">=</span><span class="st">'bold'</span>,</span>
-<span id="cb16-40"><a></a>                xytext<span class="op">=</span>(<span class="dv">6</span>, <span class="dv">6</span>), textcoords<span class="op">=</span><span class="st">'offset points'</span>,</span>
-<span id="cb16-41"><a></a>                bbox<span class="op">=</span><span class="bu">dict</span>(boxstyle<span class="op">=</span><span class="st">'round,pad=0.2'</span>, facecolor<span class="op">=</span><span class="st">'lightyellow'</span>,</span>
-<span id="cb16-42"><a></a>                          alpha<span class="op">=</span><span class="fl">0.7</span>, edgecolor<span class="op">=</span><span class="st">'gray'</span>, linewidth<span class="op">=</span><span class="fl">0.5</span>))</span>
-<span id="cb16-43"><a></a></span>
-<span id="cb16-44"><a></a>ax.set_title(<span class="st">'Pipeline completo: Word2Vec → PCA → t-SNE'</span>, fontsize<span class="op">=</span><span class="dv">14</span>)</span>
-<span id="cb16-45"><a></a>ax.set_xlabel(<span class="st">'t-SNE 1'</span>, fontsize<span class="op">=</span><span class="dv">11</span>)</span>
-<span id="cb16-46"><a></a>ax.set_ylabel(<span class="st">'t-SNE 2'</span>, fontsize<span class="op">=</span><span class="dv">11</span>)</span>
-<span id="cb16-47"><a></a>ax.grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.2</span>)</span>
-<span id="cb16-48"><a></a>plt.tight_layout()</span>
-<span id="cb16-49"><a></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb16-32"><a></a><span class="co">#| fig-width: 10</span></span>
+<span id="cb16-33"><a></a><span class="co">#| fig-height: 7</span></span>
+<span id="cb16-34"><a></a></span>
+<span id="cb16-35"><a></a><span class="co"># 7. Visualizar</span></span>
+<span id="cb16-36"><a></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">7</span>))</span>
+<span id="cb16-37"><a></a>ax.scatter(coords_final[:, <span class="dv">0</span>], coords_final[:, <span class="dv">1</span>],</span>
+<span id="cb16-38"><a></a>           c<span class="op">=</span><span class="st">'#0077b6'</span>, s<span class="op">=</span><span class="dv">100</span>, alpha<span class="op">=</span><span class="fl">0.7</span>, edgecolors<span class="op">=</span><span class="st">'white'</span>, linewidth<span class="op">=</span><span class="fl">0.5</span>)</span>
+<span id="cb16-39"><a></a></span>
+<span id="cb16-40"><a></a><span class="cf">for</span> i, w <span class="kw">in</span> <span class="bu">enumerate</span>(palabras_sel):</span>
+<span id="cb16-41"><a></a>    ax.annotate(w, (coords_final[i, <span class="dv">0</span>], coords_final[i, <span class="dv">1</span>]),</span>
+<span id="cb16-42"><a></a>                fontsize<span class="op">=</span><span class="dv">9</span>, fontweight<span class="op">=</span><span class="st">'bold'</span>,</span>
+<span id="cb16-43"><a></a>                xytext<span class="op">=</span>(<span class="dv">6</span>, <span class="dv">6</span>), textcoords<span class="op">=</span><span class="st">'offset points'</span>,</span>
+<span id="cb16-44"><a></a>                bbox<span class="op">=</span><span class="bu">dict</span>(boxstyle<span class="op">=</span><span class="st">'round,pad=0.2'</span>, facecolor<span class="op">=</span><span class="st">'lightyellow'</span>,</span>
+<span id="cb16-45"><a></a>                          alpha<span class="op">=</span><span class="fl">0.7</span>, edgecolor<span class="op">=</span><span class="st">'gray'</span>, linewidth<span class="op">=</span><span class="fl">0.5</span>))</span>
+<span id="cb16-46"><a></a></span>
+<span id="cb16-47"><a></a>ax.set_title(<span class="st">'Pipeline completo: Word2Vec → PCA → t-SNE'</span>, fontsize<span class="op">=</span><span class="dv">14</span>)</span>
+<span id="cb16-48"><a></a>ax.set_xlabel(<span class="st">'t-SNE 1'</span>, fontsize<span class="op">=</span><span class="dv">11</span>)</span>
+<span id="cb16-49"><a></a>ax.set_ylabel(<span class="st">'t-SNE 2'</span>, fontsize<span class="op">=</span><span class="dv">11</span>)</span>
+<span id="cb16-50"><a></a>ax.grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.2</span>)</span>
+<span id="cb16-51"><a></a>plt.tight_layout()</span>
+<span id="cb16-52"><a></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>PCA: 50D → 20D (99.2% varianza)</code></pre>
 </div>
