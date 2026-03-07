@@ -304,23 +304,23 @@ plt.show()
 ```{mermaid}
 %%| fig-width: 9
 flowchart LR
-    subgraph Datos ["1. Datos"]
+    subgraph Datos ["Datos"]
         T["Textos y Etiquetas"]
     end
     
-    subgraph Vectorizar ["2. Vectorización"]
+    subgraph Vectorizar ["Vectorización"]
         E["TF-IDF / Embeddings"]
     end
     
-    subgraph Modelo ["3. Modelo"]
+    subgraph Modelo ["Modelo"]
         M["MLP nn.Module"]
     end
     
-    subgraph Entrenar ["4. Entrenar"]
+    subgraph Entrenar ["Entrenar"]
         L["Loss, Optim, Backprop"]
     end
     
-    subgraph Evaluar ["5. Evaluar"]
+    subgraph Evaluar ["Evaluar"]
         R["Accuracy, F1, Reporte"]
     end
     
