@@ -282,7 +282,9 @@ Prof.&nbsp;Francisco Suárez
 </ol>
 </div><div class="column" style="width:50%;">
 <h3 id="ejemplo-numérico">Ejemplo numérico</h3>
-<div id="a3fd361b" class="cell" data-execution_count="1">
+<div id="7f0a4f8e" class="cell" data-execution_count="1">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb1-2"><a></a></span>
 <span id="cb1-3"><a></a>np.random.seed(<span class="dv">42</span>)</span>
@@ -294,6 +296,7 @@ Prof.&nbsp;Francisco Suárez
 <span id="cb1-9"><a></a>    <span class="bu">print</span>(<span class="ss">f"d=</span><span class="sc">{</span>d<span class="sc">:3d}</span><span class="ss">: media=</span><span class="sc">{</span>distancias<span class="sc">.</span>mean()<span class="sc">:.2f}</span><span class="ss">, "</span></span>
 <span id="cb1-10"><a></a>          <span class="ss">f"std=</span><span class="sc">{</span>distancias<span class="sc">.</span>std()<span class="sc">:.2f}</span><span class="ss">, "</span></span>
 <span id="cb1-11"><a></a>          <span class="ss">f"ratio=</span><span class="sc">{</span>distancias<span class="sc">.</span>std()<span class="op">/</span>distancias<span class="sc">.</span>mean()<span class="sc">:.3f}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>d=  2: media=1.32, std=0.69, ratio=0.521
 d= 10: media=4.00, std=0.83, ratio=0.209
@@ -414,7 +417,9 @@ d=300: media=23.66, std=0.86, ratio=0.036</code></pre>
 </section>
 <section id="pca-paso-a-paso-visual" class="slide level2 smaller">
 <h2>PCA: Paso a Paso Visual</h2>
-<div id="e0f6b6a6" class="cell" data-fig-height="4" data-fig-width="12" data-execution_count="2">
+<div id="3ca2e46d" class="cell" data-fig-height="4" data-fig-width="10" data-execution_count="2">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb4-2"><a></a><span class="im">from</span> sklearn.decomposition <span class="im">import</span> PCA</span>
 <span id="cb4-3"><a></a></span>
@@ -464,12 +469,15 @@ d=300: media=23.66, std=0.86, ratio=0.036</code></pre>
 <span id="cb4-47"><a></a></span>
 <span id="cb4-48"><a></a>plt.tight_layout()</span>
 <span id="cb4-49"><a></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 
 </div>
 <img data-src="s3_visualizacion_files/figure-revealjs/cell-3-output-1.png" class="r-stretch"></section>
 <section id="pca-aplicado-a-word-embeddings" class="slide level2 smaller">
 <h2>PCA Aplicado a Word Embeddings</h2>
-<div id="41cdca2f" class="cell" data-execution_count="3">
+<div id="ec8de9c8" class="cell" data-execution_count="3">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a></a><span class="im">from</span> gensim.models <span class="im">import</span> Word2Vec</span>
 <span id="cb5-2"><a></a></span>
 <span id="cb5-3"><a></a><span class="co"># Corpus con más estructura semántica</span></span>
@@ -525,6 +533,7 @@ d=300: media=23.66, std=0.86, ratio=0.036</code></pre>
 <span id="cb5-53"><a></a></span>
 <span id="cb5-54"><a></a>vectores <span class="op">=</span> np.array(vectores)</span>
 <span id="cb5-55"><a></a><span class="bu">print</span>(<span class="ss">f"Proyectando </span><span class="sc">{</span><span class="bu">len</span>(palabras)<span class="sc">}</span><span class="ss"> palabras de </span><span class="sc">{</span>vectores<span class="sc">.</span>shape[<span class="dv">1</span>]<span class="sc">}</span><span class="ss">D a 2D con PCA..."</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>Proyectando 22 palabras de 50D a 2D con PCA...</code></pre>
 </div>
@@ -532,13 +541,15 @@ d=300: media=23.66, std=0.86, ratio=0.036</code></pre>
 </section>
 <section id="pca-visualización-de-embeddings" class="slide level2 smaller">
 <h2>PCA: Visualización de Embeddings</h2>
-<div id="fb945dd5" class="cell" data-fig-height="7" data-fig-width="10" data-execution_count="4">
+<div id="b1b6f787" class="cell" data-fig-height="6" data-fig-width="10" data-execution_count="4">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a></a><span class="im">from</span> sklearn.decomposition <span class="im">import</span> PCA</span>
 <span id="cb7-2"><a></a></span>
 <span id="cb7-3"><a></a>pca <span class="op">=</span> PCA(n_components<span class="op">=</span><span class="dv">2</span>)</span>
 <span id="cb7-4"><a></a>coords_pca <span class="op">=</span> pca.fit_transform(vectores)</span>
 <span id="cb7-5"><a></a></span>
-<span id="cb7-6"><a></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">7</span>))</span>
+<span id="cb7-6"><a></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">6</span>))</span>
 <span id="cb7-7"><a></a></span>
 <span id="cb7-8"><a></a><span class="co"># Graficar puntos por categoría</span></span>
 <span id="cb7-9"><a></a><span class="cf">for</span> cat, color <span class="kw">in</span> color_map.items():</span>
@@ -559,6 +570,7 @@ d=300: media=23.66, std=0.86, ratio=0.036</code></pre>
 <span id="cb7-24"><a></a>ax.grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
 <span id="cb7-25"><a></a>plt.tight_layout()</span>
 <span id="cb7-26"><a></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 
 </div>
 <img data-src="s3_visualizacion_files/figure-revealjs/cell-5-output-1.png" class="r-stretch"><div class="fragment">
@@ -580,7 +592,9 @@ d=300: media=23.66, std=0.86, ratio=0.036</code></pre>
 <section id="varianza-explicada" class="slide level2 smaller">
 <h2>Varianza Explicada</h2>
 <p>Una ventaja de PCA: podemos saber <strong>cuánta información preservamos</strong>:</p>
-<div id="b4114346" class="cell" data-fig-height="4" data-fig-width="12" data-execution_count="5">
+<div id="a37d7f7a" class="cell" data-fig-height="4" data-fig-width="10" data-execution_count="5">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a></a>pca_full <span class="op">=</span> PCA(n_components<span class="op">=</span><span class="bu">min</span>(<span class="bu">len</span>(palabras), vectores.shape[<span class="dv">1</span>]))</span>
 <span id="cb8-2"><a></a>pca_full.fit(vectores)</span>
 <span id="cb8-3"><a></a></span>
@@ -621,6 +635,7 @@ d=300: media=23.66, std=0.86, ratio=0.036</code></pre>
 <span id="cb8-38"><a></a></span>
 <span id="cb8-39"><a></a><span class="bu">print</span>(<span class="ss">f"Con 2 componentes: </span><span class="sc">{</span>varianza_acum[<span class="dv">1</span>]<span class="sc">:.1%}</span><span class="ss"> de varianza explicada"</span>)</span>
 <span id="cb8-40"><a></a><span class="bu">print</span>(<span class="ss">f"Componentes para 90%: </span><span class="sc">{</span>n_90<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 
 <div class="cell-output cell-output-stdout">
 <pre><code>Con 2 componentes: 87.1% de varianza explicada
@@ -630,34 +645,24 @@ Componentes para 90%: 4</code></pre>
 <img data-src="s3_visualizacion_files/figure-revealjs/cell-6-output-1.png" class="r-stretch"></section>
 <section id="limitaciones-de-pca" class="slide level2 smaller scrollable">
 <h2>Limitaciones de PCA</h2>
-<div class="columns">
-<div class="column" style="width:50%;">
 <h3 id="problemas">Problemas</h3>
 <ol type="1">
-<li><strong>Solo captura relaciones lineales</strong>
-<ul>
-<li>No puede “desdoblar” variedades (manifolds) no lineales</li>
-</ul></li>
-<li><strong>Optimiza varianza global</strong>
-<ul>
-<li>Puede sacrificar estructura local por preservar distancias grandes</li>
-</ul></li>
-<li><strong>Sensible a outliers</strong>
-<ul>
-<li>Un punto muy lejano puede distorsionar toda la proyección</li>
-</ul></li>
+<li><strong>Solo captura relaciones lineales</strong> — No puede “desdoblar” variedades (manifolds) no lineales</li>
+<li><strong>Optimiza varianza global</strong> — Puede sacrificar estructura local por preservar distancias grandes</li>
+<li><strong>Sensible a outliers</strong> — Un punto muy lejano puede distorsionar toda la proyección</li>
 </ol>
-</div><div class="column" style="width:50%;">
-<h3 id="ejemplo-el-problema-del-swiss-roll">Ejemplo: El problema del “Swiss Roll”</h3>
-<p>Datos en 3D enrollados como un brazo de gitano. PCA los aplasta:</p>
-<div id="1ab07f57" class="cell" data-fig-height="4" data-fig-width="11" data-execution_count="6">
+</section>
+<section id="el-problema-del-swiss-roll" class="slide level2 smaller">
+<h2>El Problema del “Swiss Roll”</h2>
+<p>Datos en 3D enrollados como un brazo de gitano. PCA los aplasta, t-SNE los desdobla:</p>
+<div id="f5b41f37" class="cell" data-fig-height="4" data-fig-width="10" data-execution_count="6">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a></a><span class="im">from</span> sklearn.datasets <span class="im">import</span> make_swiss_roll</span>
 <span id="cb10-2"><a></a></span>
 <span id="cb10-3"><a></a>X_swiss, color_swiss <span class="op">=</span> make_swiss_roll(n_samples<span class="op">=</span><span class="dv">1000</span>, noise<span class="op">=</span><span class="fl">0.5</span>, random_state<span class="op">=</span><span class="dv">42</span>)</span>
 <span id="cb10-4"><a></a></span>
-<span id="cb10-5"><a></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">11</span>, <span class="dv">4</span>))</span>
+<span id="cb10-5"><a></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">4</span>))</span>
 <span id="cb10-6"><a></a></span>
 <span id="cb10-7"><a></a><span class="co"># PCA</span></span>
 <span id="cb10-8"><a></a>pca_swiss <span class="op">=</span> PCA(n_components<span class="op">=</span><span class="dv">2</span>)</span>
@@ -681,16 +686,9 @@ Componentes para 90%: 4</code></pre>
 <span id="cb10-26"><a></a>plt.tight_layout()</span>
 <span id="cb10-27"><a></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
-<div class="cell-output cell-output-display">
-<div>
-<figure>
-<p><img data-src="s3_visualizacion_files/figure-revealjs/cell-7-output-1.png"></p>
-</figure>
+
 </div>
-</div>
-</div>
-</div></div>
-<div class="fragment">
+<img data-src="s3_visualizacion_files/figure-revealjs/cell-7-output-1.png" class="r-stretch"><div class="fragment">
 <div class="callout callout-important callout-titled callout-style-default">
 <div class="callout-body">
 <div class="callout-title">
@@ -751,23 +749,21 @@ Componentes para 90%: 4</code></pre>
 </section>
 <section id="por-qué-la-distribución-t" class="slide level2 smaller">
 <h2>¿Por Qué la Distribución t?</h2>
-<div class="columns">
-<div class="column" style="width:50%;">
 <h3 id="el-problema-del-crowding">El problema del “crowding”</h3>
 <p>Al proyectar de alta a baja dimensión, hay <strong>menos espacio</strong> disponible.</p>
-<p>En <span class="math inline">\(\mathbb{R}^{300}\)</span>: un punto puede tener muchos vecinos equidistantes.</p>
-<p>En <span class="math inline">\(\mathbb{R}^2\)</span>: no caben todos a la misma distancia → se “apiñan” (crowding).</p>
-</div><div class="column" style="width:50%;">
-<h3 id="la-solución">La solución</h3>
-<p>La distribución t tiene <strong>colas más pesadas</strong> que la gaussiana:</p>
-<div id="71dd8d0f" class="cell" data-fig-height="3.5" data-fig-width="8" data-execution_count="7">
+<ul>
+<li>En <span class="math inline">\(\mathbb{R}^{300}\)</span>: un punto puede tener muchos vecinos equidistantes.</li>
+<li>En <span class="math inline">\(\mathbb{R}^2\)</span>: no caben todos a la misma distancia → se “apiñan” (crowding).</li>
+</ul>
+<h3 id="la-solución-colas-más-pesadas">La solución: colas más pesadas</h3>
+<div id="13d57789" class="cell" data-fig-height="4" data-fig-width="10" data-execution_count="7">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a></a>x <span class="op">=</span> np.linspace(<span class="op">-</span><span class="dv">5</span>, <span class="dv">5</span>, <span class="dv">500</span>)</span>
 <span id="cb11-2"><a></a>gauss <span class="op">=</span> np.exp(<span class="op">-</span>x<span class="op">**</span><span class="dv">2</span> <span class="op">/</span> <span class="dv">2</span>) <span class="op">/</span> np.sqrt(<span class="dv">2</span> <span class="op">*</span> np.pi)</span>
 <span id="cb11-3"><a></a>t_dist <span class="op">=</span> <span class="dv">1</span> <span class="op">/</span> (np.pi <span class="op">*</span> (<span class="dv">1</span> <span class="op">+</span> x<span class="op">**</span><span class="dv">2</span>))  <span class="co"># Cauchy = t con df=1</span></span>
 <span id="cb11-4"><a></a></span>
-<span id="cb11-5"><a></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">8</span>, <span class="fl">3.5</span>))</span>
+<span id="cb11-5"><a></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">4</span>))</span>
 <span id="cb11-6"><a></a>plt.plot(x, gauss, label<span class="op">=</span><span class="st">'Gaussiana'</span>, linewidth<span class="op">=</span><span class="dv">2</span>, color<span class="op">=</span><span class="st">'#0077b6'</span>)</span>
 <span id="cb11-7"><a></a>plt.plot(x, t_dist, label<span class="op">=</span><span class="st">'t de Student (df=1)'</span>, linewidth<span class="op">=</span><span class="dv">2</span>,</span>
 <span id="cb11-8"><a></a>         color<span class="op">=</span><span class="st">'#e63946'</span>, linestyle<span class="op">=</span><span class="st">'--'</span>)</span>
@@ -780,16 +776,9 @@ Componentes para 90%: 4</code></pre>
 <span id="cb11-15"><a></a>plt.tight_layout()</span>
 <span id="cb11-16"><a></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
-<div class="cell-output cell-output-display">
-<div>
-<figure>
-<p><img data-src="s3_visualizacion_files/figure-revealjs/cell-8-output-1.png"></p>
-</figure>
+
 </div>
-</div>
-</div>
-</div></div>
-<div class="fragment">
+<img data-src="s3_visualizacion_files/figure-revealjs/cell-8-output-1.png" class="r-stretch"><p>. . .</p>
 <div class="callout callout-tip callout-titled callout-style-default">
 <div class="callout-body">
 <div class="callout-title">
@@ -800,7 +789,6 @@ Componentes para 90%: 4</code></pre>
 </div>
 <div class="callout-content">
 <p>Puntos moderadamente distantes en alta dimensión pueden quedar <strong>más separados</strong> en 2D. Esto evita el apiñamiento y produce clusters más claros.</p>
-</div>
 </div>
 </div>
 </div>
@@ -845,14 +833,16 @@ Componentes para 90%: 4</code></pre>
 </section>
 <section id="efecto-de-la-perplejidad" class="slide level2 smaller">
 <h2>Efecto de la Perplejidad</h2>
-<div id="21070fb2" class="cell" data-fig-height="4" data-fig-width="14" data-execution_count="8">
+<div id="b51bf194" class="cell" data-fig-height="4" data-fig-width="10" data-execution_count="8">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a></a><span class="im">from</span> sklearn.manifold <span class="im">import</span> TSNE</span>
 <span id="cb12-2"><a></a><span class="im">from</span> sklearn.datasets <span class="im">import</span> make_blobs</span>
 <span id="cb12-3"><a></a></span>
 <span id="cb12-4"><a></a>X_blobs, y_blobs <span class="op">=</span> make_blobs(n_samples<span class="op">=</span><span class="dv">300</span>, centers<span class="op">=</span><span class="dv">4</span>,</span>
 <span id="cb12-5"><a></a>                               cluster_std<span class="op">=</span><span class="fl">1.0</span>, random_state<span class="op">=</span><span class="dv">42</span>)</span>
 <span id="cb12-6"><a></a></span>
-<span id="cb12-7"><a></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">14</span>, <span class="dv">4</span>))</span>
+<span id="cb12-7"><a></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="fl">3.5</span>))</span>
 <span id="cb12-8"><a></a>perplexities <span class="op">=</span> [<span class="dv">5</span>, <span class="dv">30</span>, <span class="dv">100</span>]</span>
 <span id="cb12-9"><a></a></span>
 <span id="cb12-10"><a></a><span class="cf">for</span> ax, perp <span class="kw">in</span> <span class="bu">zip</span>(axes, perplexities):</span>
@@ -867,6 +857,7 @@ Componentes para 90%: 4</code></pre>
 <span id="cb12-19"><a></a>plt.suptitle(<span class="st">'Efecto de la perplejidad en t-SNE'</span>, fontsize<span class="op">=</span><span class="dv">13</span>, y<span class="op">=</span><span class="fl">1.02</span>)</span>
 <span id="cb12-20"><a></a>plt.tight_layout()</span>
 <span id="cb12-21"><a></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 
 </div>
 <img data-src="s3_visualizacion_files/figure-revealjs/cell-9-output-1.png" class="r-stretch"><div class="fragment">
@@ -887,7 +878,9 @@ Componentes para 90%: 4</code></pre>
 </section>
 <section id="t-sne-aplicado-a-word-embeddings" class="slide level2 smaller">
 <h2>t-SNE Aplicado a Word Embeddings</h2>
-<div id="3e3d82d0" class="cell" data-fig-height="6" data-fig-width="16" data-execution_count="9">
+<div id="47ded6e6" class="cell" data-fig-height="5" data-fig-width="10" data-execution_count="9">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a></a><span class="im">from</span> sklearn.manifold <span class="im">import</span> TSNE</span>
 <span id="cb13-2"><a></a></span>
 <span id="cb13-3"><a></a><span class="co"># Usar los mismos vectores que con PCA</span></span>
@@ -895,7 +888,7 @@ Componentes para 90%: 4</code></pre>
 <span id="cb13-5"><a></a>            max_iter<span class="op">=</span><span class="dv">2000</span>, learning_rate<span class="op">=</span><span class="st">'auto'</span>, init<span class="op">=</span><span class="st">'pca'</span>)</span>
 <span id="cb13-6"><a></a>coords_tsne <span class="op">=</span> tsne.fit_transform(vectores)</span>
 <span id="cb13-7"><a></a></span>
-<span id="cb13-8"><a></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">16</span>, <span class="dv">6</span>))</span>
+<span id="cb13-8"><a></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">5</span>))</span>
 <span id="cb13-9"><a></a></span>
 <span id="cb13-10"><a></a><span class="co"># PCA</span></span>
 <span id="cb13-11"><a></a>ax <span class="op">=</span> axes[<span class="dv">0</span>]</span>
@@ -926,6 +919,7 @@ Componentes para 90%: 4</code></pre>
 <span id="cb13-36"><a></a>plt.suptitle(<span class="st">'Word Embeddings: PCA vs. t-SNE'</span>, fontsize<span class="op">=</span><span class="dv">15</span>, y<span class="op">=</span><span class="fl">1.02</span>)</span>
 <span id="cb13-37"><a></a>plt.tight_layout()</span>
 <span id="cb13-38"><a></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 
 </div>
 <img data-src="s3_visualizacion_files/figure-revealjs/cell-10-output-1.png" class="r-stretch"></section></section>
@@ -991,10 +985,10 @@ Componentes para 90%: 4</code></pre>
 </section>
 <section id="efecto-de-hiperparámetros" class="slide level2 smaller">
 <h2>Efecto de Hiperparámetros</h2>
-<div id="523788ae" class="cell" data-fig-height="6" data-fig-width="14" data-execution_count="10">
+<div id="55ba14f4" class="cell" data-fig-height="6" data-fig-width="10" data-execution_count="10">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">14</span>, <span class="dv">6</span>))</span>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">6</span>))</span>
 <span id="cb14-2"><a></a>configs <span class="op">=</span> [</span>
 <span id="cb14-3"><a></a>    (<span class="dv">5</span>, <span class="dv">500</span>), (<span class="dv">5</span>, <span class="dv">2000</span>), (<span class="dv">5</span>, <span class="dv">5000</span>),</span>
 <span id="cb14-4"><a></a>    (<span class="dv">8</span>, <span class="dv">500</span>), (<span class="dv">8</span>, <span class="dv">2000</span>), (<span class="dv">8</span>, <span class="dv">5000</span>),</span>
@@ -1182,7 +1176,9 @@ Componentes para 90%: 4</code></pre>
 </section>
 <section id="pipeline-de-visualización-de-embeddings" class="slide level2 smaller">
 <h2>Pipeline de Visualización de Embeddings</h2>
-<div id="ca1df0e1" class="cell" data-fig-height="7" data-fig-width="10" data-execution_count="11">
+<div id="b7315566" class="cell" data-fig-height="6" data-fig-width="10" data-execution_count="11">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a></a><span class="co"># Pipeline completo: Entrenar → Seleccionar → Reducir → Visualizar</span></span>
 <span id="cb16-2"><a></a></span>
 <span id="cb16-3"><a></a><span class="im">from</span> gensim.models <span class="im">import</span> Word2Vec</span>
@@ -1232,6 +1228,7 @@ Componentes para 90%: 4</code></pre>
 <span id="cb16-47"><a></a>ax.grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.2</span>)</span>
 <span id="cb16-48"><a></a>plt.tight_layout()</span>
 <span id="cb16-49"><a></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>PCA: 50D → 20D (99.2% varianza)</code></pre>
 </div>
