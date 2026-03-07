@@ -1,0 +1,910 @@
+---
+title: "Redes Neuronales para NLP"
+subtitle: "S2: Perceptrones Multicapa para Clasificación de Texto"
+author: "Prof. Francisco Suárez"
+institute: "Universidad Católica Boliviana"
+date: "2026-03-10"
+format:
+  revealjs:
+    theme: sky
+    transition: slide
+    slide-number: true
+    chalkboard: true
+    code-fold: true
+    code-tools: true
+    highlight-style: github
+    footer: "NLP y Análisis Semántico | Semana 5"
+    logo: ""
+    incremental: false
+    scrollable: true
+execute:
+  echo: true
+  warning: false
+---
+
+## Agenda de Hoy {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+**Primera Parte**
+
+1. 🔙 Repaso: De NumPy a PyTorch
+2. 🔥 PyTorch: tensores, autograd y módulos
+3. 🏗️ Construyendo un MLP con `nn.Module`
+
+:::
+::: {.column width="50%"}
+**Segunda Parte**
+
+4. 📝 Clasificación de texto: pipeline completo
+5. 📊 Entrenamiento, validación y métricas
+6. 🎯 Buenas prácticas y errores comunes
+
+:::
+:::
+
+# Bloque 1: De NumPy a PyTorch {background-color="#0077b6"}
+
+## ¿Por Qué PyTorch? {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### En S1 implementamos con NumPy
+
+```python
+# Forward manual
+z1 = X @ W1 + b1
+h1 = relu(z1)
+z2 = h1 @ W2 + b2
+y_hat = sigmoid(z2)
+
+# Backward manual
+dz2 = y_hat - y
+dW2 = h1.T @ dz2 / m
+# ... 😰 muchas derivadas
+```
+
+Funciona, pero **no escala**:
+
+- Derivadas manuales para cada arquitectura
+- Sin soporte para GPU
+- Sin optimizadores avanzados
+
+:::
+::: {.column width="50%"}
+
+### Con PyTorch
+
+```python
+# Definir modelo
+model = nn.Sequential(
+    nn.Linear(20, 8),
+    nn.ReLU(),
+    nn.Linear(8, 1),
+    nn.Sigmoid()
+)
+
+# Entrenar
+loss = criterion(model(X), y)
+loss.backward()  # ¡autograd! 🎉
+optimizer.step()
+```
+
+**Autograd** calcula todos los gradientes automáticamente.
+
+:::
+:::
+
+## PyTorch: Conceptos Fundamentales {.smaller}
+
+```{python}
+import torch
+import torch.nn as nn
+import numpy as np
+
+# 1. Tensores — como arrays de NumPy, pero con autograd
+x = torch.tensor([1.0, 2.0, 3.0], requires_grad=True)
+print(f"Tensor:    {x}")
+print(f"Tipo:      {x.dtype}")
+print(f"Requiere grad: {x.requires_grad}")
+
+# 2. Operaciones — igual que NumPy
+y = x ** 2 + 3 * x
+z = y.sum()
+print(f"\ny = x² + 3x = {y.data}")
+print(f"z = sum(y) = {z.item():.1f}")
+
+# 3. Autograd — calcula gradientes automáticamente
+z.backward()
+print(f"\n∂z/∂x = 2x + 3 = {x.grad}")
+print(f"Verificación: 2*[1,2,3] + 3 = [{2*1+3}, {2*2+3}, {2*3+3}]")
+```
+
+## NumPy ↔ PyTorch {.smaller}
+
+```{python}
+# Conversión fluida entre NumPy y PyTorch
+array_np = np.array([[1, 2], [3, 4]], dtype=np.float32)
+tensor_pt = torch.from_numpy(array_np)
+de_vuelta = tensor_pt.numpy()
+
+print(f"NumPy:\n{array_np}\n")
+print(f"PyTorch:\n{tensor_pt}\n")
+print(f"De vuelta a NumPy:\n{de_vuelta}")
+```
+
+. . .
+
+### Equivalencias comunes
+
+| NumPy | PyTorch | Descripción |
+|:------|:--------|:------------|
+| `np.array([1,2,3])` | `torch.tensor([1,2,3])` | Crear tensor |
+| `a @ b` | `a @ b` | Multiplicación matricial |
+| `np.zeros((3,4))` | `torch.zeros(3,4)` | Tensor de ceros |
+| `a.reshape(2,3)` | `a.view(2,3)` | Cambiar forma |
+| `np.random.randn(3,4)` | `torch.randn(3,4)` | Aleatorio normal |
+| `a.mean()` | `a.mean()` | Media |
+
+# Bloque 2: Construyendo un MLP con PyTorch {background-color="#023e8a"}
+
+## `nn.Module`: La Clase Base {.smaller}
+
+Todos los modelos en PyTorch heredan de `nn.Module`:
+
+```{python}
+#| code-fold: false
+import torch.nn as nn
+
+class MLPSimple(nn.Module):
+    def __init__(self, input_dim, hidden_dim, output_dim):
+        super().__init__()
+        self.capa1 = nn.Linear(input_dim, hidden_dim)
+        self.relu = nn.ReLU()
+        self.capa2 = nn.Linear(hidden_dim, output_dim)
+    
+    def forward(self, x):
+        x = self.capa1(x)     # Transformación lineal
+        x = self.relu(x)      # Activación no lineal
+        x = self.capa2(x)     # Capa de salida
+        return x
+
+# Crear modelo
+modelo = MLPSimple(input_dim=20, hidden_dim=8, output_dim=1)
+print(modelo)
+```
+
+. . .
+
+```{python}
+# Contar parámetros
+total_params = sum(p.numel() for p in modelo.parameters())
+print(f"\nParámetros totales: {total_params}")
+for nombre, param in modelo.named_parameters():
+    print(f"  {nombre}: {param.shape} = {param.numel()} params")
+```
+
+## El Loop de Entrenamiento {.smaller}
+
+El patrón estándar en PyTorch:
+
+```{python}
+#| eval: false
+#| code-fold: false
+# 1. Crear modelo, pérdida y optimizador
+modelo = MLPSimple(20, 8, 1)
+criterio = nn.BCEWithLogitsLoss()   # BCE + sigmoid integrada
+optimizador = torch.optim.SGD(modelo.parameters(), lr=0.01)
+
+# 2. Loop de entrenamiento
+for epoca in range(100):
+    # Forward pass
+    predicciones = modelo(X_train)
+    loss = criterio(predicciones, y_train)
+    
+    # Backward pass
+    optimizador.zero_grad()   # ← Limpiar gradientes anteriores
+    loss.backward()           # ← Calcular gradientes (autograd)
+    optimizador.step()        # ← Actualizar pesos
+```
+
+. . .
+
+::: {.callout-warning}
+## ¡No olvidar `zero_grad()`!
+PyTorch **acumula** gradientes por defecto. Si no los limpiamos, los gradientes de la época anterior se suman a los nuevos. Es el error más común de principiantes.
+:::
+
+## Ejemplo: MLP para XOR con PyTorch {.smaller}
+
+```{python}
+# XOR con PyTorch — comparar con la versión NumPy de S1
+X_xor = torch.tensor([[0,0], [0,1], [1,0], [1,1]], dtype=torch.float32)
+y_xor = torch.tensor([[0], [1], [1], [0]], dtype=torch.float32)
+
+# Modelo
+torch.manual_seed(42)
+modelo_xor = nn.Sequential(
+    nn.Linear(2, 4),
+    nn.ReLU(),
+    nn.Linear(4, 1),
+)
+criterio = nn.BCEWithLogitsLoss()
+optimizador = torch.optim.Adam(modelo_xor.parameters(), lr=0.05)
+
+# Entrenar
+losses = []
+for epoca in range(2000):
+    logits = modelo_xor(X_xor)
+    loss = criterio(logits, y_xor)
+    
+    optimizador.zero_grad()
+    loss.backward()
+    optimizador.step()
+    losses.append(loss.item())
+
+# Predicciones
+with torch.no_grad():
+    preds = torch.sigmoid(modelo_xor(X_xor))
+    
+print("XOR con PyTorch:")
+for i in range(4):
+    print(f"  [{int(X_xor[i][0])}, {int(X_xor[i][1])}] → {preds[i].item():.4f} "
+          f"(esperado: {int(y_xor[i])})")
+print(f"\nLoss final: {losses[-1]:.6f}")
+print(f"Líneas de código vs NumPy: ~15 vs ~30 😎")
+```
+
+## Visualización del Entrenamiento {.smaller}
+
+```{python}
+import matplotlib.pyplot as plt
+
+fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+
+# Convergencia
+ax = axes[0]
+ax.plot(losses, color='#0077b6', linewidth=1.5)
+ax.set_xlabel('Época', fontsize=11)
+ax.set_ylabel('Loss (BCE)', fontsize=11)
+ax.set_title('Convergencia — XOR con PyTorch', fontsize=12)
+ax.grid(True, alpha=0.3)
+
+# Frontera de decisión
+ax = axes[1]
+with torch.no_grad():
+    xx, yy = np.meshgrid(np.linspace(-0.5, 1.5, 200), np.linspace(-0.5, 1.5, 200))
+    grid = torch.tensor(np.c_[xx.ravel(), yy.ravel()], dtype=torch.float32)
+    z_grid = torch.sigmoid(modelo_xor(grid)).numpy().reshape(xx.shape)
+
+ax.contourf(xx, yy, z_grid, levels=50, cmap='RdYlGn', alpha=0.6)
+ax.contour(xx, yy, z_grid, levels=[0.5], colors='black', linewidths=2)
+
+colores_xor = {0: '#e63946', 1: '#2a9d8f'}
+for i in range(4):
+    ax.scatter(X_xor[i,0], X_xor[i,1], c=colores_xor[int(y_xor[i])],
+               s=200, edgecolors='black', linewidth=2, zorder=5)
+    ax.annotate(f'{preds[i].item():.2f}', (X_xor[i,0]+0.08, X_xor[i,1]+0.1),
+                fontsize=11, fontweight='bold')
+
+ax.set_xlabel('$x_1$', fontsize=12)
+ax.set_ylabel('$x_2$', fontsize=12)
+ax.set_title('Frontera de decisión — XOR', fontsize=12)
+ax.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+```
+
+# Bloque 3: Pipeline de Clasificación de Texto {background-color="#0077b6"}
+
+## El Pipeline Completo {.smaller}
+
+```{mermaid}
+%%| fig-width: 9
+flowchart LR
+    subgraph Datos ["1. Datos"]
+        T["Textos + Etiquetas"]
+    end
+    
+    subgraph Vectorizar ["2. Vectorización"]
+        E["TF-IDF o<br>Embeddings"]
+    end
+    
+    subgraph Modelo ["3. Modelo"]
+        M["MLP<br>(nn.Module)"]
+    end
+    
+    subgraph Entrenar ["4. Entrenar"]
+        L["Loss + Optim<br>+ Backprop"]
+    end
+    
+    subgraph Evaluar ["5. Evaluar"]
+        R["Accuracy,<br>F1, Reporte"]
+    end
+    
+    T --> E --> M --> L --> R
+    
+    style Datos fill:#cfe2ff
+    style Vectorizar fill:#90e0ef
+    style Modelo fill:#00b4d8,color:#fff
+    style Entrenar fill:#0077b6,color:#fff
+    style Evaluar fill:#023e8a,color:#fff
+```
+
+. . .
+
+Hoy implementamos cada paso con **datos reales** y **PyTorch**.
+
+## Paso 1: Preparar los Datos {.smaller}
+
+```{python}
+from sklearn.datasets import fetch_20newsgroups
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+import warnings
+warnings.filterwarnings('ignore')
+
+# Usar 4 categorías para simplificar
+categorias = ['sci.space', 'rec.sport.baseball', 'talk.politics.guns', 'comp.graphics']
+
+datos_train = fetch_20newsgroups(subset='train', categories=categorias,
+                                 remove=('headers', 'footers', 'quotes'))
+datos_test = fetch_20newsgroups(subset='test', categories=categorias,
+                                remove=('headers', 'footers', 'quotes'))
+
+print(f"Documentos de entrenamiento: {len(datos_train.data)}")
+print(f"Documentos de test: {len(datos_test.data)}")
+print(f"\nCategorías ({len(categorias)}):")
+for i, cat in enumerate(datos_train.target_names):
+    n = sum(datos_train.target == i)
+    print(f"  {i}: {cat} ({n} docs)")
+```
+
+## Paso 2: Vectorización con TF-IDF {.smaller}
+
+```{python}
+# TF-IDF para convertir texto → vectores numéricos
+vectorizer = TfidfVectorizer(max_features=5000, stop_words='english')
+X_train_tfidf = vectorizer.fit_transform(datos_train.data)
+X_test_tfidf = vectorizer.transform(datos_test.data)
+
+print(f"Vocabulario: {len(vectorizer.vocabulary_)} palabras")
+print(f"X_train: {X_train_tfidf.shape}")
+print(f"X_test:  {X_test_tfidf.shape}")
+
+# Convertir a tensores de PyTorch
+X_train_t = torch.tensor(X_train_tfidf.toarray(), dtype=torch.float32)
+X_test_t = torch.tensor(X_test_tfidf.toarray(), dtype=torch.float32)
+y_train_t = torch.tensor(datos_train.target, dtype=torch.long)
+y_test_t = torch.tensor(datos_test.target, dtype=torch.long)
+
+print(f"\nTensores:")
+print(f"  X_train: {X_train_t.shape}")
+print(f"  y_train: {y_train_t.shape}, clases: {y_train_t.unique().tolist()}")
+```
+
+## Paso 3: Definir el Modelo {.smaller}
+
+```{python}
+#| code-fold: false
+class ClasificadorTexto(nn.Module):
+    def __init__(self, vocab_size, hidden_dim, num_classes, dropout=0.3):
+        super().__init__()
+        self.red = nn.Sequential(
+            nn.Linear(vocab_size, hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(dropout),          # ← Regularización
+            nn.Linear(hidden_dim, hidden_dim // 2),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim // 2, num_classes),
+        )
+    
+    def forward(self, x):
+        return self.red(x)
+
+# Instanciar
+torch.manual_seed(42)
+modelo = ClasificadorTexto(
+    vocab_size=5000,
+    hidden_dim=128,
+    num_classes=len(categorias),
+    dropout=0.3
+)
+
+total_params = sum(p.numel() for p in modelo.parameters())
+print(modelo)
+print(f"\nParámetros totales: {total_params:,}")
+```
+
+. . .
+
+::: {.callout-note}
+## Dropout
+Durante el entrenamiento, **apaga aleatoriamente** el 30% de las neuronas en cada paso. Esto obliga a la red a no depender de ninguna neurona individual → mejor generalización. En evaluación se desactiva automáticamente.
+:::
+
+## Paso 4: Entrenar {.smaller}
+
+```{python}
+from torch.utils.data import DataLoader, TensorDataset
+
+# Dataset y DataLoader
+train_dataset = TensorDataset(X_train_t, y_train_t)
+train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+
+# Pérdida y optimizador
+criterio = nn.CrossEntropyLoss()
+optimizador = torch.optim.Adam(modelo.parameters(), lr=0.001)
+
+# Entrenamiento
+num_epocas = 30
+historial = {'train_loss': [], 'train_acc': [], 'test_acc': []}
+
+for epoca in range(num_epocas):
+    modelo.train()
+    epoch_loss = 0
+    correctos = 0
+    total = 0
+    
+    for X_batch, y_batch in train_loader:
+        # Forward
+        logits = modelo(X_batch)
+        loss = criterio(logits, y_batch)
+        
+        # Backward
+        optimizador.zero_grad()
+        loss.backward()
+        optimizador.step()
+        
+        epoch_loss += loss.item() * len(y_batch)
+        correctos += (logits.argmax(dim=1) == y_batch).sum().item()
+        total += len(y_batch)
+    
+    # Métricas de la época
+    train_loss = epoch_loss / total
+    train_acc = correctos / total
+    
+    # Evaluación en test
+    modelo.eval()
+    with torch.no_grad():
+        logits_test = modelo(X_test_t)
+        test_acc = (logits_test.argmax(dim=1) == y_test_t).float().mean().item()
+    
+    historial['train_loss'].append(train_loss)
+    historial['train_acc'].append(train_acc)
+    historial['test_acc'].append(test_acc)
+    
+    if (epoca + 1) % 10 == 0:
+        print(f"Época {epoca+1:3d}/{num_epocas} | "
+              f"Loss: {train_loss:.4f} | "
+              f"Train Acc: {train_acc:.1%} | "
+              f"Test Acc: {test_acc:.1%}")
+```
+
+## Curvas de Entrenamiento {.smaller}
+
+```{python}
+fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+
+# Loss
+ax = axes[0]
+ax.plot(historial['train_loss'], color='#0077b6', linewidth=2, label='Train Loss')
+ax.set_xlabel('Época', fontsize=11)
+ax.set_ylabel('Loss', fontsize=11)
+ax.set_title('Función de Pérdida', fontsize=12)
+ax.legend(fontsize=10)
+ax.grid(True, alpha=0.3)
+
+# Accuracy
+ax = axes[1]
+ax.plot(historial['train_acc'], color='#2a9d8f', linewidth=2, label='Train')
+ax.plot(historial['test_acc'], color='#e63946', linewidth=2, label='Test')
+ax.set_xlabel('Época', fontsize=11)
+ax.set_ylabel('Accuracy', fontsize=11)
+ax.set_title('Accuracy por Época', fontsize=12)
+ax.legend(fontsize=10)
+ax.grid(True, alpha=0.3)
+ax.set_ylim(0, 1.05)
+
+plt.tight_layout()
+plt.show()
+```
+
+# Bloque 4: Evaluación y Métricas {background-color="#023e8a"}
+
+## Reporte de Clasificación {.smaller}
+
+```{python}
+from sklearn.metrics import classification_report, confusion_matrix
+
+modelo.eval()
+with torch.no_grad():
+    logits_test = modelo(X_test_t)
+    y_pred = logits_test.argmax(dim=1).numpy()
+
+print(classification_report(
+    datos_test.target, y_pred,
+    target_names=datos_test.target_names
+))
+```
+
+## Matriz de Confusión {.smaller}
+
+```{python}
+cm = confusion_matrix(datos_test.target, y_pred)
+
+fig, ax = plt.subplots(figsize=(8, 6))
+im = ax.imshow(cm, interpolation='nearest', cmap='Blues')
+ax.figure.colorbar(im, ax=ax)
+
+labels_cortos = [c.split('.')[-1] for c in datos_test.target_names]
+ax.set(xticks=range(len(labels_cortos)), yticks=range(len(labels_cortos)),
+       xticklabels=labels_cortos, yticklabels=labels_cortos,
+       ylabel='Clase Real', xlabel='Clase Predicha',
+       title='Matriz de Confusión')
+plt.setp(ax.get_xticklabels(), rotation=45, ha='right')
+
+# Anotar celdas
+thresh = cm.max() / 2
+for i in range(cm.shape[0]):
+    for j in range(cm.shape[1]):
+        ax.text(j, i, format(cm[i, j], 'd'),
+                ha='center', va='center',
+                color='white' if cm[i, j] > thresh else 'black',
+                fontsize=13)
+
+plt.tight_layout()
+plt.show()
+```
+
+## Accuracy vs. F1: ¿Cuándo Importa? {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Accuracy
+
+$$\text{Accuracy} = \frac{\text{Correctos}}{\text{Total}}$$
+
+- ✅ Fácil de interpretar
+- ❌ Engañosa con clases desbalanceadas
+
+**Ejemplo:** 95% spam, 5% no-spam → un modelo que dice "todo es spam" tiene 95% accuracy.
+
+:::
+::: {.column width="50%"}
+
+### Precision, Recall, F1
+
+$$\text{Precision} = \frac{TP}{TP + FP}$$
+
+$$\text{Recall} = \frac{TP}{TP + FN}$$
+
+$$\text{F1} = 2 \cdot \frac{P \cdot R}{P + R}$$
+
+- **Precision**: de lo que predije positivo, ¿cuánto era correcto?
+- **Recall**: de lo que era positivo, ¿cuánto detecté?
+- **F1**: media armónica de ambos
+
+:::
+:::
+
+. . .
+
+::: {.callout-tip}
+## Regla práctica
+- **Accuracy** cuando las clases están balanceadas
+- **Macro F1** cuando todas las clases importan igual
+- **Weighted F1** cuando quieres ponderar por frecuencia
+:::
+
+# Bloque 5: Buenas Prácticas {background-color="#0077b6"}
+
+## Overfitting vs. Underfitting {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Underfitting 📉
+
+El modelo es **demasiado simple**:
+
+- Train accuracy baja
+- Test accuracy baja
+- **Solución**: más capas, más neuronas, más épocas
+
+### Overfitting 📈
+
+El modelo **memoriza** los datos de entrenamiento:
+
+- Train accuracy alta
+- Test accuracy baja (gap grande)
+- **Solución**: regularización
+
+:::
+::: {.column width="50%"}
+
+### Técnicas anti-overfitting
+
+| Técnica | Idea |
+|:--------|:-----|
+| **Dropout** | Apagar neuronas random |
+| **Early stopping** | Parar cuando test deja de mejorar |
+| **Weight decay** | Penalizar pesos grandes (L2) |
+| **Data augmentation** | Más datos de entrenamiento |
+| **Batch normalization** | Normalizar activaciones |
+
+:::
+:::
+
+. . .
+
+::: {.callout-important}
+## Señal de alarma
+Si `train_acc >> test_acc` (ej. train 99%, test 70%), tu modelo está **memorizando**, no **aprendiendo**. Agrega regularización o reduce la complejidad.
+:::
+
+## Hiperparámetros Importantes {.smaller}
+
+```{python}
+# Demostración: efecto de la tasa de aprendizaje
+torch.manual_seed(42)
+
+fig, axes = plt.subplots(1, 3, figsize=(14, 4))
+lrs = [0.0001, 0.001, 0.1]
+titulos = ['Muy bajo (0.0001)', 'Bueno (0.001)', 'Muy alto (0.1)']
+
+for ax, lr, titulo in zip(axes, lrs, titulos):
+    torch.manual_seed(42)
+    mod = ClasificadorTexto(5000, 64, len(categorias), dropout=0.0)
+    opt = torch.optim.SGD(mod.parameters(), lr=lr)
+    crit = nn.CrossEntropyLoss()
+    
+    losses_lr = []
+    for ep in range(50):
+        mod.train()
+        logits = mod(X_train_t)
+        loss = crit(logits, y_train_t)
+        opt.zero_grad()
+        loss.backward()
+        opt.step()
+        losses_lr.append(loss.item())
+    
+    ax.plot(losses_lr, color='#0077b6', linewidth=2)
+    ax.set_xlabel('Época', fontsize=10)
+    ax.set_ylabel('Loss', fontsize=10)
+    ax.set_title(f'lr = {titulo}', fontsize=11)
+    ax.grid(True, alpha=0.3)
+
+plt.suptitle('Efecto de la Tasa de Aprendizaje', fontsize=13, y=1.02)
+plt.tight_layout()
+plt.show()
+```
+
+. . .
+
+::: {.callout-tip}
+## Recomendación
+Empezar con `lr=0.001` y el optimizador **Adam** (adapta lr por parámetro). Funciona bien en la mayoría de los casos sin necesidad de tuning manual.
+:::
+
+## SGD vs. Adam {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### SGD (Stochastic Gradient Descent)
+
+$$w \leftarrow w - \eta \cdot \nabla_w \mathcal{L}$$
+
+- Simple y bien entendido
+- Requiere tunear lr cuidadosamente
+- Con **momentum** funciona mejor:
+
+$$v \leftarrow \beta v + \nabla_w \mathcal{L}$$
+$$w \leftarrow w - \eta \cdot v$$
+
+:::
+::: {.column width="50%"}
+
+### Adam (Adaptive Moment Estimation)
+
+Combina momentum + tasa adaptativa por parámetro:
+
+$$m_t = \beta_1 m_{t-1} + (1-\beta_1) g_t$$
+$$v_t = \beta_2 v_{t-1} + (1-\beta_2) g_t^2$$
+$$w \leftarrow w - \eta \cdot \frac{\hat{m}_t}{\sqrt{\hat{v}_t} + \epsilon}$$
+
+- ✅ Funciona bien "out of the box"
+- ✅ Adaptativo: parámetros con gradientes grandes → lr pequeño
+- Valores por defecto: $\beta_1=0.9$, $\beta_2=0.999$
+
+:::
+:::
+
+. . .
+
+::: {.callout-note}
+## En la práctica
+**Adam** es el optimizador por defecto en NLP. **SGD + momentum** puede dar mejor generalización, pero requiere más tuning. Para este curso, usamos Adam.
+:::
+
+## Errores Comunes de Principiantes {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### 🐛 Bugs frecuentes
+
+1. **Olvidar `zero_grad()`**
+   ```python
+   # ❌ Gradientes se acumulan
+   loss.backward()
+   optimizer.step()
+   
+   # ✅ Limpiar antes
+   optimizer.zero_grad()
+   loss.backward()
+   optimizer.step()
+   ```
+
+2. **No usar `model.eval()`**
+   ```python
+   # ❌ Dropout activo en test
+   preds = model(X_test)
+   
+   # ✅ Desactivar dropout
+   model.eval()
+   with torch.no_grad():
+       preds = model(X_test)
+   ```
+
+:::
+::: {.column width="50%"}
+
+3. **Confundir pérdidas**
+   ```python
+   # Binaria → BCEWithLogitsLoss
+   # Multiclase → CrossEntropyLoss
+   # ¡CE ya incluye softmax!
+   ```
+
+4. **Labels incorrectos**
+   ```python
+   # CrossEntropyLoss espera:
+   #   y: LongTensor (índices)
+   #   NO one-hot encoding
+   ```
+
+5. **No mezclar datos**
+   ```python
+   # Siempre shuffle=True en train
+   DataLoader(data, shuffle=True)
+   ```
+
+:::
+:::
+
+# Bloque 6: Comparación con Baselines {background-color="#023e8a"}
+
+## MLP vs. Regresión Logística {.smaller}
+
+```{python}
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
+
+# Baseline: Regresión Logística
+lr_model = LogisticRegression(max_iter=1000, random_state=42)
+lr_model.fit(X_train_tfidf, datos_train.target)
+lr_pred = lr_model.predict(X_test_tfidf)
+lr_acc = accuracy_score(datos_test.target, lr_pred)
+
+# Nuestro MLP
+mlp_acc = accuracy_score(datos_test.target, y_pred)
+
+print(f"{'Modelo':<25} {'Accuracy':>10} {'Parámetros':>12}")
+print("=" * 50)
+print(f"{'Regresión Logística':<25} {lr_acc:>10.1%} {lr_model.coef_.size:>12,}")
+print(f"{'MLP (128→64→4)':<25} {mlp_acc:>10.1%} {total_params:>12,}")
+```
+
+. . .
+
+```{python}
+fig, ax = plt.subplots(figsize=(8, 4))
+modelos = ['Regresión\nLogística', 'MLP\n(PyTorch)']
+accs = [lr_acc, mlp_acc]
+colores = ['#e9c46a', '#0077b6']
+bars = ax.bar(modelos, accs, color=colores, edgecolor='black', linewidth=0.5, width=0.5)
+for bar, val in zip(bars, accs):
+    ax.text(bar.get_x() + bar.get_width()/2., bar.get_height() + 0.005,
+            f'{val:.1%}', ha='center', fontweight='bold', fontsize=13)
+ax.set_ylabel('Accuracy', fontsize=12)
+ax.set_title('Clasificación de 20 Newsgroups (4 categorías)', fontsize=13)
+ax.set_ylim(0, 1.05)
+ax.grid(True, alpha=0.3, axis='y')
+plt.tight_layout()
+plt.show()
+```
+
+. . .
+
+::: {.callout-note}
+## Reflexión
+Con TF-IDF como input, la regresión logística es un baseline **muy fuerte**. Las redes neuronales brillan más cuando aprenden sus propias representaciones (embeddings entrenables), algo que veremos con modelos más avanzados.
+:::
+
+# Bloque 7: Resumen {background-color="#0077b6"}
+
+## Lo Que Aprendimos Hoy {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### PyTorch
+
+- **Tensores** con autograd automático
+- **`nn.Module`** para definir arquitecturas
+- **`DataLoader`** para mini-batches
+- Loop: forward → loss → `zero_grad` → backward → step
+
+:::
+::: {.column width="50%"}
+
+### Clasificación de texto
+
+- Pipeline: TF-IDF → MLP → CrossEntropy
+- **Dropout** para regularización
+- **Adam** como optimizador por defecto
+- **F1** como métrica principal (no solo accuracy)
+- Siempre comparar con un **baseline** simple
+
+:::
+:::
+
+## Fórmulas Clave {.smaller}
+
+| Concepto | Fórmula |
+|:---------|:--------|
+| **Cross-Entropy** | $\mathcal{L} = -\sum_c y_c \log \hat{y}_c$ |
+| **Softmax** | $\hat{y}_c = \frac{e^{z_c}}{\sum_k e^{z_k}}$ |
+| **Dropout** | $h_i = h_i \cdot m_i$, donde $m_i \sim \text{Bernoulli}(1-p)$ |
+| **Adam** | $w \leftarrow w - \eta \frac{\hat{m}_t}{\sqrt{\hat{v}_t} + \epsilon}$ |
+| **Precision** | $P = \frac{TP}{TP + FP}$ |
+| **Recall** | $R = \frac{TP}{TP + FN}$ |
+| **F1** | $F_1 = 2 \cdot \frac{P \cdot R}{P + R}$ |
+
+## Para la Próxima Sesión 📚
+
+::: {.callout-note}
+## S3: Variantes de Descenso de Gradiente y Regularización
+
+- SGD con Momentum, RMSProp, AdaGrad
+- Batch Norm, Learning Rate Scheduling
+- Regularización L1/L2 y Early Stopping
+:::
+
+**Lectura:**
+
+- [Ruder (2016): An overview of gradient descent optimization algorithms](https://ruder.io/optimizing-gradient-descent/) — Excelente resumen visual
+- Goodfellow et al., *Deep Learning*, Cap. 7: Regularization
+- Goodfellow et al., *Deep Learning*, Cap. 8: Optimization
+
+**Preparación:**
+
+- Experimentar con el código de hoy cambiando hiperparámetros
+- Quiz 4 cubrirá: perceptrones (S1) + MLPs y PyTorch (S2) 🧮
+
+# ¿Preguntas? 🙋 {background-color="#03045e"}
+
+:::{.r-fit-text}
+**¡Gracias!**
+:::
+
+📧 fsuarez@ucb.edu.bo
+
+🔗 Materiales: [github.com/fjsuarez/ucb-nlp](https://github.com/fjsuarez/ucb-nlp)

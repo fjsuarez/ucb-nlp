@@ -195,8 +195,6 @@ Si proyectas sobre PC1 y PC2, capturas la mayor parte de la información.
 ## PCA: Paso a Paso Visual {.smaller}
 
 ```{python}
-#| fig-width: 10
-#| fig-height: 4
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 
@@ -311,8 +309,6 @@ print(f"Proyectando {len(palabras)} palabras de {vectores.shape[1]}D a 2D con PC
 ## PCA: Visualización de Embeddings {.smaller}
 
 ```{python}
-#| fig-width: 10
-#| fig-height: 6
 from sklearn.decomposition import PCA
 
 pca = PCA(n_components=2)
@@ -353,8 +349,6 @@ Con un corpus pequeño los clusters no serán perfectos, pero se puede observar 
 Una ventaja de PCA: podemos saber **cuánta información preservamos**:
 
 ```{python}
-#| fig-width: 10
-#| fig-height: 4
 pca_full = PCA(n_components=min(len(palabras), vectores.shape[1]))
 pca_full.fit(vectores)
 
@@ -410,8 +404,6 @@ print(f"Componentes para 90%: {n_90}")
 Datos en 3D enrollados como un brazo de gitano. PCA los aplasta, t-SNE los desdobla:
 
 ```{python}
-#| fig-width: 10
-#| fig-height: 4
 from sklearn.datasets import make_swiss_roll
 
 X_swiss, color_swiss = make_swiss_roll(n_samples=1000, noise=0.5, random_state=42)
@@ -517,8 +509,6 @@ Al proyectar de alta a baja dimensión, hay **menos espacio** disponible.
 ## Gaussiana vs. t de Student {.smaller}
 
 ```{python}
-#| fig-width: 10
-#| fig-height: 4
 x = np.linspace(-5, 5, 500)
 gauss = np.exp(-x**2 / 2) / np.sqrt(2 * np.pi)
 t_dist = 1 / (np.pi * (1 + x**2))  # Cauchy = t con df=1
@@ -578,8 +568,6 @@ Ver siguiente slide →
 ## Efecto de la Perplejidad {.smaller}
 
 ```{python}
-#| fig-width: 10
-#| fig-height: 4
 from sklearn.manifold import TSNE
 from sklearn.datasets import make_blobs
 
@@ -613,8 +601,6 @@ plt.show()
 ## t-SNE Aplicado a Word Embeddings {.smaller}
 
 ```{python}
-#| fig-width: 10
-#| fig-height: 5
 from sklearn.manifold import TSNE
 
 # Usar los mismos vectores que con PCA
@@ -704,8 +690,6 @@ t-SNE te dice **quién** está con **quién**, pero NO te dice **qué tan lejos*
 ## Efecto de Hiperparámetros {.smaller}
 
 ```{python}
-#| fig-width: 10
-#| fig-height: 6
 fig, axes = plt.subplots(2, 3, figsize=(10, 6))
 configs = [
     (5, 500), (5, 2000), (5, 5000),
@@ -815,8 +799,6 @@ UMAP está reemplazando a t-SNE en muchas aplicaciones. Si trabajas con datasets
 ## Pipeline de Visualización de Embeddings {.smaller}
 
 ```{python}
-#| fig-width: 10
-#| fig-height: 6
 # Pipeline completo: Entrenar → Seleccionar → Reducir → Visualizar
 
 from gensim.models import Word2Vec
@@ -948,16 +930,32 @@ La Semana 5 marca el inicio de las **redes neuronales para NLP**: perceptrones, 
 Esta semana se entrega la **Tarea 1**: Analizador de sentimiento usando TF-IDF + Regresión Logística. ¡No la dejen para el último día!
 :::
 
-## {background-color="#023e8a"}
+## Para la Próxima Sesión 📚
 
-::: {style="text-align: center; margin-top: 150px;"}
+::: {.callout-note}
+## Semana 5: Redes Neuronales para NLP
 
-# ¡Gracias!
-
-### ¿Preguntas?
-
-Prof. Francisco Suárez
-
-📧 [fjsuarez@ucb.edu.bo](mailto:fjsuarez@ucb.edu.bo)
-
+- Perceptrones y retropropagación
+- Redes neuronales feedforward (MLPs)
+- Clasificación de texto con redes neuronales
 :::
+
+**Lectura:**
+
+- Jurafsky & Martin, Cap. 7: *Neural Networks and Neural Language Models*
+- [3Blue1Brown: Neural Networks](https://www.3blue1brown.com/topics/neural-networks) — Excelente serie visual
+
+**Preparación:**
+
+- Entregar Tarea 1 antes del viernes
+- Repasar conceptos de álgebra lineal (multiplicación de matrices, gradientes)
+
+# ¿Preguntas? 🙋 {background-color="#03045e"}
+
+:::{.r-fit-text}
+**¡Gracias!**
+:::
+
+📧 fsuarez@ucb.edu.bo
+
+🔗 Materiales: [github.com/fjsuarez/ucb-nlp](https://github.com/fjsuarez/ucb-nlp)

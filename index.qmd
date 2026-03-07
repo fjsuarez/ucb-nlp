@@ -26,6 +26,10 @@ format: html
 - [GloVe y FastText: Embeddings de Subpalabras](slides/semana04/s2_glove_fasttext.qmd)
 - [Visualización de Datos de Alta Dimensión: t-SNE y PCA](slides/semana04/s3_visualizacion.qmd)
 
+### Semana 5
+- [Repaso de Perceptrones y Retropropagación](slides/semana05/s1_perceptron_backprop.qmd)
+- [Perceptrones Multicapa para Clasificación de Texto](slides/semana05/s2_mlp_clasificacion.qmd)
+
 ## Tareas
 
 - [Tarea 1: Analizador de Sentimiento con TF-IDF + Regresión Logística](tareas/tarea01/tarea01_sentimiento.ipynb) — Entrega: Semana 4

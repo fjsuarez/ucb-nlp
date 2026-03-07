@@ -22,8 +22,8 @@
 | | [S2: GloVe y FastText (embeddings de subpalabras)](slides/semana04/s2_glove_fasttext.qmd) | |
 | | [S3: Visualización de datos de alta dimensión (t-SNE y PCA)](slides/semana04/s3_visualizacion.qmd) | **📝 Tarea 1:** Analizador de sentimiento usando TF-IDF + Regresión Logística |
 | **5** | **Redes Neuronales para NLP** | |
-| | S1: Repaso de Perceptrones y Retropropagación | |
-| | S2: Perceptrones Multicapa para Clasificación de Texto | Quiz 4 |
+| | [S1: Repaso de Perceptrones y Retropropagación](slides/semana05/s1_perceptron_backprop.qmd) | |
+| | [S2: Perceptrones Multicapa para Clasificación de Texto](slides/semana05/s2_mlp_clasificacion.qmd) | Quiz 4 |
 | | S3: Variantes de Descenso de Gradiente y Regularización (Dropout) | |
 | **6** | **Redes Neuronales Recurrentes (RNNs)** | |
 | | S1: Arquitectura RNN: Manejando longitud variable | |
