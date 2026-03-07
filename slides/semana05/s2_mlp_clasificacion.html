@@ -280,7 +280,7 @@ Prof.&nbsp;Francisco Suárez
 </section>
 <section id="pytorch-conceptos-fundamentales" class="slide level2 smaller">
 <h2>PyTorch: Conceptos Fundamentales</h2>
-<div id="7f49de03" class="cell" data-execution_count="1">
+<div id="97ebd5e5" class="cell" data-execution_count="1">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a></a><span class="im">import</span> torch</span>
@@ -319,7 +319,7 @@ Verificación: 2*[1,2,3] + 3 = [5, 7, 9]</code></pre>
 </section>
 <section id="numpy-pytorch" class="slide level2 smaller">
 <h2>NumPy ↔︎ PyTorch</h2>
-<div id="bba03fa6" class="cell" data-execution_count="2">
+<div id="5db3f55b" class="cell" data-execution_count="2">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a></a><span class="co"># Conversión fluida entre NumPy y PyTorch</span></span>
@@ -398,7 +398,7 @@ De vuelta a NumPy:
 <section id="nn.module-la-clase-base" class="slide level2 smaller">
 <h2><code>nn.Module</code>: La Clase Base</h2>
 <p>Todos los modelos en PyTorch heredan de <code>nn.Module</code>:</p>
-<div id="714f8714" class="cell" data-execution_count="3">
+<div id="5cb644b6" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a></a><span class="im">import</span> torch.nn <span class="im">as</span> nn</span>
 <span id="cb7-2"><a></a></span>
 <span id="cb7-3"><a></a><span class="kw">class</span> MLPSimple(nn.Module):</span>
@@ -426,7 +426,7 @@ De vuelta a NumPy:
 </div>
 </div>
 <div class="fragment">
-<div id="fef7c35e" class="cell" data-execution_count="4">
+<div id="c3f41118" class="cell" data-execution_count="4">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a></a><span class="co"># Contar parámetros</span></span>
@@ -449,7 +449,7 @@ Parámetros totales: 177
 <section id="el-loop-de-entrenamiento" class="slide level2 smaller">
 <h2>El Loop de Entrenamiento</h2>
 <p>El patrón estándar en PyTorch:</p>
-<div id="63a90e7a" class="cell" data-execution_count="5">
+<div id="510234b7" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a></a><span class="co"># 1. Crear modelo, pérdida y optimizador</span></span>
 <span id="cb11-2"><a></a>modelo <span class="op">=</span> MLPSimple(<span class="dv">20</span>, <span class="dv">8</span>, <span class="dv">1</span>)</span>
 <span id="cb11-3"><a></a>criterio <span class="op">=</span> nn.BCEWithLogitsLoss()   <span class="co"># BCE + sigmoid integrada</span></span>
@@ -484,7 +484,7 @@ Parámetros totales: 177
 </section>
 <section id="ejemplo-mlp-para-xor-con-pytorch" class="slide level2 smaller">
 <h2>Ejemplo: MLP para XOR con PyTorch</h2>
-<div id="a832cba4" class="cell" data-execution_count="6">
+<div id="bc074343" class="cell" data-execution_count="6">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a></a><span class="co"># XOR con PyTorch — comparar con la versión NumPy de S1</span></span>
@@ -537,7 +537,7 @@ Líneas de código vs NumPy: ~15 vs ~30 😎</code></pre>
 </section>
 <section id="visualización-del-entrenamiento" class="slide level2 smaller">
 <h2>Visualización del Entrenamiento</h2>
-<div id="ad292bf2" class="cell" data-execution_count="7">
+<div id="742b061a" class="cell" data-execution_count="7">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
@@ -592,23 +592,23 @@ Líneas de código vs NumPy: ~15 vs ~30 😎</code></pre>
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb15"><pre class="sourceCode numberSource default number-lines code-with-copy"><code class="sourceCode default"><span id="cb15-1"><a></a>flowchart LR</span>
 <span id="cb15-2"><a></a>    subgraph Datos ["1. Datos"]</span>
-<span id="cb15-3"><a></a>        T["Textos + Etiquetas"]</span>
+<span id="cb15-3"><a></a>        T["Textos y Etiquetas"]</span>
 <span id="cb15-4"><a></a>    end</span>
 <span id="cb15-5"><a></a>    </span>
 <span id="cb15-6"><a></a>    subgraph Vectorizar ["2. Vectorización"]</span>
-<span id="cb15-7"><a></a>        E["TF-IDF o&lt;br&gt;Embeddings"]</span>
+<span id="cb15-7"><a></a>        E["TF-IDF / Embeddings"]</span>
 <span id="cb15-8"><a></a>    end</span>
 <span id="cb15-9"><a></a>    </span>
 <span id="cb15-10"><a></a>    subgraph Modelo ["3. Modelo"]</span>
-<span id="cb15-11"><a></a>        M["MLP&lt;br&gt;(nn.Module)"]</span>
+<span id="cb15-11"><a></a>        M["MLP nn.Module"]</span>
 <span id="cb15-12"><a></a>    end</span>
 <span id="cb15-13"><a></a>    </span>
 <span id="cb15-14"><a></a>    subgraph Entrenar ["4. Entrenar"]</span>
-<span id="cb15-15"><a></a>        L["Loss + Optim&lt;br&gt;+ Backprop"]</span>
+<span id="cb15-15"><a></a>        L["Loss, Optim, Backprop"]</span>
 <span id="cb15-16"><a></a>    end</span>
 <span id="cb15-17"><a></a>    </span>
 <span id="cb15-18"><a></a>    subgraph Evaluar ["5. Evaluar"]</span>
-<span id="cb15-19"><a></a>        R["Accuracy,&lt;br&gt;F1, Reporte"]</span>
+<span id="cb15-19"><a></a>        R["Accuracy, F1, Reporte"]</span>
 <span id="cb15-20"><a></a>    end</span>
 <span id="cb15-21"><a></a>    </span>
 <span id="cb15-22"><a></a>    T --&gt; E --&gt; M --&gt; L --&gt; R</span>
@@ -625,23 +625,23 @@ Líneas de código vs NumPy: ~15 vs ~30 😎</code></pre>
 <div>
 <pre class="mermaid mermaid-js">flowchart LR
     subgraph Datos ["1. Datos"]
-        T["Textos + Etiquetas"]
+        T["Textos y Etiquetas"]
     end
     
     subgraph Vectorizar ["2. Vectorización"]
-        E["TF-IDF o&lt;br&gt;Embeddings"]
+        E["TF-IDF / Embeddings"]
     end
     
     subgraph Modelo ["3. Modelo"]
-        M["MLP&lt;br&gt;(nn.Module)"]
+        M["MLP nn.Module"]
     end
     
     subgraph Entrenar ["4. Entrenar"]
-        L["Loss + Optim&lt;br&gt;+ Backprop"]
+        L["Loss, Optim, Backprop"]
     end
     
     subgraph Evaluar ["5. Evaluar"]
-        R["Accuracy,&lt;br&gt;F1, Reporte"]
+        R["Accuracy, F1, Reporte"]
     end
     
     T --&gt; E --&gt; M --&gt; L --&gt; R
@@ -663,7 +663,7 @@ Líneas de código vs NumPy: ~15 vs ~30 😎</code></pre>
 </section>
 <section id="paso-1-preparar-los-datos" class="slide level2 smaller">
 <h2>Paso 1: Preparar los Datos</h2>
-<div id="fd66ee95" class="cell" data-execution_count="8">
+<div id="5a6a896c" class="cell" data-execution_count="8">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a></a><span class="im">from</span> sklearn.datasets <span class="im">import</span> fetch_20newsgroups</span>
@@ -702,7 +702,7 @@ Categorías (4):
 </section>
 <section id="paso-2-vectorización-con-tf-idf" class="slide level2 smaller">
 <h2>Paso 2: Vectorización con TF-IDF</h2>
-<div id="d09cc5a4" class="cell" data-execution_count="9">
+<div id="0581b325" class="cell" data-execution_count="9">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb18"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a></a><span class="co"># TF-IDF para convertir texto → vectores numéricos</span></span>
@@ -737,7 +737,7 @@ Tensores:
 </section>
 <section id="paso-3-definir-el-modelo" class="slide level2 smaller">
 <h2>Paso 3: Definir el Modelo</h2>
-<div id="0d0224c7" class="cell" data-execution_count="10">
+<div id="eff423e8" class="cell" data-execution_count="10">
 <div class="sourceCode cell-code" id="cb20"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a></a><span class="kw">class</span> ClasificadorTexto(nn.Module):</span>
 <span id="cb20-2"><a></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, vocab_size, hidden_dim, num_classes, dropout<span class="op">=</span><span class="fl">0.3</span>):</span>
 <span id="cb20-3"><a></a>        <span class="bu">super</span>().<span class="fu">__init__</span>()</span>
@@ -800,7 +800,7 @@ Parámetros totales: 648,644</code></pre>
 </section>
 <section id="paso-4-entrenar" class="slide level2 smaller">
 <h2>Paso 4: Entrenar</h2>
-<div id="bda7850f" class="cell" data-execution_count="11">
+<div id="19fa23f7" class="cell" data-execution_count="11">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb22"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a></a><span class="im">from</span> torch.utils.data <span class="im">import</span> DataLoader, TensorDataset</span>
@@ -866,7 +866,7 @@ Parámetros totales: 648,644</code></pre>
 </section>
 <section id="curvas-de-entrenamiento" class="slide level2 smaller">
 <h2>Curvas de Entrenamiento</h2>
-<div id="5c7fa8fc" class="cell" data-execution_count="12">
+<div id="130b90c7" class="cell" data-execution_count="12">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb24"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">5</span>))</span>
@@ -904,7 +904,7 @@ Parámetros totales: 648,644</code></pre>
 </section>
 <section id="reporte-de-clasificación" class="slide level2 smaller">
 <h2>Reporte de Clasificación</h2>
-<div id="359881ac" class="cell" data-execution_count="13">
+<div id="1289ac57" class="cell" data-execution_count="13">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb25"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a></a><span class="im">from</span> sklearn.metrics <span class="im">import</span> classification_report, confusion_matrix</span>
@@ -936,7 +936,7 @@ talk.politics.guns       0.91      0.87      0.89       364
 </section>
 <section id="matriz-de-confusión" class="slide level2 smaller">
 <h2>Matriz de Confusión</h2>
-<div id="3814252d" class="cell" data-execution_count="14">
+<div id="8f3c9891" class="cell" data-execution_count="14">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb27"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a></a>cm <span class="op">=</span> confusion_matrix(datos_test.target, y_pred)</span>
@@ -1083,7 +1083,7 @@ talk.politics.guns       0.91      0.87      0.89       364
 </section>
 <section id="hiperparámetros-importantes" class="slide level2 smaller">
 <h2>Hiperparámetros Importantes</h2>
-<div id="22fcd9c3" class="cell" data-execution_count="15">
+<div id="82494941" class="cell" data-execution_count="15">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb28"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a></a><span class="co"># Demostración: efecto de la tasa de aprendizaje</span></span>
@@ -1222,7 +1222,7 @@ talk.politics.guns       0.91      0.87      0.89       364
 </section>
 <section id="mlp-vs.-regresión-logística" class="slide level2 smaller">
 <h2>MLP vs.&nbsp;Regresión Logística</h2>
-<div id="21e6696c" class="cell" data-execution_count="16">
+<div id="8e714e4c" class="cell" data-execution_count="16">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb34"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a></a><span class="im">from</span> sklearn.linear_model <span class="im">import</span> LogisticRegression</span>
@@ -1250,7 +1250,7 @@ MLP (128→64→4)                 88.4%      648,644</code></pre>
 </div>
 </div>
 <div class="fragment">
-<div id="9179b53b" class="cell" data-execution_count="17">
+<div id="874aae33" class="cell" data-execution_count="17">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb36"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb36-1"><a></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">8</span>, <span class="dv">4</span>))</span>
