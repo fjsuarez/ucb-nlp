@@ -104,7 +104,6 @@ En espacios de alta dimensión, nuestra intuición geométrica **falla**:
 ### Ejemplo numérico
 
 ```{python}
-#| code-fold: false
 import numpy as np
 
 np.random.seed(42)
@@ -196,8 +195,7 @@ Si proyectas sobre PC1 y PC2, capturas la mayor parte de la información.
 ## PCA: Paso a Paso Visual {.smaller}
 
 ```{python}
-#| code-fold: false
-#| fig-width: 12
+#| fig-width: 10
 #| fig-height: 4
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
@@ -253,7 +251,6 @@ plt.show()
 ## PCA Aplicado a Word Embeddings {.smaller}
 
 ```{python}
-#| code-fold: false
 from gensim.models import Word2Vec
 
 # Corpus con más estructura semántica
@@ -314,15 +311,14 @@ print(f"Proyectando {len(palabras)} palabras de {vectores.shape[1]}D a 2D con PC
 ## PCA: Visualización de Embeddings {.smaller}
 
 ```{python}
-#| code-fold: false
 #| fig-width: 10
-#| fig-height: 7
+#| fig-height: 6
 from sklearn.decomposition import PCA
 
 pca = PCA(n_components=2)
 coords_pca = pca.fit_transform(vectores)
 
-fig, ax = plt.subplots(figsize=(10, 7))
+fig, ax = plt.subplots(figsize=(10, 6))
 
 # Graficar puntos por categoría
 for cat, color in color_map.items():
@@ -357,8 +353,7 @@ Con un corpus pequeño los clusters no serán perfectos, pero se puede observar 
 Una ventaja de PCA: podemos saber **cuánta información preservamos**:
 
 ```{python}
-#| code-fold: false
-#| fig-width: 12
+#| fig-width: 10
 #| fig-height: 4
 pca_full = PCA(n_components=min(len(palabras), vectores.shape[1]))
 pca_full.fit(vectores)
@@ -404,35 +399,24 @@ print(f"Componentes para 90%: {n_90}")
 
 ## Limitaciones de PCA {.smaller}
 
-::: {.columns}
-::: {.column width="50%"}
-
 ### Problemas
 
-1. **Solo captura relaciones lineales**
-   - No puede "desdoblar" variedades (manifolds) no lineales
+1. **Solo captura relaciones lineales** — No puede "desdoblar" variedades (manifolds) no lineales
+2. **Optimiza varianza global** — Puede sacrificar estructura local por preservar distancias grandes
+3. **Sensible a outliers** — Un punto muy lejano puede distorsionar toda la proyección
 
-2. **Optimiza varianza global**
-   - Puede sacrificar estructura local por preservar distancias grandes
+## El Problema del "Swiss Roll" {.smaller}
 
-3. **Sensible a outliers**
-   - Un punto muy lejano puede distorsionar toda la proyección
-
-:::
-::: {.column width="50%"}
-
-### Ejemplo: El problema del "Swiss Roll"
-
-Datos en 3D enrollados como un brazo de gitano. PCA los aplasta:
+Datos en 3D enrollados como un brazo de gitano. PCA los aplasta, t-SNE los desdobla:
 
 ```{python}
-#| fig-width: 11
+#| fig-width: 10
 #| fig-height: 4
 from sklearn.datasets import make_swiss_roll
 
 X_swiss, color_swiss = make_swiss_roll(n_samples=1000, noise=0.5, random_state=42)
 
-fig, axes = plt.subplots(1, 2, figsize=(11, 4))
+fig, axes = plt.subplots(1, 2, figsize=(10, 4))
 
 # PCA
 pca_swiss = PCA(n_components=2)
@@ -456,9 +440,6 @@ axes[1].set_ylabel('t-SNE 2')
 plt.tight_layout()
 plt.show()
 ```
-
-:::
-:::
 
 . . .
 
@@ -524,32 +505,23 @@ $$\text{KL}(P || Q) = \sum_{i \neq j} p_{ij} \log \frac{p_{ij}}{q_{ij}}$$
 
 ## ¿Por Qué la Distribución t? {.smaller}
 
-::: {.columns}
-::: {.column width="50%"}
-
 ### El problema del "crowding"
 
 Al proyectar de alta a baja dimensión, hay **menos espacio** disponible.
 
-En $\mathbb{R}^{300}$: un punto puede tener muchos vecinos equidistantes.
+- En $\mathbb{R}^{300}$: un punto puede tener muchos vecinos equidistantes.
+- En $\mathbb{R}^2$: no caben todos a la misma distancia → se "apiñan" (crowding).
 
-En $\mathbb{R}^2$: no caben todos a la misma distancia → se "apiñan" (crowding).
-
-:::
-::: {.column width="50%"}
-
-### La solución
-
-La distribución t tiene **colas más pesadas** que la gaussiana:
+### La solución: colas más pesadas
 
 ```{python}
-#| fig-width: 8
-#| fig-height: 3.5
+#| fig-width: 10
+#| fig-height: 4
 x = np.linspace(-5, 5, 500)
 gauss = np.exp(-x**2 / 2) / np.sqrt(2 * np.pi)
 t_dist = 1 / (np.pi * (1 + x**2))  # Cauchy = t con df=1
 
-plt.figure(figsize=(8, 3.5))
+plt.figure(figsize=(10, 4))
 plt.plot(x, gauss, label='Gaussiana', linewidth=2, color='#0077b6')
 plt.plot(x, t_dist, label='t de Student (df=1)', linewidth=2,
          color='#e63946', linestyle='--')
@@ -562,9 +534,6 @@ plt.grid(True, alpha=0.3)
 plt.tight_layout()
 plt.show()
 ```
-
-:::
-:::
 
 . . .
 
@@ -609,8 +578,7 @@ Ver siguiente slide →
 ## Efecto de la Perplejidad {.smaller}
 
 ```{python}
-#| code-fold: false
-#| fig-width: 14
+#| fig-width: 10
 #| fig-height: 4
 from sklearn.manifold import TSNE
 from sklearn.datasets import make_blobs
@@ -618,7 +586,7 @@ from sklearn.datasets import make_blobs
 X_blobs, y_blobs = make_blobs(n_samples=300, centers=4,
                                cluster_std=1.0, random_state=42)
 
-fig, axes = plt.subplots(1, 3, figsize=(14, 4))
+fig, axes = plt.subplots(1, 3, figsize=(10, 3.5))
 perplexities = [5, 30, 100]
 
 for ax, perp in zip(axes, perplexities):
@@ -645,9 +613,8 @@ plt.show()
 ## t-SNE Aplicado a Word Embeddings {.smaller}
 
 ```{python}
-#| code-fold: false
-#| fig-width: 16
-#| fig-height: 6
+#| fig-width: 10
+#| fig-height: 5
 from sklearn.manifold import TSNE
 
 # Usar los mismos vectores que con PCA
@@ -655,7 +622,7 @@ tsne = TSNE(n_components=2, perplexity=5, random_state=42,
             max_iter=2000, learning_rate='auto', init='pca')
 coords_tsne = tsne.fit_transform(vectores)
 
-fig, axes = plt.subplots(1, 2, figsize=(16, 6))
+fig, axes = plt.subplots(1, 2, figsize=(10, 5))
 
 # PCA
 ax = axes[0]
@@ -737,10 +704,9 @@ t-SNE te dice **quién** está con **quién**, pero NO te dice **qué tan lejos*
 ## Efecto de Hiperparámetros {.smaller}
 
 ```{python}
-#| code-fold: true
-#| fig-width: 14
+#| fig-width: 10
 #| fig-height: 6
-fig, axes = plt.subplots(2, 3, figsize=(14, 6))
+fig, axes = plt.subplots(2, 3, figsize=(10, 6))
 configs = [
     (5, 500), (5, 2000), (5, 5000),
     (8, 500), (8, 2000), (8, 5000),
@@ -849,9 +815,8 @@ UMAP está reemplazando a t-SNE en muchas aplicaciones. Si trabajas con datasets
 ## Pipeline de Visualización de Embeddings {.smaller}
 
 ```{python}
-#| code-fold: false
 #| fig-width: 10
-#| fig-height: 7
+#| fig-height: 6
 # Pipeline completo: Entrenar → Seleccionar → Reducir → Visualizar
 
 from gensim.models import Word2Vec
