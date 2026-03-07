@@ -305,23 +305,23 @@ plt.show()
 %%| fig-width: 9
 flowchart LR
     subgraph Datos ["1. Datos"]
-        T["Textos + Etiquetas"]
+        T["Textos y Etiquetas"]
     end
     
     subgraph Vectorizar ["2. Vectorización"]
-        E["TF-IDF o<br>Embeddings"]
+        E["TF-IDF / Embeddings"]
     end
     
     subgraph Modelo ["3. Modelo"]
-        M["MLP<br>(nn.Module)"]
+        M["MLP nn.Module"]
     end
     
     subgraph Entrenar ["4. Entrenar"]
-        L["Loss + Optim<br>+ Backprop"]
+        L["Loss, Optim, Backprop"]
     end
     
     subgraph Evaluar ["5. Evaluar"]
-        R["Accuracy,<br>F1, Reporte"]
+        R["Accuracy, F1, Reporte"]
     end
     
     T --> E --> M --> L --> R
