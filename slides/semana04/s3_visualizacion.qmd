@@ -512,7 +512,9 @@ Al proyectar de alta a baja dimensión, hay **menos espacio** disponible.
 - En $\mathbb{R}^{300}$: un punto puede tener muchos vecinos equidistantes.
 - En $\mathbb{R}^2$: no caben todos a la misma distancia → se "apiñan" (crowding).
 
-### La solución: colas más pesadas
+**Solución**: La distribución t tiene **colas más pesadas** que la gaussiana → más espacio para separar clusters.
+
+## Gaussiana vs. t de Student {.smaller}
 
 ```{python}
 #| fig-width: 10
@@ -534,8 +536,6 @@ plt.grid(True, alpha=0.3)
 plt.tight_layout()
 plt.show()
 ```
-
-. . .
 
 ::: {.callout-tip}
 ## Consecuencia de las colas pesadas
