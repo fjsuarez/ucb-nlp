@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>https://fjsuarez.me/slides/semana05/s2_mlp_clasificacion.html</loc>
+    <lastmod>2026-03-07T17:13:48.505Z</lastmod>
+  </url>
+  <url>
     <loc>https://fjsuarez.me/slides/semana04/s3_visualizacion.html</loc>
-    <lastmod>2026-03-07T16:37:09.915Z</lastmod>
+    <lastmod>2026-03-07T16:49:22.068Z</lastmod>
   </url>
   <url>
     <loc>https://fjsuarez.me/slides/semana04/s1_word2vec.html</loc>
@@ -26,7 +30,7 @@
   </url>
   <url>
     <loc>https://fjsuarez.me/programa.html</loc>
-    <lastmod>2026-03-03T20:29:20.740Z</lastmod>
+    <lastmod>2026-03-07T17:16:04.521Z</lastmod>
   </url>
   <url>
     <loc>https://fjsuarez.me/general.html</loc>
@@ -34,7 +38,7 @@
   </url>
   <url>
     <loc>https://fjsuarez.me/index.html</loc>
-    <lastmod>2026-03-03T20:33:43.120Z</lastmod>
+    <lastmod>2026-03-07T17:16:04.521Z</lastmod>
   </url>
   <url>
     <loc>https://fjsuarez.me/slides/semana01/s1_intro_nlp.html</loc>
@@ -58,6 +62,10 @@
   </url>
   <url>
     <loc>https://fjsuarez.me/slides/semana04/s2_glove_fasttext.html</loc>
-    <lastmod>2026-03-03T20:10:35.233Z</lastmod>
+    <lastmod>2026-03-07T16:49:22.068Z</lastmod>
+  </url>
+  <url>
+    <loc>https://fjsuarez.me/slides/semana05/s1_perceptron_backprop.html</loc>
+    <lastmod>2026-03-07T17:04:36.980Z</lastmod>
   </url>
 </urlset>

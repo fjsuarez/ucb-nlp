@@ -282,7 +282,7 @@ Prof.&nbsp;Francisco Suárez
 </ol>
 </div><div class="column" style="width:50%;">
 <h3 id="ejemplo-numérico">Ejemplo numérico</h3>
-<div id="27716b7c" class="cell" data-execution_count="1">
+<div id="27615aa0" class="cell" data-execution_count="1">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
@@ -417,7 +417,7 @@ d=300: media=23.66, std=0.86, ratio=0.036</code></pre>
 </section>
 <section id="pca-paso-a-paso-visual" class="slide level2 smaller">
 <h2>PCA: Paso a Paso Visual</h2>
-<div id="a379a455" class="cell" data-fig-height="4" data-fig-width="10" data-execution_count="2">
+<div id="7a2f1851" class="cell" data-execution_count="2">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
@@ -475,7 +475,7 @@ d=300: media=23.66, std=0.86, ratio=0.036</code></pre>
 <img data-src="s3_visualizacion_files/figure-revealjs/cell-3-output-1.png" class="r-stretch"></section>
 <section id="pca-aplicado-a-word-embeddings" class="slide level2 smaller">
 <h2>PCA Aplicado a Word Embeddings</h2>
-<div id="f2778ce3" class="cell" data-execution_count="3">
+<div id="4a8fe179" class="cell" data-execution_count="3">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a></a><span class="im">from</span> gensim.models <span class="im">import</span> Word2Vec</span>
@@ -541,7 +541,7 @@ d=300: media=23.66, std=0.86, ratio=0.036</code></pre>
 </section>
 <section id="pca-visualización-de-embeddings" class="slide level2 smaller">
 <h2>PCA: Visualización de Embeddings</h2>
-<div id="3197213d" class="cell" data-fig-height="6" data-fig-width="10" data-execution_count="4">
+<div id="2d4ed513" class="cell" data-execution_count="4">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a></a><span class="im">from</span> sklearn.decomposition <span class="im">import</span> PCA</span>
@@ -592,7 +592,7 @@ d=300: media=23.66, std=0.86, ratio=0.036</code></pre>
 <section id="varianza-explicada" class="slide level2 smaller">
 <h2>Varianza Explicada</h2>
 <p>Una ventaja de PCA: podemos saber <strong>cuánta información preservamos</strong>:</p>
-<div id="7f4e3db3" class="cell" data-fig-height="4" data-fig-width="10" data-execution_count="5">
+<div id="1952fa31" class="cell" data-execution_count="5">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a></a>pca_full <span class="op">=</span> PCA(n_components<span class="op">=</span><span class="bu">min</span>(<span class="bu">len</span>(palabras), vectores.shape[<span class="dv">1</span>]))</span>
@@ -655,7 +655,7 @@ Componentes para 90%: 4</code></pre>
 <section id="el-problema-del-swiss-roll" class="slide level2 smaller">
 <h2>El Problema del “Swiss Roll”</h2>
 <p>Datos en 3D enrollados como un brazo de gitano. PCA los aplasta, t-SNE los desdobla:</p>
-<div id="d18186f9" class="cell" data-fig-height="4" data-fig-width="10" data-execution_count="6">
+<div id="924f03af" class="cell" data-execution_count="6">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a></a><span class="im">from</span> sklearn.datasets <span class="im">import</span> make_swiss_roll</span>
@@ -759,7 +759,7 @@ Componentes para 90%: 4</code></pre>
 </section>
 <section id="gaussiana-vs.-t-de-student" class="slide level2 smaller">
 <h2>Gaussiana vs.&nbsp;t de Student</h2>
-<div id="c310b5b1" class="cell" data-fig-height="4" data-fig-width="10" data-execution_count="7">
+<div id="c9f76b7d" class="cell" data-execution_count="7">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a></a>x <span class="op">=</span> np.linspace(<span class="op">-</span><span class="dv">5</span>, <span class="dv">5</span>, <span class="dv">500</span>)</span>
@@ -835,7 +835,7 @@ Componentes para 90%: 4</code></pre>
 </section>
 <section id="efecto-de-la-perplejidad" class="slide level2 smaller">
 <h2>Efecto de la Perplejidad</h2>
-<div id="a0fe075f" class="cell" data-fig-height="4" data-fig-width="10" data-execution_count="8">
+<div id="efe0f4d4" class="cell" data-execution_count="8">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a></a><span class="im">from</span> sklearn.manifold <span class="im">import</span> TSNE</span>
@@ -880,7 +880,7 @@ Componentes para 90%: 4</code></pre>
 </section>
 <section id="t-sne-aplicado-a-word-embeddings" class="slide level2 smaller">
 <h2>t-SNE Aplicado a Word Embeddings</h2>
-<div id="945c99b1" class="cell" data-fig-height="5" data-fig-width="10" data-execution_count="9">
+<div id="1e0b696c" class="cell" data-execution_count="9">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a></a><span class="im">from</span> sklearn.manifold <span class="im">import</span> TSNE</span>
@@ -987,7 +987,7 @@ Componentes para 90%: 4</code></pre>
 </section>
 <section id="efecto-de-hiperparámetros" class="slide level2 smaller">
 <h2>Efecto de Hiperparámetros</h2>
-<div id="a9773dac" class="cell" data-fig-height="6" data-fig-width="10" data-execution_count="10">
+<div id="f47e244a" class="cell" data-execution_count="10">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">6</span>))</span>
@@ -1178,7 +1178,7 @@ Componentes para 90%: 4</code></pre>
 </section>
 <section id="pipeline-de-visualización-de-embeddings" class="slide level2 smaller">
 <h2>Pipeline de Visualización de Embeddings</h2>
-<div id="c3c74cd8" class="cell" data-fig-height="6" data-fig-width="10" data-execution_count="11">
+<div id="d4682b94" class="cell" data-execution_count="11">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a></a><span class="co"># Pipeline completo: Entrenar → Seleccionar → Reducir → Visualizar</span></span>
@@ -1346,19 +1346,46 @@ Componentes para 90%: 4</code></pre>
 </div>
 </div>
 </section>
-<section id="section" class="slide level2" data-background-color="#023e8a">
-<h2></h2>
+<section id="para-la-próxima-sesión" class="slide level2">
+<h2>Para la Próxima Sesión 📚</h2>
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Semana 5: Redes Neuronales para NLP</strong></p>
+</div>
+<div class="callout-content">
+<ul>
+<li>Perceptrones y retropropagación</li>
+<li>Redes neuronales feedforward (MLPs)</li>
+<li>Clasificación de texto con redes neuronales</li>
+</ul>
+</div>
+</div>
+</div>
+<p><strong>Lectura:</strong></p>
+<ul>
+<li>Jurafsky &amp; Martin, Cap. 7: <em>Neural Networks and Neural Language Models</em></li>
+<li><a href="https://www.3blue1brown.com/topics/neural-networks">3Blue1Brown: Neural Networks</a> — Excelente serie visual</li>
+</ul>
+<p><strong>Preparación:</strong></p>
+<ul>
+<li>Entregar Tarea 1 antes del viernes</li>
+<li>Repasar conceptos de álgebra lineal (multiplicación de matrices, gradientes)</li>
+</ul>
 </section></section>
-<section>
-<section id="gracias" class="title-slide slide level1 center" style="text-align: center; margin-top: 150px;">
-<h1>¡Gracias!</h1>
+<section id="preguntas" class="title-slide slide level1 center" data-background-color="#03045e">
+<h1>¿Preguntas? 🙋</h1>
+<div class="r-fit-text">
+<p><strong>¡Gracias!</strong></p>
+</div>
+<p>📧 fsuarez@ucb.edu.bo</p>
+<p>🔗 Materiales: <a href="https://github.com/fjsuarez/ucb-nlp">github.com/fjsuarez/ucb-nlp</a></p>
+
 
 </section>
-<h3 id="preguntas">¿Preguntas?</h3>
-<p>Prof.&nbsp;Francisco Suárez</p>
-<p>📧 <a href="mailto:fjsuarez@ucb.edu.bo">fjsuarez@ucb.edu.bo</a></p></section>
-
-
     </div>
   <div class="quarto-auto-generated-content" style="display: none;">
 <div class="footer footer-default">

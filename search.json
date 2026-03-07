@@ -1,5 +1,180 @@
 [
   {
+    "objectID": "slides/semana05/s2_mlp_clasificacion.html#agenda-de-hoy",
+    "href": "slides/semana05/s2_mlp_clasificacion.html#agenda-de-hoy",
+    "title": "Redes Neuronales para NLP",
+    "section": "Agenda de Hoy",
+    "text": "Agenda de Hoy\n\n\nPrimera Parte\n\n🔙 Repaso: De NumPy a PyTorch\n🔥 PyTorch: tensores, autograd y módulos\n🏗️ Construyendo un MLP con nn.Module\n\n\nSegunda Parte\n\n📝 Clasificación de texto: pipeline completo\n📊 Entrenamiento, validación y métricas\n🎯 Buenas prácticas y errores comunes"
+  },
+  {
+    "objectID": "slides/semana05/s2_mlp_clasificacion.html#por-qué-pytorch",
+    "href": "slides/semana05/s2_mlp_clasificacion.html#por-qué-pytorch",
+    "title": "Redes Neuronales para NLP",
+    "section": "¿Por Qué PyTorch?",
+    "text": "¿Por Qué PyTorch?\n\n\nEn S1 implementamos con NumPy\n# Forward manual\nz1 = X @ W1 + b1\nh1 = relu(z1)\nz2 = h1 @ W2 + b2\ny_hat = sigmoid(z2)\n\n# Backward manual\ndz2 = y_hat - y\ndW2 = h1.T @ dz2 / m\n# ... 😰 muchas derivadas\nFunciona, pero no escala:\n\nDerivadas manuales para cada arquitectura\nSin soporte para GPU\nSin optimizadores avanzados\n\n\nCon PyTorch\n# Definir modelo\nmodel = nn.Sequential(\n    nn.Linear(20, 8),\n    nn.ReLU(),\n    nn.Linear(8, 1),\n    nn.Sigmoid()\n)\n\n# Entrenar\nloss = criterion(model(X), y)\nloss.backward()  # ¡autograd! 🎉\noptimizer.step()\nAutograd calcula todos los gradientes automáticamente."
+  },
+  {
+    "objectID": "slides/semana05/s2_mlp_clasificacion.html#pytorch-conceptos-fundamentales",
+    "href": "slides/semana05/s2_mlp_clasificacion.html#pytorch-conceptos-fundamentales",
+    "title": "Redes Neuronales para NLP",
+    "section": "PyTorch: Conceptos Fundamentales",
+    "text": "PyTorch: Conceptos Fundamentales\n\n\nCode\nimport torch\nimport torch.nn as nn\nimport numpy as np\n\n# 1. Tensores — como arrays de NumPy, pero con autograd\nx = torch.tensor([1.0, 2.0, 3.0], requires_grad=True)\nprint(f\"Tensor:    {x}\")\nprint(f\"Tipo:      {x.dtype}\")\nprint(f\"Requiere grad: {x.requires_grad}\")\n\n# 2. Operaciones — igual que NumPy\ny = x ** 2 + 3 * x\nz = y.sum()\nprint(f\"\\ny = x² + 3x = {y.data}\")\nprint(f\"z = sum(y) = {z.item():.1f}\")\n\n# 3. Autograd — calcula gradientes automáticamente\nz.backward()\nprint(f\"\\n∂z/∂x = 2x + 3 = {x.grad}\")\nprint(f\"Verificación: 2*[1,2,3] + 3 = [{2*1+3}, {2*2+3}, {2*3+3}]\")\n\n\nTensor:    tensor([1., 2., 3.], requires_grad=True)\nTipo:      torch.float32\nRequiere grad: True\n\ny = x² + 3x = tensor([ 4., 10., 18.])\nz = sum(y) = 32.0\n\n∂z/∂x = 2x + 3 = tensor([5., 7., 9.])\nVerificación: 2*[1,2,3] + 3 = [5, 7, 9]"
+  },
+  {
+    "objectID": "slides/semana05/s2_mlp_clasificacion.html#numpy-pytorch",
+    "href": "slides/semana05/s2_mlp_clasificacion.html#numpy-pytorch",
+    "title": "Redes Neuronales para NLP",
+    "section": "NumPy ↔︎ PyTorch",
+    "text": "NumPy ↔︎ PyTorch\n\n\nCode\n# Conversión fluida entre NumPy y PyTorch\narray_np = np.array([[1, 2], [3, 4]], dtype=np.float32)\ntensor_pt = torch.from_numpy(array_np)\nde_vuelta = tensor_pt.numpy()\n\nprint(f\"NumPy:\\n{array_np}\\n\")\nprint(f\"PyTorch:\\n{tensor_pt}\\n\")\nprint(f\"De vuelta a NumPy:\\n{de_vuelta}\")\n\n\nNumPy:\n[[1. 2.]\n [3. 4.]]\n\nPyTorch:\ntensor([[1., 2.],\n        [3., 4.]])\n\nDe vuelta a NumPy:\n[[1. 2.]\n [3. 4.]]\n\n\n\nEquivalencias comunes\n\n\n\nNumPy\nPyTorch\nDescripción\n\n\n\n\nnp.array([1,2,3])\ntorch.tensor([1,2,3])\nCrear tensor\n\n\na @ b\na @ b\nMultiplicación matricial\n\n\nnp.zeros((3,4))\ntorch.zeros(3,4)\nTensor de ceros\n\n\na.reshape(2,3)\na.view(2,3)\nCambiar forma\n\n\nnp.random.randn(3,4)\ntorch.randn(3,4)\nAleatorio normal\n\n\na.mean()\na.mean()\nMedia"
+  },
+  {
+    "objectID": "slides/semana05/s2_mlp_clasificacion.html#nn.module-la-clase-base",
+    "href": "slides/semana05/s2_mlp_clasificacion.html#nn.module-la-clase-base",
+    "title": "Redes Neuronales para NLP",
+    "section": "nn.Module: La Clase Base",
+    "text": "nn.Module: La Clase Base\nTodos los modelos en PyTorch heredan de nn.Module:\n\nimport torch.nn as nn\n\nclass MLPSimple(nn.Module):\n    def __init__(self, input_dim, hidden_dim, output_dim):\n        super().__init__()\n        self.capa1 = nn.Linear(input_dim, hidden_dim)\n        self.relu = nn.ReLU()\n        self.capa2 = nn.Linear(hidden_dim, output_dim)\n    \n    def forward(self, x):\n        x = self.capa1(x)     # Transformación lineal\n        x = self.relu(x)      # Activación no lineal\n        x = self.capa2(x)     # Capa de salida\n        return x\n\n# Crear modelo\nmodelo = MLPSimple(input_dim=20, hidden_dim=8, output_dim=1)\nprint(modelo)\n\nMLPSimple(\n  (capa1): Linear(in_features=20, out_features=8, bias=True)\n  (relu): ReLU()\n  (capa2): Linear(in_features=8, out_features=1, bias=True)\n)\n\n\n\n\n\nCode\n# Contar parámetros\ntotal_params = sum(p.numel() for p in modelo.parameters())\nprint(f\"\\nParámetros totales: {total_params}\")\nfor nombre, param in modelo.named_parameters():\n    print(f\"  {nombre}: {param.shape} = {param.numel()} params\")\n\n\n\nParámetros totales: 177\n  capa1.weight: torch.Size([8, 20]) = 160 params\n  capa1.bias: torch.Size([8]) = 8 params\n  capa2.weight: torch.Size([1, 8]) = 8 params\n  capa2.bias: torch.Size([1]) = 1 params"
+  },
+  {
+    "objectID": "slides/semana05/s2_mlp_clasificacion.html#el-loop-de-entrenamiento",
+    "href": "slides/semana05/s2_mlp_clasificacion.html#el-loop-de-entrenamiento",
+    "title": "Redes Neuronales para NLP",
+    "section": "El Loop de Entrenamiento",
+    "text": "El Loop de Entrenamiento\nEl patrón estándar en PyTorch:\n\n# 1. Crear modelo, pérdida y optimizador\nmodelo = MLPSimple(20, 8, 1)\ncriterio = nn.BCEWithLogitsLoss()   # BCE + sigmoid integrada\noptimizador = torch.optim.SGD(modelo.parameters(), lr=0.01)\n\n# 2. Loop de entrenamiento\nfor epoca in range(100):\n    # Forward pass\n    predicciones = modelo(X_train)\n    loss = criterio(predicciones, y_train)\n    \n    # Backward pass\n    optimizador.zero_grad()   # ← Limpiar gradientes anteriores\n    loss.backward()           # ← Calcular gradientes (autograd)\n    optimizador.step()        # ← Actualizar pesos\n\n\n\n\n\n\n\n\n¡No olvidar zero_grad()!\n\n\nPyTorch acumula gradientes por defecto. Si no los limpiamos, los gradientes de la época anterior se suman a los nuevos. Es el error más común de principiantes."
+  },
+  {
+    "objectID": "slides/semana05/s2_mlp_clasificacion.html#ejemplo-mlp-para-xor-con-pytorch",
+    "href": "slides/semana05/s2_mlp_clasificacion.html#ejemplo-mlp-para-xor-con-pytorch",
+    "title": "Redes Neuronales para NLP",
+    "section": "Ejemplo: MLP para XOR con PyTorch",
+    "text": "Ejemplo: MLP para XOR con PyTorch\n\n\nCode\n# XOR con PyTorch — comparar con la versión NumPy de S1\nX_xor = torch.tensor([[0,0], [0,1], [1,0], [1,1]], dtype=torch.float32)\ny_xor = torch.tensor([[0], [1], [1], [0]], dtype=torch.float32)\n\n# Modelo\ntorch.manual_seed(42)\nmodelo_xor = nn.Sequential(\n    nn.Linear(2, 4),\n    nn.ReLU(),\n    nn.Linear(4, 1),\n)\ncriterio = nn.BCEWithLogitsLoss()\noptimizador = torch.optim.Adam(modelo_xor.parameters(), lr=0.05)\n\n# Entrenar\nlosses = []\nfor epoca in range(2000):\n    logits = modelo_xor(X_xor)\n    loss = criterio(logits, y_xor)\n    \n    optimizador.zero_grad()\n    loss.backward()\n    optimizador.step()\n    losses.append(loss.item())\n\n# Predicciones\nwith torch.no_grad():\n    preds = torch.sigmoid(modelo_xor(X_xor))\n    \nprint(\"XOR con PyTorch:\")\nfor i in range(4):\n    print(f\"  [{int(X_xor[i][0])}, {int(X_xor[i][1])}] → {preds[i].item():.4f} \"\n          f\"(esperado: {int(y_xor[i])})\")\nprint(f\"\\nLoss final: {losses[-1]:.6f}\")\nprint(f\"Líneas de código vs NumPy: ~15 vs ~30 😎\")\n\n\nXOR con PyTorch:\n  [0, 0] → 0.0000 (esperado: 0)\n  [0, 1] → 1.0000 (esperado: 1)\n  [1, 0] → 0.9994 (esperado: 1)\n  [1, 1] → 0.0000 (esperado: 0)\n\nLoss final: 0.000174\nLíneas de código vs NumPy: ~15 vs ~30 😎"
+  },
+  {
+    "objectID": "slides/semana05/s2_mlp_clasificacion.html#visualización-del-entrenamiento",
+    "href": "slides/semana05/s2_mlp_clasificacion.html#visualización-del-entrenamiento",
+    "title": "Redes Neuronales para NLP",
+    "section": "Visualización del Entrenamiento",
+    "text": "Visualización del Entrenamiento\n\n\nCode\nimport matplotlib.pyplot as plt\n\nfig, axes = plt.subplots(1, 2, figsize=(12, 5))\n\n# Convergencia\nax = axes[0]\nax.plot(losses, color='#0077b6', linewidth=1.5)\nax.set_xlabel('Época', fontsize=11)\nax.set_ylabel('Loss (BCE)', fontsize=11)\nax.set_title('Convergencia — XOR con PyTorch', fontsize=12)\nax.grid(True, alpha=0.3)\n\n# Frontera de decisión\nax = axes[1]\nwith torch.no_grad():\n    xx, yy = np.meshgrid(np.linspace(-0.5, 1.5, 200), np.linspace(-0.5, 1.5, 200))\n    grid = torch.tensor(np.c_[xx.ravel(), yy.ravel()], dtype=torch.float32)\n    z_grid = torch.sigmoid(modelo_xor(grid)).numpy().reshape(xx.shape)\n\nax.contourf(xx, yy, z_grid, levels=50, cmap='RdYlGn', alpha=0.6)\nax.contour(xx, yy, z_grid, levels=[0.5], colors='black', linewidths=2)\n\ncolores_xor = {0: '#e63946', 1: '#2a9d8f'}\nfor i in range(4):\n    ax.scatter(X_xor[i,0], X_xor[i,1], c=colores_xor[int(y_xor[i])],\n               s=200, edgecolors='black', linewidth=2, zorder=5)\n    ax.annotate(f'{preds[i].item():.2f}', (X_xor[i,0]+0.08, X_xor[i,1]+0.1),\n                fontsize=11, fontweight='bold')\n\nax.set_xlabel('$x_1$', fontsize=12)\nax.set_ylabel('$x_2$', fontsize=12)\nax.set_title('Frontera de decisión — XOR', fontsize=12)\nax.grid(True, alpha=0.3)\n\nplt.tight_layout()\nplt.show()"
+  },
+  {
+    "objectID": "slides/semana05/s2_mlp_clasificacion.html#el-pipeline-completo",
+    "href": "slides/semana05/s2_mlp_clasificacion.html#el-pipeline-completo",
+    "title": "Redes Neuronales para NLP",
+    "section": "El Pipeline Completo",
+    "text": "El Pipeline Completo\n\n\nCode\nflowchart LR\n    subgraph Datos [\"1. Datos\"]\n        T[\"Textos + Etiquetas\"]\n    end\n    \n    subgraph Vectorizar [\"2. Vectorización\"]\n        E[\"TF-IDF o&lt;br&gt;Embeddings\"]\n    end\n    \n    subgraph Modelo [\"3. Modelo\"]\n        M[\"MLP&lt;br&gt;(nn.Module)\"]\n    end\n    \n    subgraph Entrenar [\"4. Entrenar\"]\n        L[\"Loss + Optim&lt;br&gt;+ Backprop\"]\n    end\n    \n    subgraph Evaluar [\"5. Evaluar\"]\n        R[\"Accuracy,&lt;br&gt;F1, Reporte\"]\n    end\n    \n    T --&gt; E --&gt; M --&gt; L --&gt; R\n    \n    style Datos fill:#cfe2ff\n    style Vectorizar fill:#90e0ef\n    style Modelo fill:#00b4d8,color:#fff\n    style Entrenar fill:#0077b6,color:#fff\n    style Evaluar fill:#023e8a,color:#fff\n\n\n\n\n\nflowchart LR\n    subgraph Datos [\"1. Datos\"]\n        T[\"Textos + Etiquetas\"]\n    end\n    \n    subgraph Vectorizar [\"2. Vectorización\"]\n        E[\"TF-IDF o&lt;br&gt;Embeddings\"]\n    end\n    \n    subgraph Modelo [\"3. Modelo\"]\n        M[\"MLP&lt;br&gt;(nn.Module)\"]\n    end\n    \n    subgraph Entrenar [\"4. Entrenar\"]\n        L[\"Loss + Optim&lt;br&gt;+ Backprop\"]\n    end\n    \n    subgraph Evaluar [\"5. Evaluar\"]\n        R[\"Accuracy,&lt;br&gt;F1, Reporte\"]\n    end\n    \n    T --&gt; E --&gt; M --&gt; L --&gt; R\n    \n    style Datos fill:#cfe2ff\n    style Vectorizar fill:#90e0ef\n    style Modelo fill:#00b4d8,color:#fff\n    style Entrenar fill:#0077b6,color:#fff\n    style Evaluar fill:#023e8a,color:#fff\n\n\n\n\n\n\n\nHoy implementamos cada paso con datos reales y PyTorch."
+  },
+  {
+    "objectID": "slides/semana05/s2_mlp_clasificacion.html#paso-1-preparar-los-datos",
+    "href": "slides/semana05/s2_mlp_clasificacion.html#paso-1-preparar-los-datos",
+    "title": "Redes Neuronales para NLP",
+    "section": "Paso 1: Preparar los Datos",
+    "text": "Paso 1: Preparar los Datos\n\n\nCode\nfrom sklearn.datasets import fetch_20newsgroups\nfrom sklearn.feature_extraction.text import TfidfVectorizer\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import LabelEncoder\nimport warnings\nwarnings.filterwarnings('ignore')\n\n# Usar 4 categorías para simplificar\ncategorias = ['sci.space', 'rec.sport.baseball', 'talk.politics.guns', 'comp.graphics']\n\ndatos_train = fetch_20newsgroups(subset='train', categories=categorias,\n                                 remove=('headers', 'footers', 'quotes'))\ndatos_test = fetch_20newsgroups(subset='test', categories=categorias,\n                                remove=('headers', 'footers', 'quotes'))\n\nprint(f\"Documentos de entrenamiento: {len(datos_train.data)}\")\nprint(f\"Documentos de test: {len(datos_test.data)}\")\nprint(f\"\\nCategorías ({len(categorias)}):\")\nfor i, cat in enumerate(datos_train.target_names):\n    n = sum(datos_train.target == i)\n    print(f\"  {i}: {cat} ({n} docs)\")\n\n\nDocumentos de entrenamiento: 2320\nDocumentos de test: 1544\n\nCategorías (4):\n  0: comp.graphics (584 docs)\n  1: rec.sport.baseball (597 docs)\n  2: sci.space (593 docs)\n  3: talk.politics.guns (546 docs)"
+  },
+  {
+    "objectID": "slides/semana05/s2_mlp_clasificacion.html#paso-2-vectorización-con-tf-idf",
+    "href": "slides/semana05/s2_mlp_clasificacion.html#paso-2-vectorización-con-tf-idf",
+    "title": "Redes Neuronales para NLP",
+    "section": "Paso 2: Vectorización con TF-IDF",
+    "text": "Paso 2: Vectorización con TF-IDF\n\n\nCode\n# TF-IDF para convertir texto → vectores numéricos\nvectorizer = TfidfVectorizer(max_features=5000, stop_words='english')\nX_train_tfidf = vectorizer.fit_transform(datos_train.data)\nX_test_tfidf = vectorizer.transform(datos_test.data)\n\nprint(f\"Vocabulario: {len(vectorizer.vocabulary_)} palabras\")\nprint(f\"X_train: {X_train_tfidf.shape}\")\nprint(f\"X_test:  {X_test_tfidf.shape}\")\n\n# Convertir a tensores de PyTorch\nX_train_t = torch.tensor(X_train_tfidf.toarray(), dtype=torch.float32)\nX_test_t = torch.tensor(X_test_tfidf.toarray(), dtype=torch.float32)\ny_train_t = torch.tensor(datos_train.target, dtype=torch.long)\ny_test_t = torch.tensor(datos_test.target, dtype=torch.long)\n\nprint(f\"\\nTensores:\")\nprint(f\"  X_train: {X_train_t.shape}\")\nprint(f\"  y_train: {y_train_t.shape}, clases: {y_train_t.unique().tolist()}\")\n\n\nVocabulario: 5000 palabras\nX_train: (2320, 5000)\nX_test:  (1544, 5000)\n\nTensores:\n  X_train: torch.Size([2320, 5000])\n  y_train: torch.Size([2320]), clases: [0, 1, 2, 3]"
+  },
+  {
+    "objectID": "slides/semana05/s2_mlp_clasificacion.html#paso-3-definir-el-modelo",
+    "href": "slides/semana05/s2_mlp_clasificacion.html#paso-3-definir-el-modelo",
+    "title": "Redes Neuronales para NLP",
+    "section": "Paso 3: Definir el Modelo",
+    "text": "Paso 3: Definir el Modelo\n\nclass ClasificadorTexto(nn.Module):\n    def __init__(self, vocab_size, hidden_dim, num_classes, dropout=0.3):\n        super().__init__()\n        self.red = nn.Sequential(\n            nn.Linear(vocab_size, hidden_dim),\n            nn.ReLU(),\n            nn.Dropout(dropout),          # ← Regularización\n            nn.Linear(hidden_dim, hidden_dim // 2),\n            nn.ReLU(),\n            nn.Dropout(dropout),\n            nn.Linear(hidden_dim // 2, num_classes),\n        )\n    \n    def forward(self, x):\n        return self.red(x)\n\n# Instanciar\ntorch.manual_seed(42)\nmodelo = ClasificadorTexto(\n    vocab_size=5000,\n    hidden_dim=128,\n    num_classes=len(categorias),\n    dropout=0.3\n)\n\ntotal_params = sum(p.numel() for p in modelo.parameters())\nprint(modelo)\nprint(f\"\\nParámetros totales: {total_params:,}\")\n\nClasificadorTexto(\n  (red): Sequential(\n    (0): Linear(in_features=5000, out_features=128, bias=True)\n    (1): ReLU()\n    (2): Dropout(p=0.3, inplace=False)\n    (3): Linear(in_features=128, out_features=64, bias=True)\n    (4): ReLU()\n    (5): Dropout(p=0.3, inplace=False)\n    (6): Linear(in_features=64, out_features=4, bias=True)\n  )\n)\n\nParámetros totales: 648,644\n\n\n\n\n\n\n\n\n\nDropout\n\n\nDurante el entrenamiento, apaga aleatoriamente el 30% de las neuronas en cada paso. Esto obliga a la red a no depender de ninguna neurona individual → mejor generalización. En evaluación se desactiva automáticamente."
+  },
+  {
+    "objectID": "slides/semana05/s2_mlp_clasificacion.html#paso-4-entrenar",
+    "href": "slides/semana05/s2_mlp_clasificacion.html#paso-4-entrenar",
+    "title": "Redes Neuronales para NLP",
+    "section": "Paso 4: Entrenar",
+    "text": "Paso 4: Entrenar\n\n\nCode\nfrom torch.utils.data import DataLoader, TensorDataset\n\n# Dataset y DataLoader\ntrain_dataset = TensorDataset(X_train_t, y_train_t)\ntrain_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)\n\n# Pérdida y optimizador\ncriterio = nn.CrossEntropyLoss()\noptimizador = torch.optim.Adam(modelo.parameters(), lr=0.001)\n\n# Entrenamiento\nnum_epocas = 30\nhistorial = {'train_loss': [], 'train_acc': [], 'test_acc': []}\n\nfor epoca in range(num_epocas):\n    modelo.train()\n    epoch_loss = 0\n    correctos = 0\n    total = 0\n    \n    for X_batch, y_batch in train_loader:\n        # Forward\n        logits = modelo(X_batch)\n        loss = criterio(logits, y_batch)\n        \n        # Backward\n        optimizador.zero_grad()\n        loss.backward()\n        optimizador.step()\n        \n        epoch_loss += loss.item() * len(y_batch)\n        correctos += (logits.argmax(dim=1) == y_batch).sum().item()\n        total += len(y_batch)\n    \n    # Métricas de la época\n    train_loss = epoch_loss / total\n    train_acc = correctos / total\n    \n    # Evaluación en test\n    modelo.eval()\n    with torch.no_grad():\n        logits_test = modelo(X_test_t)\n        test_acc = (logits_test.argmax(dim=1) == y_test_t).float().mean().item()\n    \n    historial['train_loss'].append(train_loss)\n    historial['train_acc'].append(train_acc)\n    historial['test_acc'].append(test_acc)\n    \n    if (epoca + 1) % 10 == 0:\n        print(f\"Época {epoca+1:3d}/{num_epocas} | \"\n              f\"Loss: {train_loss:.4f} | \"\n              f\"Train Acc: {train_acc:.1%} | \"\n              f\"Test Acc: {test_acc:.1%}\")\n\n\nÉpoca  10/30 | Loss: 0.0579 | Train Acc: 97.8% | Test Acc: 88.3%\nÉpoca  20/30 | Loss: 0.0523 | Train Acc: 97.5% | Test Acc: 88.0%\nÉpoca  30/30 | Loss: 0.0528 | Train Acc: 97.5% | Test Acc: 88.4%"
+  },
+  {
+    "objectID": "slides/semana05/s2_mlp_clasificacion.html#curvas-de-entrenamiento",
+    "href": "slides/semana05/s2_mlp_clasificacion.html#curvas-de-entrenamiento",
+    "title": "Redes Neuronales para NLP",
+    "section": "Curvas de Entrenamiento",
+    "text": "Curvas de Entrenamiento\n\n\nCode\nfig, axes = plt.subplots(1, 2, figsize=(12, 5))\n\n# Loss\nax = axes[0]\nax.plot(historial['train_loss'], color='#0077b6', linewidth=2, label='Train Loss')\nax.set_xlabel('Época', fontsize=11)\nax.set_ylabel('Loss', fontsize=11)\nax.set_title('Función de Pérdida', fontsize=12)\nax.legend(fontsize=10)\nax.grid(True, alpha=0.3)\n\n# Accuracy\nax = axes[1]\nax.plot(historial['train_acc'], color='#2a9d8f', linewidth=2, label='Train')\nax.plot(historial['test_acc'], color='#e63946', linewidth=2, label='Test')\nax.set_xlabel('Época', fontsize=11)\nax.set_ylabel('Accuracy', fontsize=11)\nax.set_title('Accuracy por Época', fontsize=12)\nax.legend(fontsize=10)\nax.grid(True, alpha=0.3)\nax.set_ylim(0, 1.05)\n\nplt.tight_layout()\nplt.show()"
+  },
+  {
+    "objectID": "slides/semana05/s2_mlp_clasificacion.html#reporte-de-clasificación",
+    "href": "slides/semana05/s2_mlp_clasificacion.html#reporte-de-clasificación",
+    "title": "Redes Neuronales para NLP",
+    "section": "Reporte de Clasificación",
+    "text": "Reporte de Clasificación\n\n\nCode\nfrom sklearn.metrics import classification_report, confusion_matrix\n\nmodelo.eval()\nwith torch.no_grad():\n    logits_test = modelo(X_test_t)\n    y_pred = logits_test.argmax(dim=1).numpy()\n\nprint(classification_report(\n    datos_test.target, y_pred,\n    target_names=datos_test.target_names\n))\n\n\n                    precision    recall  f1-score   support\n\n     comp.graphics       0.91      0.90      0.90       389\nrec.sport.baseball       0.84      0.94      0.88       397\n         sci.space       0.89      0.84      0.86       394\ntalk.politics.guns       0.91      0.87      0.89       364\n\n          accuracy                           0.88      1544\n         macro avg       0.89      0.88      0.88      1544\n      weighted avg       0.89      0.88      0.88      1544"
+  },
+  {
+    "objectID": "slides/semana05/s2_mlp_clasificacion.html#matriz-de-confusión",
+    "href": "slides/semana05/s2_mlp_clasificacion.html#matriz-de-confusión",
+    "title": "Redes Neuronales para NLP",
+    "section": "Matriz de Confusión",
+    "text": "Matriz de Confusión\n\n\nCode\ncm = confusion_matrix(datos_test.target, y_pred)\n\nfig, ax = plt.subplots(figsize=(8, 6))\nim = ax.imshow(cm, interpolation='nearest', cmap='Blues')\nax.figure.colorbar(im, ax=ax)\n\nlabels_cortos = [c.split('.')[-1] for c in datos_test.target_names]\nax.set(xticks=range(len(labels_cortos)), yticks=range(len(labels_cortos)),\n       xticklabels=labels_cortos, yticklabels=labels_cortos,\n       ylabel='Clase Real', xlabel='Clase Predicha',\n       title='Matriz de Confusión')\nplt.setp(ax.get_xticklabels(), rotation=45, ha='right')\n\n# Anotar celdas\nthresh = cm.max() / 2\nfor i in range(cm.shape[0]):\n    for j in range(cm.shape[1]):\n        ax.text(j, i, format(cm[i, j], 'd'),\n                ha='center', va='center',\n                color='white' if cm[i, j] &gt; thresh else 'black',\n                fontsize=13)\n\nplt.tight_layout()\nplt.show()"
+  },
+  {
+    "objectID": "slides/semana05/s2_mlp_clasificacion.html#accuracy-vs.-f1-cuándo-importa",
+    "href": "slides/semana05/s2_mlp_clasificacion.html#accuracy-vs.-f1-cuándo-importa",
+    "title": "Redes Neuronales para NLP",
+    "section": "Accuracy vs. F1: ¿Cuándo Importa?",
+    "text": "Accuracy vs. F1: ¿Cuándo Importa?\n\n\nAccuracy\n\\[\\text{Accuracy} = \\frac{\\text{Correctos}}{\\text{Total}}\\]\n\n✅ Fácil de interpretar\n❌ Engañosa con clases desbalanceadas\n\nEjemplo: 95% spam, 5% no-spam → un modelo que dice “todo es spam” tiene 95% accuracy.\n\nPrecision, Recall, F1\n\\[\\text{Precision} = \\frac{TP}{TP + FP}\\]\n\\[\\text{Recall} = \\frac{TP}{TP + FN}\\]\n\\[\\text{F1} = 2 \\cdot \\frac{P \\cdot R}{P + R}\\]\n\nPrecision: de lo que predije positivo, ¿cuánto era correcto?\nRecall: de lo que era positivo, ¿cuánto detecté?\nF1: media armónica de ambos\n\n\n\n\n\n\n\n\n\nRegla práctica\n\n\n\nAccuracy cuando las clases están balanceadas\nMacro F1 cuando todas las clases importan igual\nWeighted F1 cuando quieres ponderar por frecuencia"
+  },
+  {
+    "objectID": "slides/semana05/s2_mlp_clasificacion.html#overfitting-vs.-underfitting",
+    "href": "slides/semana05/s2_mlp_clasificacion.html#overfitting-vs.-underfitting",
+    "title": "Redes Neuronales para NLP",
+    "section": "Overfitting vs. Underfitting",
+    "text": "Overfitting vs. Underfitting\n\n\nUnderfitting 📉\nEl modelo es demasiado simple:\n\nTrain accuracy baja\nTest accuracy baja\nSolución: más capas, más neuronas, más épocas\n\nOverfitting 📈\nEl modelo memoriza los datos de entrenamiento:\n\nTrain accuracy alta\nTest accuracy baja (gap grande)\nSolución: regularización\n\n\nTécnicas anti-overfitting\n\n\n\nTécnica\nIdea\n\n\n\n\nDropout\nApagar neuronas random\n\n\nEarly stopping\nParar cuando test deja de mejorar\n\n\nWeight decay\nPenalizar pesos grandes (L2)\n\n\nData augmentation\nMás datos de entrenamiento\n\n\nBatch normalization\nNormalizar activaciones\n\n\n\n\n\n\n\n\n\n\n\nSeñal de alarma\n\n\nSi train_acc &gt;&gt; test_acc (ej. train 99%, test 70%), tu modelo está memorizando, no aprendiendo. Agrega regularización o reduce la complejidad."
+  },
+  {
+    "objectID": "slides/semana05/s2_mlp_clasificacion.html#hiperparámetros-importantes",
+    "href": "slides/semana05/s2_mlp_clasificacion.html#hiperparámetros-importantes",
+    "title": "Redes Neuronales para NLP",
+    "section": "Hiperparámetros Importantes",
+    "text": "Hiperparámetros Importantes\n\n\nCode\n# Demostración: efecto de la tasa de aprendizaje\ntorch.manual_seed(42)\n\nfig, axes = plt.subplots(1, 3, figsize=(14, 4))\nlrs = [0.0001, 0.001, 0.1]\ntitulos = ['Muy bajo (0.0001)', 'Bueno (0.001)', 'Muy alto (0.1)']\n\nfor ax, lr, titulo in zip(axes, lrs, titulos):\n    torch.manual_seed(42)\n    mod = ClasificadorTexto(5000, 64, len(categorias), dropout=0.0)\n    opt = torch.optim.SGD(mod.parameters(), lr=lr)\n    crit = nn.CrossEntropyLoss()\n    \n    losses_lr = []\n    for ep in range(50):\n        mod.train()\n        logits = mod(X_train_t)\n        loss = crit(logits, y_train_t)\n        opt.zero_grad()\n        loss.backward()\n        opt.step()\n        losses_lr.append(loss.item())\n    \n    ax.plot(losses_lr, color='#0077b6', linewidth=2)\n    ax.set_xlabel('Época', fontsize=10)\n    ax.set_ylabel('Loss', fontsize=10)\n    ax.set_title(f'lr = {titulo}', fontsize=11)\n    ax.grid(True, alpha=0.3)\n\nplt.suptitle('Efecto de la Tasa de Aprendizaje', fontsize=13, y=1.02)\nplt.tight_layout()\nplt.show()\n\n\n\n\n\n\n\n\n\n\nRecomendación\n\n\nEmpezar con lr=0.001 y el optimizador Adam (adapta lr por parámetro). Funciona bien en la mayoría de los casos sin necesidad de tuning manual."
+  },
+  {
+    "objectID": "slides/semana05/s2_mlp_clasificacion.html#sgd-vs.-adam",
+    "href": "slides/semana05/s2_mlp_clasificacion.html#sgd-vs.-adam",
+    "title": "Redes Neuronales para NLP",
+    "section": "SGD vs. Adam",
+    "text": "SGD vs. Adam\n\n\nSGD (Stochastic Gradient Descent)\n\\[w \\leftarrow w - \\eta \\cdot \\nabla_w \\mathcal{L}\\]\n\nSimple y bien entendido\nRequiere tunear lr cuidadosamente\nCon momentum funciona mejor:\n\n\\[v \\leftarrow \\beta v + \\nabla_w \\mathcal{L}\\] \\[w \\leftarrow w - \\eta \\cdot v\\]\n\nAdam (Adaptive Moment Estimation)\nCombina momentum + tasa adaptativa por parámetro:\n\\[m_t = \\beta_1 m_{t-1} + (1-\\beta_1) g_t\\] \\[v_t = \\beta_2 v_{t-1} + (1-\\beta_2) g_t^2\\] \\[w \\leftarrow w - \\eta \\cdot \\frac{\\hat{m}_t}{\\sqrt{\\hat{v}_t} + \\epsilon}\\]\n\n✅ Funciona bien “out of the box”\n✅ Adaptativo: parámetros con gradientes grandes → lr pequeño\nValores por defecto: \\(\\beta_1=0.9\\), \\(\\beta_2=0.999\\)\n\n\n\n\n\n\n\n\n\nEn la práctica\n\n\nAdam es el optimizador por defecto en NLP. SGD + momentum puede dar mejor generalización, pero requiere más tuning. Para este curso, usamos Adam."
+  },
+  {
+    "objectID": "slides/semana05/s2_mlp_clasificacion.html#errores-comunes-de-principiantes",
+    "href": "slides/semana05/s2_mlp_clasificacion.html#errores-comunes-de-principiantes",
+    "title": "Redes Neuronales para NLP",
+    "section": "Errores Comunes de Principiantes",
+    "text": "Errores Comunes de Principiantes\n\n\n🐛 Bugs frecuentes\n\nOlvidar zero_grad()\n# ❌ Gradientes se acumulan\nloss.backward()\noptimizer.step()\n\n# ✅ Limpiar antes\noptimizer.zero_grad()\nloss.backward()\noptimizer.step()\nNo usar model.eval()\n# ❌ Dropout activo en test\npreds = model(X_test)\n\n# ✅ Desactivar dropout\nmodel.eval()\nwith torch.no_grad():\n    preds = model(X_test)\n\n\n\nConfundir pérdidas\n# Binaria → BCEWithLogitsLoss\n# Multiclase → CrossEntropyLoss\n# ¡CE ya incluye softmax!\nLabels incorrectos\n# CrossEntropyLoss espera:\n#   y: LongTensor (índices)\n#   NO one-hot encoding\nNo mezclar datos\n# Siempre shuffle=True en train\nDataLoader(data, shuffle=True)"
+  },
+  {
+    "objectID": "slides/semana05/s2_mlp_clasificacion.html#mlp-vs.-regresión-logística",
+    "href": "slides/semana05/s2_mlp_clasificacion.html#mlp-vs.-regresión-logística",
+    "title": "Redes Neuronales para NLP",
+    "section": "MLP vs. Regresión Logística",
+    "text": "MLP vs. Regresión Logística\n\n\nCode\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.metrics import accuracy_score\n\n# Baseline: Regresión Logística\nlr_model = LogisticRegression(max_iter=1000, random_state=42)\nlr_model.fit(X_train_tfidf, datos_train.target)\nlr_pred = lr_model.predict(X_test_tfidf)\nlr_acc = accuracy_score(datos_test.target, lr_pred)\n\n# Nuestro MLP\nmlp_acc = accuracy_score(datos_test.target, y_pred)\n\nprint(f\"{'Modelo':&lt;25} {'Accuracy':&gt;10} {'Parámetros':&gt;12}\")\nprint(\"=\" * 50)\nprint(f\"{'Regresión Logística':&lt;25} {lr_acc:&gt;10.1%} {lr_model.coef_.size:&gt;12,}\")\nprint(f\"{'MLP (128→64→4)':&lt;25} {mlp_acc:&gt;10.1%} {total_params:&gt;12,}\")\n\n\nModelo                      Accuracy   Parámetros\n==================================================\nRegresión Logística            86.9%       20,000\nMLP (128→64→4)                 88.4%      648,644\n\n\n\n\n\nCode\nfig, ax = plt.subplots(figsize=(8, 4))\nmodelos = ['Regresión\\nLogística', 'MLP\\n(PyTorch)']\naccs = [lr_acc, mlp_acc]\ncolores = ['#e9c46a', '#0077b6']\nbars = ax.bar(modelos, accs, color=colores, edgecolor='black', linewidth=0.5, width=0.5)\nfor bar, val in zip(bars, accs):\n    ax.text(bar.get_x() + bar.get_width()/2., bar.get_height() + 0.005,\n            f'{val:.1%}', ha='center', fontweight='bold', fontsize=13)\nax.set_ylabel('Accuracy', fontsize=12)\nax.set_title('Clasificación de 20 Newsgroups (4 categorías)', fontsize=13)\nax.set_ylim(0, 1.05)\nax.grid(True, alpha=0.3, axis='y')\nplt.tight_layout()\nplt.show()\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nReflexión\n\n\nCon TF-IDF como input, la regresión logística es un baseline muy fuerte. Las redes neuronales brillan más cuando aprenden sus propias representaciones (embeddings entrenables), algo que veremos con modelos más avanzados."
+  },
+  {
+    "objectID": "slides/semana05/s2_mlp_clasificacion.html#lo-que-aprendimos-hoy",
+    "href": "slides/semana05/s2_mlp_clasificacion.html#lo-que-aprendimos-hoy",
+    "title": "Redes Neuronales para NLP",
+    "section": "Lo Que Aprendimos Hoy",
+    "text": "Lo Que Aprendimos Hoy\n\n\nPyTorch\n\nTensores con autograd automático\nnn.Module para definir arquitecturas\nDataLoader para mini-batches\nLoop: forward → loss → zero_grad → backward → step\n\n\nClasificación de texto\n\nPipeline: TF-IDF → MLP → CrossEntropy\nDropout para regularización\nAdam como optimizador por defecto\nF1 como métrica principal (no solo accuracy)\nSiempre comparar con un baseline simple"
+  },
+  {
+    "objectID": "slides/semana05/s2_mlp_clasificacion.html#fórmulas-clave",
+    "href": "slides/semana05/s2_mlp_clasificacion.html#fórmulas-clave",
+    "title": "Redes Neuronales para NLP",
+    "section": "Fórmulas Clave",
+    "text": "Fórmulas Clave\n\n\n\n\n\n\n\nConcepto\nFórmula\n\n\n\n\nCross-Entropy\n\\(\\mathcal{L} = -\\sum_c y_c \\log \\hat{y}_c\\)\n\n\nSoftmax\n\\(\\hat{y}_c = \\frac{e^{z_c}}{\\sum_k e^{z_k}}\\)\n\n\nDropout\n\\(h_i = h_i \\cdot m_i\\), donde \\(m_i \\sim \\text{Bernoulli}(1-p)\\)\n\n\nAdam\n\\(w \\leftarrow w - \\eta \\frac{\\hat{m}_t}{\\sqrt{\\hat{v}_t} + \\epsilon}\\)\n\n\nPrecision\n\\(P = \\frac{TP}{TP + FP}\\)\n\n\nRecall\n\\(R = \\frac{TP}{TP + FN}\\)\n\n\nF1\n\\(F_1 = 2 \\cdot \\frac{P \\cdot R}{P + R}\\)"
+  },
+  {
+    "objectID": "slides/semana05/s2_mlp_clasificacion.html#para-la-próxima-sesión",
+    "href": "slides/semana05/s2_mlp_clasificacion.html#para-la-próxima-sesión",
+    "title": "Redes Neuronales para NLP",
+    "section": "Para la Próxima Sesión 📚",
+    "text": "Para la Próxima Sesión 📚\n\n\n\n\n\n\nS3: Variantes de Descenso de Gradiente y Regularización\n\n\n\nSGD con Momentum, RMSProp, AdaGrad\nBatch Norm, Learning Rate Scheduling\nRegularización L1/L2 y Early Stopping\n\n\n\n\nLectura:\n\nRuder (2016): An overview of gradient descent optimization algorithms — Excelente resumen visual\nGoodfellow et al., Deep Learning, Cap. 7: Regularization\nGoodfellow et al., Deep Learning, Cap. 8: Optimization\n\nPreparación:\n\nExperimentar con el código de hoy cambiando hiperparámetros\nQuiz 4 cubrirá: perceptrones (S1) + MLPs y PyTorch (S2) 🧮"
+  },
+  {
     "objectID": "slides/semana04/s3_visualizacion.html#agenda-de-hoy",
     "href": "slides/semana04/s3_visualizacion.html#agenda-de-hoy",
     "title": "La Revolución Vectorial",
@@ -180,6 +355,13 @@
     "title": "La Revolución Vectorial",
     "section": "Para Reflexionar 🤔",
     "text": "Para Reflexionar 🤔\n\n\nPreguntas de discusión\n\nSi PCA explica el 95% de la varianza con 10 componentes, ¿significa que los otros 290 son “inútiles”?\n¿Por qué no deberíamos usar t-SNE como preprocesamiento para un clasificador?\nSi dos ejecuciones de t-SNE producen mapas muy diferentes, ¿qué nos dice eso sobre los datos?\n\n\nLecturas recomendadas\n\nVan der Maaten & Hinton (2008). Visualizing Data using t-SNE. JMLR\nHow to Use t-SNE Effectively — Distill.pub (interactivo, excelente)\nMcInnes et al. (2018). UMAP: Uniform Manifold Approximation and Projection. arXiv:1802.03426\nJurafsky & Martin, Ch. 6 — Visualización de embeddings\n\n\n\n\n\n\n\n\n\n📝 Tarea 1: Analizador de Sentimiento\n\n\nEsta semana se entrega la Tarea 1: Analizador de sentimiento usando TF-IDF + Regresión Logística. ¡No la dejen para el último día!"
+  },
+  {
+    "objectID": "slides/semana04/s3_visualizacion.html#para-la-próxima-sesión",
+    "href": "slides/semana04/s3_visualizacion.html#para-la-próxima-sesión",
+    "title": "La Revolución Vectorial",
+    "section": "Para la Próxima Sesión 📚",
+    "text": "Para la Próxima Sesión 📚\n\n\n\n\n\n\nSemana 5: Redes Neuronales para NLP\n\n\n\nPerceptrones y retropropagación\nRedes neuronales feedforward (MLPs)\nClasificación de texto con redes neuronales\n\n\n\n\nLectura:\n\nJurafsky & Martin, Cap. 7: Neural Networks and Neural Language Models\n3Blue1Brown: Neural Networks — Excelente serie visual\n\nPreparación:\n\nEntregar Tarea 1 antes del viernes\nRepasar conceptos de álgebra lineal (multiplicación de matrices, gradientes)"
   },
   {
     "objectID": "slides/semana04/s1_word2vec.html#agenda-de-hoy",
@@ -1306,14 +1488,14 @@
     "href": "index.html",
     "title": "NLP y Análisis Semántico",
     "section": "",
-    "text": "Introducción a NLP\nExpresiones Regulares\nPreprocesamiento de Texto\n\n\n\n\n\nBolsa de Palabras (BoW) y One-hot Encoding\nTF-IDF: Encontrando lo Relevante\nInformación Mutua Puntual (PMI) y N-gramas\n\n\n\n\n\nModelos de Lenguaje N-gram y Regla de la Cadena\nEvaluación: Perplejidad y Técnicas de Suavizado\nModelos Ocultos de Markov (HMM) para Etiquetado POS\n\n\n\n\n\nWord2Vec: Skip-gram y CBOW\nGloVe y FastText: Embeddings de Subpalabras\nVisualización de Datos de Alta Dimensión: t-SNE y PCA"
+    "text": "Introducción a NLP\nExpresiones Regulares\nPreprocesamiento de Texto\n\n\n\n\n\nBolsa de Palabras (BoW) y One-hot Encoding\nTF-IDF: Encontrando lo Relevante\nInformación Mutua Puntual (PMI) y N-gramas\n\n\n\n\n\nModelos de Lenguaje N-gram y Regla de la Cadena\nEvaluación: Perplejidad y Técnicas de Suavizado\nModelos Ocultos de Markov (HMM) para Etiquetado POS\n\n\n\n\n\nWord2Vec: Skip-gram y CBOW\nGloVe y FastText: Embeddings de Subpalabras\nVisualización de Datos de Alta Dimensión: t-SNE y PCA\n\n\n\n\n\nRepaso de Perceptrones y Retropropagación\nPerceptrones Multicapa para Clasificación de Texto"
   },
   {
     "objectID": "index.html#diapositivas",
     "href": "index.html#diapositivas",
     "title": "NLP y Análisis Semántico",
     "section": "",
-    "text": "Introducción a NLP\nExpresiones Regulares\nPreprocesamiento de Texto\n\n\n\n\n\nBolsa de Palabras (BoW) y One-hot Encoding\nTF-IDF: Encontrando lo Relevante\nInformación Mutua Puntual (PMI) y N-gramas\n\n\n\n\n\nModelos de Lenguaje N-gram y Regla de la Cadena\nEvaluación: Perplejidad y Técnicas de Suavizado\nModelos Ocultos de Markov (HMM) para Etiquetado POS\n\n\n\n\n\nWord2Vec: Skip-gram y CBOW\nGloVe y FastText: Embeddings de Subpalabras\nVisualización de Datos de Alta Dimensión: t-SNE y PCA"
+    "text": "Introducción a NLP\nExpresiones Regulares\nPreprocesamiento de Texto\n\n\n\n\n\nBolsa de Palabras (BoW) y One-hot Encoding\nTF-IDF: Encontrando lo Relevante\nInformación Mutua Puntual (PMI) y N-gramas\n\n\n\n\n\nModelos de Lenguaje N-gram y Regla de la Cadena\nEvaluación: Perplejidad y Técnicas de Suavizado\nModelos Ocultos de Markov (HMM) para Etiquetado POS\n\n\n\n\n\nWord2Vec: Skip-gram y CBOW\nGloVe y FastText: Embeddings de Subpalabras\nVisualización de Datos de Alta Dimensión: t-SNE y PCA\n\n\n\n\n\nRepaso de Perceptrones y Retropropagación\nPerceptrones Multicapa para Clasificación de Texto"
   },
   {
     "objectID": "index.html#tareas",
@@ -2476,5 +2658,180 @@
     "title": "La Revolución Vectorial",
     "section": "Lecturas Recomendadas",
     "text": "Lecturas Recomendadas\n\n\nPapers originales\n\nPennington et al. (2014). GloVe: Global Vectors for Word Representation. EMNLP 2014\nBojanowski et al. (2017). Enriching Word Vectors with Subword Information. TACL 2017\n\n\nRecursos adicionales\n\nJurafsky & Martin, Ch. 6 — Secciones sobre GloVe\nStanford GloVe Project — Modelos pre-entrenados y código\nFastText Official — Modelos en 157 idiomas\nJay Alammar: The Illustrated Word2Vec — Incluye comparación con GloVe"
+  },
+  {
+    "objectID": "slides/semana05/s1_perceptron_backprop.html#agenda-de-hoy",
+    "href": "slides/semana05/s1_perceptron_backprop.html#agenda-de-hoy",
+    "title": "Redes Neuronales para NLP",
+    "section": "Agenda de Hoy",
+    "text": "Agenda de Hoy\n\n\nPrimera Parte\n\n🔙 Repaso: ¿Por qué redes neuronales en NLP?\n🧠 El perceptrón: la neurona artificial\n📐 Funciones de activación\n\n\nSegunda Parte\n\n⛓️ Redes de múltiples capas (MLPs)\n🔄 Retropropagación: aprendiendo de los errores\n🛠️ Implementación desde cero con NumPy"
+  },
+  {
+    "objectID": "slides/semana05/s1_perceptron_backprop.html#por-qué-redes-neuronales",
+    "href": "slides/semana05/s1_perceptron_backprop.html#por-qué-redes-neuronales",
+    "title": "Redes Neuronales para NLP",
+    "section": "¿Por Qué Redes Neuronales?",
+    "text": "¿Por Qué Redes Neuronales?\n\n\nLo que ya tenemos\n\n\n\nHerramienta\nLimitación\n\n\n\n\nBoW / TF-IDF\nNo captura orden ni semántica\n\n\nWord2Vec / GloVe\nSolo representan, no deciden\n\n\nRegresión Logística\nFronteras lineales\n\n\nN-gramas\nExplosión combinatoria\n\n\n\n\nLo que necesitamos\n\nModelos que aprendan representaciones y decisiones juntas\nCapturar relaciones no lineales entre palabras\nEscalar a millones de parámetros\nSer la base de Transformers, BERT, GPT…\n\n\n\n\n\n\n\n\n\nEl Camino\n\n\nPerceptrón → MLP → RNN → LSTM → Transformer → BERT → GPT\nHoy cubrimos los primeros dos pasos de este camino."
+  },
+  {
+    "objectID": "slides/semana05/s1_perceptron_backprop.html#inspiración-biológica-breve",
+    "href": "slides/semana05/s1_perceptron_backprop.html#inspiración-biológica-breve",
+    "title": "Redes Neuronales para NLP",
+    "section": "Inspiración Biológica (Breve)",
+    "text": "Inspiración Biológica (Breve)\n\n\nLa neurona biológica\n\nRecibe señales por las dendritas\nIntegra las señales en el soma\nSi supera un umbral, dispara por el axón\nLa señal pasa a otras neuronas por las sinapsis\n\nLa “fuerza” de cada sinapsis es lo que el cerebro ajusta al aprender.\n\nLa neurona artificial\n\nRecibe entradas \\(x_1, x_2, \\ldots, x_n\\)\nCalcula la suma ponderada: \\(z = \\sum_i w_i x_i + b\\)\nAplica una función de activación: \\(a = f(z)\\)\nTransmite el resultado\n\nLos pesos \\(w_i\\) y el sesgo \\(b\\) son lo que el modelo ajusta al aprender.\n\n\n\n\n\n\n\n\nCuidado con la analogía\n\n\nLas redes neuronales artificiales están inspiradas en el cerebro, pero son una simplificación extrema. No pretenden modelar el cerebro real."
+  },
+  {
+    "objectID": "slides/semana05/s1_perceptron_backprop.html#el-perceptrón-rosenblatt-1958",
+    "href": "slides/semana05/s1_perceptron_backprop.html#el-perceptrón-rosenblatt-1958",
+    "title": "Redes Neuronales para NLP",
+    "section": "El Perceptrón (Rosenblatt, 1958)",
+    "text": "El Perceptrón (Rosenblatt, 1958)\nEl modelo neuronal más simple: una sola neurona que toma una decisión binaria.\n\\[\\hat{y} = \\begin{cases} 1 & \\text{si } \\vec{w} \\cdot \\vec{x} + b \\geq 0 \\\\ 0 & \\text{si } \\vec{w} \\cdot \\vec{x} + b &lt; 0 \\end{cases}\\]\n\n\n\nCode\nflowchart LR\n    x1[\"x₁\"] --&gt;|w₁| S[\"Σ + b\"]\n    x2[\"x₂\"] --&gt;|w₂| S\n    x3[\"x₃\"] --&gt;|w₃| S\n    S --&gt; F[\"f(z)\"]\n    F --&gt; Y[\"ŷ\"]\n\n    style S fill:#0077b6,color:#fff\n    style F fill:#e63946,color:#fff\n    style Y fill:#2a9d8f,color:#fff\n\n\n\n\n\nflowchart LR\n    x1[\"x₁\"] --&gt;|w₁| S[\"Σ + b\"]\n    x2[\"x₂\"] --&gt;|w₂| S\n    x3[\"x₃\"] --&gt;|w₃| S\n    S --&gt; F[\"f(z)\"]\n    F --&gt; Y[\"ŷ\"]\n\n    style S fill:#0077b6,color:#fff\n    style F fill:#e63946,color:#fff\n    style Y fill:#2a9d8f,color:#fff\n\n\n\n\n\n\n\n\nRegla de actualización\nPara cada ejemplo \\((x, y)\\) con tasa de aprendizaje \\(\\eta\\):\n\\[w_i \\leftarrow w_i + \\eta \\cdot (y - \\hat{y}) \\cdot x_i\\]\n\\[b \\leftarrow b + \\eta \\cdot (y - \\hat{y})\\]"
+  },
+  {
+    "objectID": "slides/semana05/s1_perceptron_backprop.html#el-perceptrón-en-acción",
+    "href": "slides/semana05/s1_perceptron_backprop.html#el-perceptrón-en-acción",
+    "title": "Redes Neuronales para NLP",
+    "section": "El Perceptrón en Acción",
+    "text": "El Perceptrón en Acción\n\n\nCode\nimport numpy as np\nimport matplotlib.pyplot as plt\n\nnp.random.seed(42)\n\n# Datos linealmente separables: ¿sentimiento positivo o negativo?\n# Simulamos: x1 = frecuencia de palabras positivas, x2 = frecuencia de palabras negativas\nn = 50\npositivos = np.random.randn(n, 2) + [2, 0]   # cluster positivo\nnegativos = np.random.randn(n, 2) + [0, 2]   # cluster negativo\nX = np.vstack([positivos, negativos])\ny = np.array([1]*n + [0]*n)\n\n# Perceptrón desde cero\nw = np.zeros(2)\nb = 0.0\neta = 0.1\n\nerrores_por_epoca = []\nfor epoca in range(20):\n    errores = 0\n    for i in range(len(X)):\n        z = np.dot(w, X[i]) + b\n        y_hat = 1 if z &gt;= 0 else 0\n        error = y[i] - y_hat\n        w += eta * error * X[i]\n        b += eta * error\n        if error != 0:\n            errores += 1\n    errores_por_epoca.append(errores)\n\nfig, axes = plt.subplots(1, 2, figsize=(12, 5))\n\n# Frontera de decisión\nax = axes[0]\nax.scatter(positivos[:, 0], positivos[:, 1], c='#2a9d8f', label='Positivo', s=40, alpha=0.7)\nax.scatter(negativos[:, 0], negativos[:, 1], c='#e63946', label='Negativo', s=40, alpha=0.7)\n\nx_line = np.linspace(-2, 5, 100)\nif w[1] != 0:\n    y_line = -(w[0] * x_line + b) / w[1]\n    ax.plot(x_line, y_line, 'k--', linewidth=2, label='Frontera')\n\nax.set_xlabel('Frecuencia palabras positivas', fontsize=11)\nax.set_ylabel('Frecuencia palabras negativas', fontsize=11)\nax.set_title('Perceptrón: Clasificación de Sentimiento', fontsize=12)\nax.legend(fontsize=10)\nax.grid(True, alpha=0.3)\nax.set_xlim(-2, 5)\nax.set_ylim(-2, 5)\n\n# Convergencia\nax = axes[1]\nax.plot(range(1, 21), errores_por_epoca, 'o-', color='#0077b6', markersize=5)\nax.set_xlabel('Época', fontsize=11)\nax.set_ylabel('Errores', fontsize=11)\nax.set_title('Convergencia del Perceptrón', fontsize=12)\nax.grid(True, alpha=0.3)\n\nplt.tight_layout()\nplt.show()\n\nprint(f\"Pesos finales: w = [{w[0]:.3f}, {w[1]:.3f}], b = {b:.3f}\")\nprint(f\"Errores finales: {errores_por_epoca[-1]}\")\n\n\n\nPesos finales: w = [0.052, -0.529], b = 0.200\nErrores finales: 6"
+  },
+  {
+    "objectID": "slides/semana05/s1_perceptron_backprop.html#el-problema-de-xor",
+    "href": "slides/semana05/s1_perceptron_backprop.html#el-problema-de-xor",
+    "title": "Redes Neuronales para NLP",
+    "section": "El Problema de XOR",
+    "text": "El Problema de XOR\n\n\nAND — Separable linealmente ✅\n\n\n\n\\(x_1\\)\n\\(x_2\\)\nAND\n\n\n\n\n0\n0\n0\n\n\n0\n1\n0\n\n\n1\n0\n0\n\n\n1\n1\n1\n\n\n\nOR — Separable linealmente ✅\n\n\n\n\\(x_1\\)\n\\(x_2\\)\nOR\n\n\n\n\n0\n0\n0\n\n\n0\n1\n1\n\n\n1\n0\n1\n\n\n1\n1\n1\n\n\n\n\nXOR — No separable linealmente ❌\n\n\n\n\\(x_1\\)\n\\(x_2\\)\nXOR\n\n\n\n\n0\n0\n0\n\n\n0\n1\n1\n\n\n1\n0\n1\n\n\n1\n1\n0\n\n\n\nNo existe ninguna línea recta que separe las clases."
+  },
+  {
+    "objectID": "slides/semana05/s1_perceptron_backprop.html#visualización-de-xor",
+    "href": "slides/semana05/s1_perceptron_backprop.html#visualización-de-xor",
+    "title": "Redes Neuronales para NLP",
+    "section": "Visualización de XOR",
+    "text": "Visualización de XOR\n\n\nCode\nfig, axes = plt.subplots(1, 3, figsize=(14, 4))\ngates = {\n    'AND': ([0,0,1,1], [0,1,0,1], [0,0,0,1]),\n    'OR':  ([0,0,1,1], [0,1,0,1], [0,1,1,1]),\n    'XOR': ([0,0,1,1], [0,1,0,1], [0,1,1,0]),\n}\ncolores_gate = {0: '#e63946', 1: '#2a9d8f'}\n\nfor ax, (nombre, (x1, x2, y_gate)) in zip(axes, gates.items()):\n    for i in range(4):\n        ax.scatter(x1[i], x2[i], c=colores_gate[y_gate[i]],\n                   s=200, zorder=5, edgecolors='black', linewidth=1.5)\n        ax.annotate(str(y_gate[i]), (x1[i], x2[i]),\n                    fontsize=14, fontweight='bold', ha='center', va='center',\n                    color='white')\n    \n    if nombre != 'XOR':\n        xx = np.linspace(-0.5, 1.5, 100)\n        if nombre == 'AND':\n            yy = 1.5 - xx  # w1=1, w2=1, b=-1.5\n        else:\n            yy = 0.5 - xx  # w1=1, w2=1, b=-0.5\n        ax.plot(xx, yy, 'k--', linewidth=2, alpha=0.7)\n        ax.fill_between(xx, yy, 2, alpha=0.05, color='#2a9d8f')\n    else:\n        ax.text(0.5, -0.3, '¿Dónde va la línea?', ha='center',\n                fontsize=11, style='italic', color='#e63946')\n    \n    ax.set_xlim(-0.5, 1.5)\n    ax.set_ylim(-0.5, 1.5)\n    ax.set_xlabel('$x_1$', fontsize=12)\n    ax.set_ylabel('$x_2$', fontsize=12)\n    ax.set_title(nombre, fontsize=14, fontweight='bold')\n    ax.grid(True, alpha=0.3)\n    ax.set_aspect('equal')\n\nplt.tight_layout()\nplt.show()\n\n\n\n\n\n\n\n\n\n\nLa Crisis del Perceptrón (Minsky & Papert, 1969)\n\n\nDemostraron que un perceptrón no puede resolver XOR y que las limitaciones lineales son fundamentales. Esto causó el primer “invierno” de la IA (~1970-1986).\nLa solución: apilar perceptrones en múltiples capas → redes neuronales profundas."
+  },
+  {
+    "objectID": "slides/semana05/s1_perceptron_backprop.html#por-qué-necesitamos-activaciones",
+    "href": "slides/semana05/s1_perceptron_backprop.html#por-qué-necesitamos-activaciones",
+    "title": "Redes Neuronales para NLP",
+    "section": "¿Por Qué Necesitamos Activaciones?",
+    "text": "¿Por Qué Necesitamos Activaciones?\nSin funciones de activación no lineales, apilar capas es inútil:\n\\[\\text{Capa 1: } \\vec{h} = W_1 \\vec{x} + \\vec{b}_1\\] \\[\\text{Capa 2: } \\vec{y} = W_2 \\vec{h} + \\vec{b}_2\\]\n\nSustituyendo:\n\\[\\vec{y} = W_2 (W_1 \\vec{x} + \\vec{b}_1) + \\vec{b}_2 = \\underbrace{(W_2 W_1)}_{\\tilde{W}} \\vec{x} + \\underbrace{(W_2 \\vec{b}_1 + \\vec{b}_2)}_{\\tilde{\\vec{b}}}\\]\n\n\n¡Dos capas lineales = una sola capa lineal! Necesitamos no linealidad entre capas."
+  },
+  {
+    "objectID": "slides/semana05/s1_perceptron_backprop.html#funciones-de-activación-comunes",
+    "href": "slides/semana05/s1_perceptron_backprop.html#funciones-de-activación-comunes",
+    "title": "Redes Neuronales para NLP",
+    "section": "Funciones de Activación Comunes",
+    "text": "Funciones de Activación Comunes\n\n\nCode\nx = np.linspace(-4, 4, 200)\n\n# Funciones de activación\nsigmoid = 1 / (1 + np.exp(-x))\ntanh_vals = np.tanh(x)\nrelu = np.maximum(0, x)\nleaky_relu = np.where(x &gt; 0, x, 0.01 * x)\n\nfig, axes = plt.subplots(2, 2, figsize=(12, 8))\n\nconfigs = [\n    (axes[0,0], sigmoid, 'Sigmoide: $\\\\sigma(z) = \\\\frac{1}{1+e^{-z}}$', '#0077b6'),\n    (axes[0,1], tanh_vals, 'Tanh: $\\\\tanh(z) = \\\\frac{e^z - e^{-z}}{e^z + e^{-z}}$', '#2a9d8f'),\n    (axes[1,0], relu, 'ReLU: $\\\\max(0, z)$', '#e63946'),\n    (axes[1,1], leaky_relu, 'Leaky ReLU: $\\\\max(0.01z, z)$', '#e9c46a'),\n]\n\nfor ax, y_vals, titulo, color in configs:\n    ax.plot(x, y_vals, linewidth=2.5, color=color)\n    ax.axhline(y=0, color='gray', linewidth=0.5)\n    ax.axvline(x=0, color='gray', linewidth=0.5)\n    ax.set_title(titulo, fontsize=12)\n    ax.grid(True, alpha=0.3)\n    ax.set_xlabel('z', fontsize=11)\n    ax.set_ylabel('f(z)', fontsize=11)\n\nplt.tight_layout()\nplt.show()"
+  },
+  {
+    "objectID": "slides/semana05/s1_perceptron_backprop.html#comparación-de-activaciones",
+    "href": "slides/semana05/s1_perceptron_backprop.html#comparación-de-activaciones",
+    "title": "Redes Neuronales para NLP",
+    "section": "Comparación de Activaciones",
+    "text": "Comparación de Activaciones\n\n\n\n\n\n\n\n\n\nFunción\nRango\nDerivada\nProblema\n\n\n\n\nSigmoide\n\\((0, 1)\\)\n\\(\\sigma(1-\\sigma)\\), máx 0.25\nGradient vanishing\n\n\nTanh\n\\((-1, 1)\\)\n\\(1 - \\tanh^2\\), máx 1.0\nGradient vanishing\n\n\nReLU\n\\([0, \\infty)\\)\n0 ó 1\n“Neuronas muertas”\n\n\nLeaky ReLU\n\\((-\\infty, \\infty)\\)\n0.01 ó 1\n✅ Poca desventaja\n\n\n\n\n\n\n\n\n\n\nEn la práctica\n\n\n\nReLU es el estándar para capas ocultas (rápida, simple, funciona bien)\nSigmoide para la capa de salida en clasificación binaria\nSoftmax para la capa de salida en clasificación multiclase\nTanh ya casi no se usa, excepto en LSTMs"
+  },
+  {
+    "objectID": "slides/semana05/s1_perceptron_backprop.html#el-gradiente-de-la-sigmoide",
+    "href": "slides/semana05/s1_perceptron_backprop.html#el-gradiente-de-la-sigmoide",
+    "title": "Redes Neuronales para NLP",
+    "section": "El Gradiente de la Sigmoide",
+    "text": "El Gradiente de la Sigmoide\n¿Por qué la sigmoide causa “gradientes que desaparecen”?\n\n\nCode\nx = np.linspace(-6, 6, 200)\nsig = 1 / (1 + np.exp(-x))\nsig_grad = sig * (1 - sig)\n\nfig, axes = plt.subplots(1, 2, figsize=(12, 4))\n\nax = axes[0]\nax.plot(x, sig, linewidth=2.5, color='#0077b6', label='$\\\\sigma(z)$')\nax.set_title('Sigmoide', fontsize=12)\nax.legend(fontsize=12)\nax.grid(True, alpha=0.3)\nax.set_xlabel('z', fontsize=11)\n\nax = axes[1]\nax.plot(x, sig_grad, linewidth=2.5, color='#e63946', label=\"$\\\\sigma'(z) = \\\\sigma(1-\\\\sigma)$\")\nax.axhline(y=0.25, color='gray', linestyle='--', alpha=0.5, label='Máximo: 0.25')\nax.set_title('Gradiente de la Sigmoide', fontsize=12)\nax.legend(fontsize=11)\nax.grid(True, alpha=0.3)\nax.set_xlabel('z', fontsize=11)\n\nplt.tight_layout()\nplt.show()\n\n\n\n\n\n\n\n\n\n\nProblema de saturación\n\n\nCuando \\(|z|\\) es grande, \\(\\sigma'(z) \\approx 0\\). En una red profunda, multiplicar muchos gradientes pequeños (\\(&lt; 0.25\\)) → el gradiente se desvanece exponencialmente en las capas más tempranas."
+  },
+  {
+    "objectID": "slides/semana05/s1_perceptron_backprop.html#arquitectura-de-un-mlp",
+    "href": "slides/semana05/s1_perceptron_backprop.html#arquitectura-de-un-mlp",
+    "title": "Redes Neuronales para NLP",
+    "section": "Arquitectura de un MLP",
+    "text": "Arquitectura de un MLP\nUn MLP apila múltiples capas de neuronas con activaciones no lineales:\n\n\nCode\nflowchart LR\n    subgraph Entrada [\"Capa de Entrada\"]\n        x1[\"x₁\"]\n        x2[\"x₂\"]\n        x3[\"x₃\"]\n    end\n    \n    subgraph Oculta1 [\"Capa Oculta 1\"]\n        h1[\"h₁\"]\n        h2[\"h₂\"]\n        h3[\"h₃\"]\n        h4[\"h₄\"]\n    end\n    \n    subgraph Oculta2 [\"Capa Oculta 2\"]\n        g1[\"g₁\"]\n        g2[\"g₂\"]\n    end\n    \n    subgraph Salida [\"Capa de Salida\"]\n        y1[\"ŷ\"]\n    end\n    \n    x1 --&gt; h1 & h2 & h3 & h4\n    x2 --&gt; h1 & h2 & h3 & h4\n    x3 --&gt; h1 & h2 & h3 & h4\n    h1 --&gt; g1 & g2\n    h2 --&gt; g1 & g2\n    h3 --&gt; g1 & g2\n    h4 --&gt; g1 & g2\n    g1 --&gt; y1\n    g2 --&gt; y1\n    \n    style Entrada fill:#cfe2ff,stroke:#0077b6\n    style Oculta1 fill:#90e0ef,stroke:#0077b6\n    style Oculta2 fill:#00b4d8,stroke:#023e8a,color:#fff\n    style Salida fill:#0077b6,stroke:#023e8a,color:#fff\n\n\n\n\n\nflowchart LR\n    subgraph Entrada [\"Capa de Entrada\"]\n        x1[\"x₁\"]\n        x2[\"x₂\"]\n        x3[\"x₃\"]\n    end\n    \n    subgraph Oculta1 [\"Capa Oculta 1\"]\n        h1[\"h₁\"]\n        h2[\"h₂\"]\n        h3[\"h₃\"]\n        h4[\"h₄\"]\n    end\n    \n    subgraph Oculta2 [\"Capa Oculta 2\"]\n        g1[\"g₁\"]\n        g2[\"g₂\"]\n    end\n    \n    subgraph Salida [\"Capa de Salida\"]\n        y1[\"ŷ\"]\n    end\n    \n    x1 --&gt; h1 & h2 & h3 & h4\n    x2 --&gt; h1 & h2 & h3 & h4\n    x3 --&gt; h1 & h2 & h3 & h4\n    h1 --&gt; g1 & g2\n    h2 --&gt; g1 & g2\n    h3 --&gt; g1 & g2\n    h4 --&gt; g1 & g2\n    g1 --&gt; y1\n    g2 --&gt; y1\n    \n    style Entrada fill:#cfe2ff,stroke:#0077b6\n    style Oculta1 fill:#90e0ef,stroke:#0077b6\n    style Oculta2 fill:#00b4d8,stroke:#023e8a,color:#fff\n    style Salida fill:#0077b6,stroke:#023e8a,color:#fff"
+  },
+  {
+    "objectID": "slides/semana05/s1_perceptron_backprop.html#forward-pass-propagación-hacia-adelante",
+    "href": "slides/semana05/s1_perceptron_backprop.html#forward-pass-propagación-hacia-adelante",
+    "title": "Redes Neuronales para NLP",
+    "section": "Forward Pass (Propagación Hacia Adelante)",
+    "text": "Forward Pass (Propagación Hacia Adelante)\nCapa por capa\n\\[\\vec{h}^{(1)} = f\\left(W^{(1)} \\vec{x} + \\vec{b}^{(1)}\\right)\\] \\[\\vec{h}^{(2)} = f\\left(W^{(2)} \\vec{h}^{(1)} + \\vec{b}^{(2)}\\right)\\] \\[\\hat{y} = \\sigma\\left(\\vec{w}^{(3)} \\cdot \\vec{h}^{(2)} + b^{(3)}\\right)\\]\n. . .\nDimensiones\n\n\n\nComponente\nDimensión\nEjemplo\n\n\n\n\n\\(\\vec{x}\\) (entrada)\n\\(n \\times 1\\)\n\\(3 \\times 1\\)\n\n\n\\(W^{(1)}\\)\n\\(d_1 \\times n\\)\n\\(4 \\times 3\\)\n\n\n\\(\\vec{h}^{(1)}\\)\n\\(d_1 \\times 1\\)\n\\(4 \\times 1\\)\n\n\n\\(W^{(2)}\\)\n\\(d_2 \\times d_1\\)\n\\(2 \\times 4\\)\n\n\n\\(\\vec{h}^{(2)}\\)\n\\(d_2 \\times 1\\)\n\\(2 \\times 1\\)\n\n\n\\(\\vec{w}^{(3)}\\)\n\\(1 \\times d_2\\)\n\\(1 \\times 2\\)\n\n\n\n. . .\n\n\n\n\n\n\nParámetros totales\n\n\nEn este ejemplo: \\((4 \\times 3 + 4) + (2 \\times 4 + 2) + (1 \\times 2 + 1) = 16 + 10 + 3 = 29\\) parámetros."
+  },
+  {
+    "objectID": "slides/semana05/s1_perceptron_backprop.html#mlp-resuelve-xor",
+    "href": "slides/semana05/s1_perceptron_backprop.html#mlp-resuelve-xor",
+    "title": "Redes Neuronales para NLP",
+    "section": "MLP Resuelve XOR",
+    "text": "MLP Resuelve XOR\n\n\nCode\n# MLP para XOR — desde cero con NumPy\nX_xor = np.array([[0,0], [0,1], [1,0], [1,1]])\ny_xor = np.array([[0], [1], [1], [0]])\n\nnp.random.seed(42)\n# Arquitectura: 2 → 4 → 1\nW1 = np.random.randn(2, 4) * 0.5\nb1 = np.zeros((1, 4))\nW2 = np.random.randn(4, 1) * 0.5\nb2 = np.zeros((1, 1))\n\ndef sigmoid(z):\n    return 1 / (1 + np.exp(-z))\n\neta = 1.0\nlosses = []\n\nfor epoca in range(5000):\n    # Forward\n    z1 = X_xor @ W1 + b1\n    h1 = sigmoid(z1)\n    z2 = h1 @ W2 + b2\n    y_hat = sigmoid(z2)\n    \n    # Loss (binary cross-entropy)\n    loss = -np.mean(y_xor * np.log(y_hat + 1e-8) + (1 - y_xor) * np.log(1 - y_hat + 1e-8))\n    losses.append(loss)\n    \n    # Backward\n    dz2 = y_hat - y_xor                      # (4, 1)\n    dW2 = h1.T @ dz2 / 4                     # (4, 1)\n    db2 = np.mean(dz2, axis=0, keepdims=True) # (1, 1)\n    dh1 = dz2 @ W2.T                         # (4, 4)\n    dz1 = dh1 * h1 * (1 - h1)                # (4, 4)\n    dW1 = X_xor.T @ dz1 / 4                  # (2, 4)\n    db1 = np.mean(dz1, axis=0, keepdims=True) # (1, 4)\n    \n    # Update\n    W2 -= eta * dW2\n    b2 -= eta * db2\n    W1 -= eta * dW1\n    b1 -= eta * db1\n\n# Resultados\nfig, axes = plt.subplots(1, 2, figsize=(12, 5))\n\n# Frontera de decisión\nax = axes[0]\nxx, yy = np.meshgrid(np.linspace(-0.5, 1.5, 200), np.linspace(-0.5, 1.5, 200))\ngrid = np.c_[xx.ravel(), yy.ravel()]\nh_grid = sigmoid(grid @ W1 + b1)\nz_grid = sigmoid(h_grid @ W2 + b2).reshape(xx.shape)\nax.contourf(xx, yy, z_grid, levels=50, cmap='RdYlGn', alpha=0.6)\nax.contour(xx, yy, z_grid, levels=[0.5], colors='black', linewidths=2)\n\nfor i in range(4):\n    color = '#2a9d8f' if y_xor[i][0] == 1 else '#e63946'\n    ax.scatter(X_xor[i, 0], X_xor[i, 1], c=color, s=200,\n               edgecolors='black', linewidth=2, zorder=5)\n    ax.annotate(f'{y_hat[i][0]:.2f}', (X_xor[i,0]+0.08, X_xor[i,1]+0.1),\n                fontsize=11, fontweight='bold')\n\nax.set_xlabel('$x_1$', fontsize=12)\nax.set_ylabel('$x_2$', fontsize=12)\nax.set_title('MLP: Frontera de decisión para XOR', fontsize=12)\nax.grid(True, alpha=0.3)\n\n# Convergencia\nax = axes[1]\nax.plot(losses, color='#0077b6', linewidth=1.5)\nax.set_xlabel('Época', fontsize=11)\nax.set_ylabel('Loss (Binary Cross-Entropy)', fontsize=11)\nax.set_title('Convergencia del MLP', fontsize=12)\nax.grid(True, alpha=0.3)\n\nplt.tight_layout()\nplt.show()\n\nprint(f\"Predicciones finales:\")\nfor i in range(4):\n    print(f\"  x={X_xor[i]} → ŷ={y_hat[i][0]:.4f} (esperado: {y_xor[i][0]})\")\n\n\n\nPredicciones finales:\n  x=[0 0] → ŷ=0.0024 (esperado: 0)\n  x=[0 1] → ŷ=0.9984 (esperado: 1)\n  x=[1 0] → ŷ=0.9984 (esperado: 1)\n  x=[1 1] → ŷ=0.0013 (esperado: 0)\n\n\n\n\n\n\n\n\n\nLección clave\n\n\nLa frontera de decisión del MLP es no lineal — puede separar las clases de XOR. Cada capa oculta transforma el espacio de entrada en un espacio donde los datos sí son linealmente separables."
+  },
+  {
+    "objectID": "slides/semana05/s1_perceptron_backprop.html#la-idea-central",
+    "href": "slides/semana05/s1_perceptron_backprop.html#la-idea-central",
+    "title": "Redes Neuronales para NLP",
+    "section": "La Idea Central",
+    "text": "La Idea Central\n\nRetropropagación (Backpropagation) calcula el gradiente de la pérdida con respecto a cada peso de la red, usando la regla de la cadena de forma eficiente.\n\n\n¿Por qué es difícil?\nUna red con \\(L\\) capas y función de pérdida \\(\\mathcal{L}\\):\n\\[\\frac{\\partial \\mathcal{L}}{\\partial W^{(1)}} = \\frac{\\partial \\mathcal{L}}{\\partial \\hat{y}} \\cdot \\frac{\\partial \\hat{y}}{\\partial h^{(L-1)}} \\cdot \\frac{\\partial h^{(L-1)}}{\\partial h^{(L-2)}} \\cdots \\frac{\\partial h^{(2)}}{\\partial h^{(1)}} \\cdot \\frac{\\partial h^{(1)}}{\\partial W^{(1)}}\\]\n. . .\nLa regla de la cadena descompone el problema en gradientes locales que se propagan hacia atrás capa por capa."
+  },
+  {
+    "objectID": "slides/semana05/s1_perceptron_backprop.html#ejemplo-red-de-una-capa-oculta",
+    "href": "slides/semana05/s1_perceptron_backprop.html#ejemplo-red-de-una-capa-oculta",
+    "title": "Redes Neuronales para NLP",
+    "section": "Ejemplo: Red de Una Capa Oculta",
+    "text": "Ejemplo: Red de Una Capa Oculta\nForward pass\n\\[z = w_1 x_1 + w_2 x_2 + b\\] \\[h = \\sigma(z)\\] \\[\\hat{y} = h\\] \\[\\mathcal{L} = -[y \\log(\\hat{y}) + (1-y)\\log(1-\\hat{y})]\\]\n. . .\nBackward pass (regla de la cadena)\n\\[\\frac{\\partial \\mathcal{L}}{\\partial w_1} = \\underbrace{\\frac{\\partial \\mathcal{L}}{\\partial \\hat{y}}}_{\\text{pérdida}} \\cdot \\underbrace{\\frac{\\partial \\hat{y}}{\\partial z}}_{\\text{activación}} \\cdot \\underbrace{\\frac{\\partial z}{\\partial w_1}}_{\\text{lineal}}\\]\n. . .\nCalculando cada parte:\n\\[\\frac{\\partial \\mathcal{L}}{\\partial \\hat{y}} = \\frac{\\hat{y} - y}{\\hat{y}(1-\\hat{y})}, \\quad \\frac{\\partial \\hat{y}}{\\partial z} = \\sigma(z)(1-\\sigma(z)), \\quad \\frac{\\partial z}{\\partial w_1} = x_1\\]\n. . .\nSimplificando:\n\\[\\frac{\\partial \\mathcal{L}}{\\partial w_1} = (\\hat{y} - y) \\cdot x_1\\]"
+  },
+  {
+    "objectID": "slides/semana05/s1_perceptron_backprop.html#grafo-computacional",
+    "href": "slides/semana05/s1_perceptron_backprop.html#grafo-computacional",
+    "title": "Redes Neuronales para NLP",
+    "section": "Grafo Computacional",
+    "text": "Grafo Computacional\nBackprop opera sobre un grafo computacional — cada nodo calcula su gradiente local:\n\n\nCode\nflowchart LR\n    x[\"x\"] --&gt; mul[\"×\"]\n    w[\"w\"] --&gt; mul\n    mul --&gt; add[\"Σ\"]\n    b[\"b\"] --&gt; add\n    add --&gt; sig[\"σ\"]\n    sig --&gt; loss[\"L\"]\n    y[\"y\"] --&gt; loss\n    \n    loss -.-&gt;|\"∂L/∂σ\"| sig\n    sig -.-&gt;|\"∂σ/∂z · ∂L/∂σ\"| add\n    add -.-&gt;|\"∂z/∂w · ...\"| mul\n    \n    style loss fill:#e63946,color:#fff\n    style sig fill:#0077b6,color:#fff\n    style add fill:#90e0ef,stroke:#0077b6\n    style mul fill:#90e0ef,stroke:#0077b6\n\n\n\n\n\nflowchart LR\n    x[\"x\"] --&gt; mul[\"×\"]\n    w[\"w\"] --&gt; mul\n    mul --&gt; add[\"Σ\"]\n    b[\"b\"] --&gt; add\n    add --&gt; sig[\"σ\"]\n    sig --&gt; loss[\"L\"]\n    y[\"y\"] --&gt; loss\n    \n    loss -.-&gt;|\"∂L/∂σ\"| sig\n    sig -.-&gt;|\"∂σ/∂z · ∂L/∂σ\"| add\n    add -.-&gt;|\"∂z/∂w · ...\"| mul\n    \n    style loss fill:#e63946,color:#fff\n    style sig fill:#0077b6,color:#fff\n    style add fill:#90e0ef,stroke:#0077b6\n    style mul fill:#90e0ef,stroke:#0077b6\n\n\n\n\n\n\n\n\n\n\n\n\n\nFrameworks modernos\n\n\nPyTorch y TensorFlow construyen este grafo automáticamente (autograd). Nosotros solo definimos el forward pass; el backward se calcula solo. Pero entender cómo funciona es fundamental."
+  },
+  {
+    "objectID": "slides/semana05/s1_perceptron_backprop.html#backprop-paso-a-paso",
+    "href": "slides/semana05/s1_perceptron_backprop.html#backprop-paso-a-paso",
+    "title": "Redes Neuronales para NLP",
+    "section": "Backprop Paso a Paso",
+    "text": "Backprop Paso a Paso\n\n\nCode\n# Backprop manual — red con 1 neurona oculta\n# Entrada: x = [1.0, 0.5], y = 1 (spam)\n\nx = np.array([1.0, 0.5])\ny = 1.0\n\n# Pesos iniciales (aleatorios)\nw = np.array([0.3, -0.2])\nb = 0.1\n\n# --- Forward Pass ---\nz = np.dot(w, x) + b                      # z = 0.3*1 + (-0.2)*0.5 + 0.1 = 0.3\nh = 1 / (1 + np.exp(-z))                   # σ(0.3) ≈ 0.574\ny_hat = h\nloss = -(y * np.log(y_hat) + (1-y) * np.log(1-y_hat))\n\nprint(\"=== Forward Pass ===\")\nprint(f\"z = w·x + b = {w[0]}×{x[0]} + {w[1]}×{x[1]} + {b} = {z:.3f}\")\nprint(f\"h = σ({z:.3f}) = {h:.4f}\")\nprint(f\"Loss = {loss:.4f}\")\n\n# --- Backward Pass ---\ndL_dy = (y_hat - y)               # ∂L/∂ŷ simplificado\ndL_dw = dL_dy * x                 # ∂L/∂w = (ŷ - y) · x\ndL_db = dL_dy                     # ∂L/∂b = (ŷ - y)\n\nprint(\"\\n=== Backward Pass ===\")\nprint(f\"∂L/∂ŷ = ŷ - y = {y_hat:.4f} - {y} = {dL_dy:.4f}\")\nprint(f\"∂L/∂w₁ = {dL_dy:.4f} × {x[0]} = {dL_dw[0]:.4f}\")\nprint(f\"∂L/∂w₂ = {dL_dy:.4f} × {x[1]} = {dL_dw[1]:.4f}\")\nprint(f\"∂L/∂b  = {dL_db:.4f}\")\n\n# --- Update ---\neta = 0.5\nw_new = w - eta * dL_dw\nb_new = b - eta * dL_db\n\nprint(f\"\\n=== Update (η={eta}) ===\")\nprint(f\"w₁: {w[0]:.3f} → {w_new[0]:.4f}\")\nprint(f\"w₂: {w[1]:.3f} → {w_new[1]:.4f}\")\nprint(f\"b:  {b:.3f} → {b_new:.4f}\")\n\n# Verificar que la loss baja\nz_new = np.dot(w_new, x) + b_new\nh_new = 1 / (1 + np.exp(-z_new))\nloss_new = -(y * np.log(h_new) + (1-y) * np.log(1-h_new))\nprint(f\"\\nLoss antes: {loss:.4f} → Loss después: {loss_new:.4f} ({'↓ Bajó!' if loss_new &lt; loss else '↑ Subió'})\")\n\n\n=== Forward Pass ===\nz = w·x + b = 0.3×1.0 + -0.2×0.5 + 0.1 = 0.300\nh = σ(0.300) = 0.5744\nLoss = 0.5544\n\n=== Backward Pass ===\n∂L/∂ŷ = ŷ - y = 0.5744 - 1.0 = -0.4256\n∂L/∂w₁ = -0.4256 × 1.0 = -0.4256\n∂L/∂w₂ = -0.4256 × 0.5 = -0.2128\n∂L/∂b  = -0.4256\n\n=== Update (η=0.5) ===\nw₁: 0.300 → 0.5128\nw₂: -0.200 → -0.0936\nb:  0.100 → 0.3128\n\nLoss antes: 0.5544 → Loss después: 0.3777 (↓ Bajó!)"
+  },
+  {
+    "objectID": "slides/semana05/s1_perceptron_backprop.html#funciones-de-pérdida",
+    "href": "slides/semana05/s1_perceptron_backprop.html#funciones-de-pérdida",
+    "title": "Redes Neuronales para NLP",
+    "section": "Funciones de Pérdida",
+    "text": "Funciones de Pérdida\n\n\nClasificación binaria\nBinary Cross-Entropy (BCE):\n\\[\\mathcal{L} = -\\frac{1}{N}\\sum_i \\left[y_i \\log(\\hat{y}_i) + (1-y_i)\\log(1-\\hat{y}_i)\\right]\\]\nCapa de salida: sigmoide\n\nClasificación multiclase\nCross-Entropy:\n\\[\\mathcal{L} = -\\frac{1}{N}\\sum_i \\sum_c y_{i,c} \\log(\\hat{y}_{i,c})\\]\nCapa de salida: softmax\n\\[\\text{softmax}(z_j) = \\frac{e^{z_j}}{\\sum_k e^{z_k}}\\]\n\n\nRegresión\nMean Squared Error (MSE):\n\\[\\mathcal{L} = \\frac{1}{N}\\sum_i (y_i - \\hat{y}_i)^2\\]"
+  },
+  {
+    "objectID": "slides/semana05/s1_perceptron_backprop.html#softmax-de-logits-a-probabilidades",
+    "href": "slides/semana05/s1_perceptron_backprop.html#softmax-de-logits-a-probabilidades",
+    "title": "Redes Neuronales para NLP",
+    "section": "Softmax: De Logits a Probabilidades",
+    "text": "Softmax: De Logits a Probabilidades\n\n\nCode\n# Ejemplo: clasificación de sentimiento en 3 clases\nlogits = np.array([2.1, 0.5, -1.3])  # salida de la última capa\nclases = ['Positivo', 'Neutro', 'Negativo']\n\n# Softmax\nexp_logits = np.exp(logits - np.max(logits))  # truco de estabilidad numérica\nsoftmax_probs = exp_logits / exp_logits.sum()\n\nfig, axes = plt.subplots(1, 2, figsize=(12, 4))\n\n# Logits (valores crudos)\nax = axes[0]\ncolors = ['#2a9d8f', '#e9c46a', '#e63946']\nbars = ax.bar(clases, logits, color=colors, edgecolor='black', linewidth=0.5)\nfor bar, val in zip(bars, logits):\n    ax.text(bar.get_x() + bar.get_width()/2., bar.get_height() + 0.1,\n            f'{val:.1f}', ha='center', fontweight='bold', fontsize=12)\nax.set_title('Logits (salida cruda)', fontsize=12)\nax.set_ylabel('Valor', fontsize=11)\nax.axhline(y=0, color='gray', linewidth=0.5)\nax.grid(True, alpha=0.3, axis='y')\n\n# Softmax\nax = axes[1]\nbars = ax.bar(clases, softmax_probs, color=colors, edgecolor='black', linewidth=0.5)\nfor bar, val in zip(bars, softmax_probs):\n    ax.text(bar.get_x() + bar.get_width()/2., bar.get_height() + 0.01,\n            f'{val:.1%}', ha='center', fontweight='bold', fontsize=12)\nax.set_title('Softmax (probabilidades)', fontsize=12)\nax.set_ylabel('Probabilidad', fontsize=11)\nax.set_ylim(0, 1)\nax.grid(True, alpha=0.3, axis='y')\n\nplt.tight_layout()\nplt.show()\n\nprint(f\"Logits: {logits} → Softmax: [{', '.join(f'{p:.4f}' for p in softmax_probs)}]\")\nprint(f\"Suma de probabilidades: {softmax_probs.sum():.4f}\")\n\n\n\nLogits: [ 2.1  0.5 -1.3] → Softmax: [0.8095, 0.1634, 0.0270]\nSuma de probabilidades: 1.0000"
+  },
+  {
+    "objectID": "slides/semana05/s1_perceptron_backprop.html#un-mlp-para-clasificación-de-texto",
+    "href": "slides/semana05/s1_perceptron_backprop.html#un-mlp-para-clasificación-de-texto",
+    "title": "Redes Neuronales para NLP",
+    "section": "Un MLP para Clasificación de Texto",
+    "text": "Un MLP para Clasificación de Texto\n¿Cómo combinar lo que ya sabemos (embeddings) con lo que aprendimos hoy?\n\n\nCode\nflowchart LR\n    subgraph Input [\"Entrada\"]\n        T[\"Texto: 'película genial'\"]\n    end\n    \n    subgraph Embed [\"Embeddings\"]\n        E1[\"vec(película)\"]\n        E2[\"vec(genial)\"]\n    end\n    \n    subgraph Pool [\"Pooling\"]\n        P[\"Promedio\"]\n    end\n    \n    subgraph MLP [\"Red Neuronal\"]\n        H1[\"Capa Oculta&lt;br&gt;ReLU\"]\n        H2[\"Capa de Salida&lt;br&gt;Softmax\"]\n    end\n    \n    subgraph Out [\"Predicción\"]\n        Y[\"😊 Positivo: 92%\"]\n    end\n    \n    T --&gt; E1 & E2\n    E1 & E2 --&gt; P\n    P --&gt; H1 --&gt; H2 --&gt; Y\n    \n    style Input fill:#cfe2ff\n    style Embed fill:#90e0ef\n    style Pool fill:#00b4d8,color:#fff\n    style MLP fill:#0077b6,color:#fff\n    style Out fill:#2a9d8f,color:#fff\n\n\n\n\n\nflowchart LR\n    subgraph Input [\"Entrada\"]\n        T[\"Texto: 'película genial'\"]\n    end\n    \n    subgraph Embed [\"Embeddings\"]\n        E1[\"vec(película)\"]\n        E2[\"vec(genial)\"]\n    end\n    \n    subgraph Pool [\"Pooling\"]\n        P[\"Promedio\"]\n    end\n    \n    subgraph MLP [\"Red Neuronal\"]\n        H1[\"Capa Oculta&lt;br&gt;ReLU\"]\n        H2[\"Capa de Salida&lt;br&gt;Softmax\"]\n    end\n    \n    subgraph Out [\"Predicción\"]\n        Y[\"😊 Positivo: 92%\"]\n    end\n    \n    T --&gt; E1 & E2\n    E1 & E2 --&gt; P\n    P --&gt; H1 --&gt; H2 --&gt; Y\n    \n    style Input fill:#cfe2ff\n    style Embed fill:#90e0ef\n    style Pool fill:#00b4d8,color:#fff\n    style MLP fill:#0077b6,color:#fff\n    style Out fill:#2a9d8f,color:#fff\n\n\n\n\n\n\n\nPipeline\n\nTokenizar el texto\nBuscar el embedding de cada palabra\nPromediar los embeddings → un vector de tamaño fijo\nPasar por un MLP: capa oculta con ReLU → capa de salida con softmax\nObtener la predicción"
+  },
+  {
+    "objectID": "slides/semana05/s1_perceptron_backprop.html#ejemplo-práctico-clasificador-de-sentimiento",
+    "href": "slides/semana05/s1_perceptron_backprop.html#ejemplo-práctico-clasificador-de-sentimiento",
+    "title": "Redes Neuronales para NLP",
+    "section": "Ejemplo Práctico: Clasificador de Sentimiento",
+    "text": "Ejemplo Práctico: Clasificador de Sentimiento\n\n\nCode\nfrom gensim.models import Word2Vec\n\n# Mini corpus de entrenamiento\ntextos = [\n    (\"la película es genial y divertida\", 1),\n    (\"me encantó la actuación del actor\", 1),\n    (\"la historia es aburrida y lenta\", 0),\n    (\"pésima película no la recomiendo\", 0),\n    (\"una obra maestra del cine\", 1),\n    (\"terrible actuación muy mala\", 0),\n    (\"excelente drama con buen final\", 1),\n    (\"no vale la pena verla\", 0),\n]\n\n# Entrenar embeddings\ncorpus_tokens = [t.split() for t, _ in textos]\nw2v = Word2Vec(sentences=corpus_tokens, vector_size=20, window=3,\n               min_count=1, sg=1, epochs=200, seed=42)\n\n# Vectorizar textos: promedio de embeddings\ndef texto_a_vector(texto, modelo, dim=20):\n    palabras = texto.split()\n    vecs = [modelo.wv[w] for w in palabras if w in modelo.wv]\n    if not vecs:\n        return np.zeros(dim)\n    return np.mean(vecs, axis=0)\n\nX = np.array([texto_a_vector(t, w2v) for t, _ in textos])\ny = np.array([[label] for _, label in textos])\n\n# MLP: 20 → 8 → 1\nnp.random.seed(42)\nW1 = np.random.randn(20, 8) * 0.3\nb1 = np.zeros((1, 8))\nW2 = np.random.randn(8, 1) * 0.3\nb2 = np.zeros((1, 1))\n\ndef sigmoid(z):\n    return 1 / (1 + np.exp(-np.clip(z, -500, 500)))\n\ndef relu(z):\n    return np.maximum(0, z)\n\ndef relu_grad(z):\n    return (z &gt; 0).astype(float)\n\n# Entrenar\neta = 0.05\nlosses = []\n\nfor epoca in range(500):\n    # Forward\n    z1 = X @ W1 + b1\n    h1 = relu(z1)\n    z2 = h1 @ W2 + b2\n    y_hat = sigmoid(z2)\n    \n    loss = -np.mean(y * np.log(y_hat + 1e-8) + (1-y) * np.log(1-y_hat + 1e-8))\n    losses.append(loss)\n    \n    # Backward\n    m = len(X)\n    dz2 = y_hat - y\n    dW2 = h1.T @ dz2 / m\n    db2 = np.mean(dz2, axis=0, keepdims=True)\n    dh1 = dz2 @ W2.T\n    dz1 = dh1 * relu_grad(z1)\n    dW1 = X.T @ dz1 / m\n    db1 = np.mean(dz1, axis=0, keepdims=True)\n    \n    W2 -= eta * dW2\n    b2 -= eta * db2\n    W1 -= eta * dW1\n    b1 -= eta * db1\n\n# Predicciones finales\nz1_f = X @ W1 + b1\nh1_f = relu(z1_f)\nz2_f = h1_f @ W2 + b2\ny_pred = sigmoid(z2_f)\n\nprint(\"Resultados del clasificador MLP:\")\nprint(f\"{'Texto':&lt;45} {'Real':&gt;5} {'Pred':&gt;6}\")\nprint(\"=\" * 60)\nfor i, (texto, label) in enumerate(textos):\n    emoji = '✅' if round(y_pred[i][0]) == label else '❌'\n    print(f\"{texto:&lt;45} {label:&gt;5} {y_pred[i][0]:&gt;6.3f} {emoji}\")\n\nprint(f\"\\nLoss final: {losses[-1]:.4f}\")\naccuracy = np.mean(np.round(y_pred.flatten()) == y.flatten())\nprint(f\"Accuracy: {accuracy:.0%}\")\n\n\nResultados del clasificador MLP:\nTexto                                          Real   Pred\n============================================================\nla película es genial y divertida                 1  0.498 ❌\nme encantó la actuación del actor                 1  0.500 ✅\nla historia es aburrida y lenta                   0  0.499 ✅\npésima película no la recomiendo                  0  0.498 ✅\nuna obra maestra del cine                         1  0.499 ❌\nterrible actuación muy mala                       0  0.503 ❌\nexcelente drama con buen final                    1  0.499 ❌\nno vale la pena verla                             0  0.503 ❌\n\nLoss final: 0.6945\nAccuracy: 38%"
+  },
+  {
+    "objectID": "slides/semana05/s1_perceptron_backprop.html#lo-que-aprendimos-hoy",
+    "href": "slides/semana05/s1_perceptron_backprop.html#lo-que-aprendimos-hoy",
+    "title": "Redes Neuronales para NLP",
+    "section": "Lo Que Aprendimos Hoy",
+    "text": "Lo Que Aprendimos Hoy\n\n\nModelos\n\nPerceptrón: una neurona, fronteras lineales\nMLP: capas apiladas + no linealidad = fronteras complejas\nLas funciones de activación (ReLU, sigmoide) permiten aprender relaciones no lineales\n\n\nEntrenamiento\n\nForward pass: calcular la predicción\nFunción de pérdida: medir el error (BCE, CE, MSE)\nBackward pass: calcular gradientes con la regla de la cadena\nActualización: ajustar pesos en la dirección del gradiente"
+  },
+  {
+    "objectID": "slides/semana05/s1_perceptron_backprop.html#fórmulas-clave",
+    "href": "slides/semana05/s1_perceptron_backprop.html#fórmulas-clave",
+    "title": "Redes Neuronales para NLP",
+    "section": "Fórmulas Clave",
+    "text": "Fórmulas Clave\n\n\n\n\n\n\n\nConcepto\nFórmula\n\n\n\n\nPerceptrón\n\\(\\hat{y} = f(\\vec{w} \\cdot \\vec{x} + b)\\)\n\n\nReLU\n\\(f(z) = \\max(0, z)\\)\n\n\nSigmoide\n\\(\\sigma(z) = \\frac{1}{1 + e^{-z}}\\)\n\n\nSoftmax\n\\(\\text{softmax}(z_j) = \\frac{e^{z_j}}{\\sum_k e^{z_k}}\\)\n\n\nBCE\n\\(\\mathcal{L} = -[y\\log\\hat{y} + (1-y)\\log(1-\\hat{y})]\\)\n\n\nForward\n\\(\\vec{h} = f(W\\vec{x} + \\vec{b})\\)\n\n\nRegla de la cadena\n\\(\\frac{\\partial \\mathcal{L}}{\\partial w} = \\frac{\\partial \\mathcal{L}}{\\partial \\hat{y}} \\cdot \\frac{\\partial \\hat{y}}{\\partial z} \\cdot \\frac{\\partial z}{\\partial w}\\)\n\n\nActualización\n\\(w \\leftarrow w - \\eta \\frac{\\partial \\mathcal{L}}{\\partial w}\\)"
+  },
+  {
+    "objectID": "slides/semana05/s1_perceptron_backprop.html#para-la-próxima-sesión",
+    "href": "slides/semana05/s1_perceptron_backprop.html#para-la-próxima-sesión",
+    "title": "Redes Neuronales para NLP",
+    "section": "Para la Próxima Sesión 📚",
+    "text": "Para la Próxima Sesión 📚\n\n\n\n\n\n\nS2: Perceptrones Multicapa para Clasificación de Texto\n\n\n\nImplementación con PyTorch\nClasificación multiclase de documentos\nTécnicas de embedding + MLP en la práctica\n\n\n\n\nLectura:\n\nJurafsky & Martin, Cap. 7: Neural Networks and Neural Language Models\n3Blue1Brown: Neural Networks — Excelente serie visual\n\nPreparación:\n\nInstalar PyTorch: pip install torch\nRepasar el concepto de derivadas parciales y regla de la cadena"
   }
 ]
