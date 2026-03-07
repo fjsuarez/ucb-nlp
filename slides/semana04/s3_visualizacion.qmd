@@ -737,10 +737,10 @@ t-SNE te dice **quién** está con **quién**, pero NO te dice **qué tan lejos*
 ## Efecto de Hiperparámetros {.smaller}
 
 ```{python}
-#| code-fold: false
-#| fig-width: 15
-#| fig-height: 9
-fig, axes = plt.subplots(2, 3, figsize=(15, 9))
+#| code-fold: true
+#| fig-width: 14
+#| fig-height: 6
+fig, axes = plt.subplots(2, 3, figsize=(14, 6))
 configs = [
     (5, 500), (5, 2000), (5, 5000),
     (8, 500), (8, 2000), (8, 5000),
@@ -850,6 +850,8 @@ UMAP está reemplazando a t-SNE en muchas aplicaciones. Si trabajas con datasets
 
 ```{python}
 #| code-fold: false
+#| fig-width: 10
+#| fig-height: 7
 # Pipeline completo: Entrenar → Seleccionar → Reducir → Visualizar
 
 from gensim.models import Word2Vec
@@ -880,9 +882,6 @@ print(f"PCA: {vecs_std.shape[1]}D → {n_pca}D "
 tsne_final = TSNE(n_components=2, perplexity=min(8, len(palabras_sel)//3),
                   random_state=42, max_iter=2000, learning_rate='auto', init='pca')
 coords_final = tsne_final.fit_transform(vecs_pca)
-
-#| fig-width: 10
-#| fig-height: 7
 
 # 7. Visualizar
 fig, ax = plt.subplots(figsize=(10, 7))
@@ -982,4 +981,18 @@ La Semana 5 marca el inicio de las **redes neuronales para NLP**: perceptrones, 
 ::: {.callout-important}
 ## 📝 Tarea 1: Analizador de Sentimiento
 Esta semana se entrega la **Tarea 1**: Analizador de sentimiento usando TF-IDF + Regresión Logística. ¡No la dejen para el último día!
+:::
+
+## {background-color="#023e8a"}
+
+::: {style="text-align: center; margin-top: 150px;"}
+
+# ¡Gracias!
+
+### ¿Preguntas?
+
+Prof. Francisco Suárez
+
+📧 [fjsuarez@ucb.edu.bo](mailto:fjsuarez@ucb.edu.bo)
+
 :::
