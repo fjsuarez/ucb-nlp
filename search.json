@@ -95,7 +95,14 @@
     "href": "slides/semana04/s3_visualizacion.html#por-qué-la-distribución-t",
     "title": "La Revolución Vectorial",
     "section": "¿Por Qué la Distribución t?",
-    "text": "¿Por Qué la Distribución t?\nEl problema del “crowding”\nAl proyectar de alta a baja dimensión, hay menos espacio disponible.\n\nEn \\(\\mathbb{R}^{300}\\): un punto puede tener muchos vecinos equidistantes.\nEn \\(\\mathbb{R}^2\\): no caben todos a la misma distancia → se “apiñan” (crowding).\n\nLa solución: colas más pesadas\n\n\nCode\nx = np.linspace(-5, 5, 500)\ngauss = np.exp(-x**2 / 2) / np.sqrt(2 * np.pi)\nt_dist = 1 / (np.pi * (1 + x**2))  # Cauchy = t con df=1\n\nplt.figure(figsize=(10, 4))\nplt.plot(x, gauss, label='Gaussiana', linewidth=2, color='#0077b6')\nplt.plot(x, t_dist, label='t de Student (df=1)', linewidth=2,\n         color='#e63946', linestyle='--')\nplt.fill_between(x, t_dist, alpha=0.1, color='#e63946')\nplt.xlabel('Distancia', fontsize=11)\nplt.ylabel('Densidad', fontsize=11)\nplt.title('Colas más pesadas → más espacio para separar clusters', fontsize=12)\nplt.legend(fontsize=11)\nplt.grid(True, alpha=0.3)\nplt.tight_layout()\nplt.show()\n\n\n\n. . .\n\n\n\n\n\n\nConsecuencia de las colas pesadas\n\n\nPuntos moderadamente distantes en alta dimensión pueden quedar más separados en 2D. Esto evita el apiñamiento y produce clusters más claros."
+    "text": "¿Por Qué la Distribución t?\nEl problema del “crowding”\nAl proyectar de alta a baja dimensión, hay menos espacio disponible.\n\nEn \\(\\mathbb{R}^{300}\\): un punto puede tener muchos vecinos equidistantes.\nEn \\(\\mathbb{R}^2\\): no caben todos a la misma distancia → se “apiñan” (crowding).\n\nSolución: La distribución t tiene colas más pesadas que la gaussiana → más espacio para separar clusters."
+  },
+  {
+    "objectID": "slides/semana04/s3_visualizacion.html#gaussiana-vs.-t-de-student",
+    "href": "slides/semana04/s3_visualizacion.html#gaussiana-vs.-t-de-student",
+    "title": "La Revolución Vectorial",
+    "section": "Gaussiana vs. t de Student",
+    "text": "Gaussiana vs. t de Student\n\n\nCode\nx = np.linspace(-5, 5, 500)\ngauss = np.exp(-x**2 / 2) / np.sqrt(2 * np.pi)\nt_dist = 1 / (np.pi * (1 + x**2))  # Cauchy = t con df=1\n\nplt.figure(figsize=(10, 4))\nplt.plot(x, gauss, label='Gaussiana', linewidth=2, color='#0077b6')\nplt.plot(x, t_dist, label='t de Student (df=1)', linewidth=2,\n         color='#e63946', linestyle='--')\nplt.fill_between(x, t_dist, alpha=0.1, color='#e63946')\nplt.xlabel('Distancia', fontsize=11)\nplt.ylabel('Densidad', fontsize=11)\nplt.title('Colas más pesadas → más espacio para separar clusters', fontsize=12)\nplt.legend(fontsize=11)\nplt.grid(True, alpha=0.3)\nplt.tight_layout()\nplt.show()\n\n\n\n\n\n\n\n\n\nConsecuencia de las colas pesadas\n\n\nPuntos moderadamente distantes en alta dimensión pueden quedar más separados en 2D. Esto evita el apiñamiento y produce clusters más claros."
   },
   {
     "objectID": "slides/semana04/s3_visualizacion.html#el-hiperparámetro-clave-perplexity",
