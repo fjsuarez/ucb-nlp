@@ -24,11 +24,11 @@
 | **5** | **Redes Neuronales para NLP** | |
 | | [S1: Repaso de Perceptrones y Retropropagación](slides/semana05/s1_perceptron_backprop.qmd) | |
 | | [S2: Perceptrones Multicapa para Clasificación de Texto](slides/semana05/s2_mlp_clasificacion.qmd) | Quiz 4 |
-| | S3: Variantes de Descenso de Gradiente y Regularización (Dropout) | |
+| | [S3: Variantes de Descenso de Gradiente y Regularización (Dropout)](slides/semana05/s3_optimizacion_regularizacion.qmd) | |
 | **6** | **Redes Neuronales Recurrentes (RNNs)** | |
-| | S1: Arquitectura RNN: Manejando longitud variable | |
-| | S2: Gradientes que desaparecen y la solución LSTM | Quiz 5 |
-| | S3: Unidades Recurrentes con Compuertas (GRU) y RNNs Bidireccionales | |
+| | [S1: Arquitectura RNN: Manejando longitud variable](slides/semana06/s1_arquitectura_rnn.qmd) | |
+| | [S2: Gradientes que desaparecen y la solución LSTM](slides/semana06/s2_lstm_vanishing_gradients.qmd) | Quiz 5 |
+| | [S3: Unidades Recurrentes con Compuertas (GRU) y RNNs Bidireccionales](slides/semana06/s3_gru_bidireccional.qmd) | |
 | **7** | **Secuencia a Secuencia (Seq2Seq)** | |
 | | S1: Arquitecturas Codificador-Decodificador | |
 | | S2: Aplicaciones: Traducción Automática Neuronal (NMT) | |

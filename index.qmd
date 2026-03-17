@@ -29,6 +29,12 @@ format: html
 ### Semana 5
 - [Repaso de Perceptrones y Retropropagación](slides/semana05/s1_perceptron_backprop.qmd)
 - [Perceptrones Multicapa para Clasificación de Texto](slides/semana05/s2_mlp_clasificacion.qmd)
+- [Variantes de Descenso de Gradiente y Regularización](slides/semana05/s3_optimizacion_regularizacion.qmd)
+
+### Semana 6
+- [Arquitectura RNN: Manejando Longitud Variable](slides/semana06/s1_arquitectura_rnn.qmd)
+- [Gradientes que Desaparecen y la Solución LSTM](slides/semana06/s2_lstm_vanishing_gradients.qmd)
+- [GRU y RNNs Bidireccionales](slides/semana06/s3_gru_bidireccional.qmd)
 
 ## Tareas
 
