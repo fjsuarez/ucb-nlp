@@ -1,0 +1,864 @@
+---
+title: "Secuencia a Secuencia (Seq2Seq)"
+subtitle: "S1: Arquitecturas Codificador-Decodificador"
+author: "Prof. Francisco Suárez"
+institute: "Universidad Católica Boliviana"
+date: "2026-03-25"
+format:
+  revealjs:
+    theme: sky
+    transition: slide
+    slide-number: true
+    chalkboard: true
+    code-fold: true
+    code-tools: true
+    highlight-style: github
+    footer: "NLP y Análisis Semántico | Semana 7"
+    logo: ""
+    incremental: false
+    scrollable: true
+execute:
+  echo: true
+  warning: false
+---
+
+## Agenda de Hoy {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+1. 🔄 De clasificación a **generación**
+2. 📥 El **Codificador** (Encoder)
+3. 📤 El **Decodificador** (Decoder)
+4. 🎓 Entrenamiento: **Teacher Forcing**
+5. 🔍 Estrategias de **Decodificación**
+6. 🧪 Experimento: modelo Seq2Seq completo
+
+:::
+::: {.column width="50%"}
+
+::: {.callout-tip}
+## Objetivo
+Entender la arquitectura **Codificador-Decodificador** (Seq2Seq) que permite mapear secuencias de longitud variable a otras secuencias de longitud variable.
+:::
+
+**Prerequisitos:** RNNs, LSTM, GRU (Semana 6)
+
+:::
+:::
+
+# De Clasificación a Generación {background-color="#0077b6"}
+
+## ¿Qué hemos resuelto hasta ahora? {.smaller}
+
+Con RNNs, LSTM y GRU hemos aprendido a:
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Clasificación de secuencias
+- Entrada: secuencia de tokens
+- Salida: **una etiqueta** (sentimiento, tema, etc.)
+- $h_T \rightarrow \text{softmax} \rightarrow y$
+
+### Etiquetado de secuencias
+- Entrada: secuencia de tokens
+- Salida: **una etiqueta por token** (POS tagging)
+- $h_t \rightarrow \text{softmax} \rightarrow y_t$
+
+:::
+::: {.column width="50%"}
+
+::: {.callout-warning}
+## Limitación
+En ambos casos, la **longitud de la salida** está determinada por la **longitud de la entrada** (o es un escalar).
+
+¿Qué pasa cuando la salida tiene longitud **diferente**?
+:::
+
+:::
+:::
+
+## El Problema: Salida de Longitud Variable {.smaller}
+
+Muchas tareas de NLP requieren generar secuencias **de longitud diferente** a la entrada:
+
+| Tarea | Entrada | Salida | Longitud |
+|:------|:--------|:-------|:---------|
+| **Traducción** | "el gato duerme" (3 tokens) | "the cat sleeps" (3 tokens) | Puede diferir |
+| **Resumen** | Artículo (500 tokens) | Resumen (50 tokens) | Salida << Entrada |
+| **Chatbot** | "¿Cómo estás?" (2 tokens) | "¡Muy bien, gracias!" (3 tokens) | Impredecible |
+| **Descripción de imágenes** | Imagen (vector fijo) | "Un gato sentado en..." | Variable |
+
+::: {.callout-important}
+## El Reto
+Necesitamos una arquitectura que acepte una secuencia de **longitud $T_x$** y genere otra de **longitud $T_y$**, donde $T_x \neq T_y$ en general.
+:::
+
+## La Solución: Codificador-Decodificador {.smaller}
+
+La idea clave de Sutskever et al. (2014) y Cho et al. (2014):
+
+> **Dividir el problema en dos partes:**
+>
+> 1. **Codificador (Encoder):** lee la secuencia de entrada y la comprime en un **vector de contexto** $\mathbf{c}$
+> 2. **Decodificador (Decoder):** genera la secuencia de salida **token por token**, condicionado en $\mathbf{c}$
+
+```{python}
+#| echo: false
+#| fig-align: center
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+import numpy as np
+
+fig, ax = plt.subplots(1, 1, figsize=(14, 4))
+ax.set_xlim(-0.5, 14.5)
+ax.set_ylim(-1.5, 3.5)
+ax.axis('off')
+
+# Encoder cells
+enc_color = '#0077b6'
+for i, token in enumerate(["el", "gato", "duerme"]):
+    rect = mpatches.FancyBboxPatch((i*2, 0.5), 1.4, 1.5, boxstyle="round,pad=0.1",
+                                     facecolor=enc_color, edgecolor='white', linewidth=2)
+    ax.add_patch(rect)
+    ax.text(i*2 + 0.7, 1.25, "GRU", ha='center', va='center', fontsize=10, color='white', fontweight='bold')
+    ax.text(i*2 + 0.7, -0.2, f'"{token}"', ha='center', va='center', fontsize=11, fontweight='bold', color=enc_color)
+    if i > 0:
+        ax.annotate('', xy=(i*2, 1.25), xytext=((i-1)*2+1.4, 1.25),
+                    arrowprops=dict(arrowstyle='->', color=enc_color, lw=2))
+
+# Context vector
+ctx_x = 6.5
+ax.annotate('', xy=(ctx_x, 1.25), xytext=(4+1.4, 1.25),
+            arrowprops=dict(arrowstyle='->', color='#e76f51', lw=3))
+circle = plt.Circle((ctx_x + 0.7, 1.25), 0.6, color='#e76f51', ec='white', linewidth=2)
+ax.add_patch(circle)
+ax.text(ctx_x + 0.7, 1.25, "c", ha='center', va='center', fontsize=16, color='white', fontweight='bold')
+
+# Decoder cells
+dec_color = '#023e8a'
+dec_start = 9
+for i, token in enumerate(["the", "cat", "sleeps"]):
+    rect = mpatches.FancyBboxPatch((dec_start + i*2, 0.5), 1.4, 1.5, boxstyle="round,pad=0.1",
+                                     facecolor=dec_color, edgecolor='white', linewidth=2)
+    ax.add_patch(rect)
+    ax.text(dec_start + i*2 + 0.7, 1.25, "GRU", ha='center', va='center', fontsize=10, color='white', fontweight='bold')
+    ax.text(dec_start + i*2 + 0.7, 2.8, f'"{token}"', ha='center', va='center', fontsize=11, fontweight='bold', color=dec_color)
+    ax.annotate('', xy=(dec_start + i*2 + 0.7, 2.4), xytext=(dec_start + i*2 + 0.7, 2.0),
+                arrowprops=dict(arrowstyle='->', color=dec_color, lw=2))
+    if i > 0:
+        ax.annotate('', xy=(dec_start + i*2, 1.25), xytext=(dec_start + (i-1)*2 + 1.4, 1.25),
+                    arrowprops=dict(arrowstyle='->', color=dec_color, lw=2))
+
+# Context to decoder
+ax.annotate('', xy=(dec_start, 1.25), xytext=(ctx_x + 1.3, 1.25),
+            arrowprops=dict(arrowstyle='->', color='#e76f51', lw=3))
+
+# Labels
+ax.text(2, 3.2, "CODIFICADOR", ha='center', fontsize=13, fontweight='bold', color=enc_color)
+ax.text(dec_start + 2.7, -0.8, "DECODIFICADOR", ha='center', fontsize=13, fontweight='bold', color=dec_color)
+ax.text(ctx_x + 0.7, -0.5, "Vector de\nContexto", ha='center', fontsize=10, color='#e76f51', fontweight='bold')
+
+for i in range(3):
+    ax.annotate('', xy=(i*2 + 0.7, 0.5), xytext=(i*2 + 0.7, 0.1),
+                arrowprops=dict(arrowstyle='->', color=enc_color, lw=1.5))
+
+plt.tight_layout()
+plt.show()
+```
+
+# El Codificador (Encoder) 📥 {background-color="#023e8a"}
+
+## Arquitectura del Encoder {.smaller}
+
+El **codificador** es una RNN (LSTM o GRU) que procesa la secuencia de entrada:
+
+$$x_1, x_2, \ldots, x_{T_x} \xrightarrow{\text{Encoder}} \mathbf{c}$$
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Paso a paso
+
+1. Cada token $x_t$ se convierte en un vector con una capa de **embedding**
+2. La RNN procesa la secuencia de embeddings
+3. El **último estado oculto** $h_{T_x}$ se usa como **vector de contexto**:
+
+$$\mathbf{c} = h_{T_x}$$
+
+:::
+::: {.column width="50%"}
+
+::: {.callout-note}
+## Variantes del vector de contexto
+
+- **Último estado:** $\mathbf{c} = h_{T_x}$ (Cho et al., 2014)
+- **Concatenación:** $\mathbf{c} = [\overrightarrow{h}_{T_x}; \overleftarrow{h}_1]$ (bidireccional)
+- **Promedio:** $\mathbf{c} = \frac{1}{T_x}\sum_t h_t$
+- En LSTM: se pasan tanto $h_{T_x}$ como $c_{T_x}$
+:::
+
+:::
+:::
+
+::: {.callout-tip}
+## Intuición
+El encoder **comprime** toda la información de la secuencia de entrada en un vector de dimensión fija $\mathbf{c} \in \mathbb{R}^{D_h}$.
+:::
+
+## Encoder en PyTorch {.smaller}
+
+```{python}
+#| code-fold: show
+import torch
+import torch.nn as nn
+
+class Encoder(nn.Module):
+    def __init__(self, vocab_size, embed_dim, hidden_dim, n_layers=1, dropout=0.0):
+        super().__init__()
+        self.embedding = nn.Embedding(vocab_size, embed_dim)
+        self.rnn = nn.GRU(embed_dim, hidden_dim,
+                          num_layers=n_layers, batch_first=True,
+                          dropout=dropout if n_layers > 1 else 0.0)
+    
+    def forward(self, src):
+        """
+        src: (batch, src_len) — índices de tokens
+        Retorna: hidden (n_layers, batch, hidden_dim) — vector de contexto
+        """
+        embedded = self.embedding(src)           # (batch, src_len, embed_dim)
+        outputs, hidden = self.rnn(embedded)     # hidden: (n_layers, batch, hidden_dim)
+        return hidden                            # Último estado oculto = contexto
+
+# Ejemplo
+enc = Encoder(vocab_size=100, embed_dim=32, hidden_dim=64)
+x = torch.randint(0, 100, (4, 8))  # batch=4, longitud=8
+context = enc(x)
+print(f"Entrada:  {x.shape}")           # (4, 8)
+print(f"Contexto: {context.shape}")     # (1, 4, 64)
+```
+
+::: {.callout-note}
+## Observación
+El encoder toma una secuencia de **cualquier longitud** y produce un vector de tamaño fijo `(1, batch, 64)`. Toda la información de la entrada queda **comprimida** en 64 dimensiones.
+:::
+
+# El Decodificador (Decoder) 📤 {background-color="#03045e"}
+
+## Arquitectura del Decoder {.smaller}
+
+El **decodificador** es otra RNN que genera la secuencia de salida **token por token**:
+
+$$\mathbf{c} \xrightarrow{\text{Decoder}} y_1, y_2, \ldots, y_{T_y}$$
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Generación Autoregresiva
+
+1. Estado inicial: $s_0 = \mathbf{c}$ (vector de contexto)
+2. Primer input: token especial `<SOS>` (Start of Sequence)
+3. En cada paso $t$:
+   - $s_t = \text{GRU}(y_{t-1}, s_{t-1})$
+   - $P(y_t) = \text{softmax}(W_o \cdot s_t)$
+4. Se detiene al generar `<EOS>` (End of Sequence)
+
+:::
+::: {.column width="50%"}
+
+::: {.callout-important}
+## Clave: Autoregresión
+Cada predicción **depende de las predicciones anteriores**. Un error temprano puede propagarse → **error cascading**.
+:::
+
+```{python}
+#| echo: false
+#| fig-align: center
+fig, ax = plt.subplots(figsize=(6, 4))
+ax.set_xlim(-0.5, 8)
+ax.set_ylim(-1, 4.5)
+ax.axis('off')
+
+dec_color = '#023e8a'
+tokens_in = ['<SOS>', 'the', 'cat', 'sleeps']
+tokens_out = ['the', 'cat', 'sleeps', '<EOS>']
+for i in range(4):
+    rect = mpatches.FancyBboxPatch((i*2, 1), 1.3, 1.2, boxstyle="round,pad=0.1",
+                                     facecolor=dec_color, edgecolor='white', linewidth=2)
+    ax.add_patch(rect)
+    ax.text(i*2 + 0.65, 1.6, "GRU", ha='center', va='center', fontsize=9, color='white', fontweight='bold')
+    ax.text(i*2 + 0.65, -0.3, tokens_in[i], ha='center', fontsize=10, fontweight='bold', color='#264653')
+    ax.text(i*2 + 0.65, 3.5, tokens_out[i], ha='center', fontsize=10, fontweight='bold', color='#e76f51')
+    ax.annotate('', xy=(i*2+0.65, 1), xytext=(i*2+0.65, 0.1),
+                arrowprops=dict(arrowstyle='->', color='#264653', lw=1.5))
+    ax.annotate('', xy=(i*2+0.65, 3.1), xytext=(i*2+0.65, 2.2),
+                arrowprops=dict(arrowstyle='->', color='#e76f51', lw=1.5))
+    if i > 0:
+        ax.annotate('', xy=(i*2, 1.6), xytext=((i-1)*2+1.3, 1.6),
+                    arrowprops=dict(arrowstyle='->', color=dec_color, lw=2))
+
+ax.text(4, 4.2, "Salida (predicciones)", ha='center', fontsize=11, color='#e76f51', fontweight='bold')
+ax.text(4, -0.9, "Entrada (token anterior)", ha='center', fontsize=11, color='#264653', fontweight='bold')
+
+plt.tight_layout()
+plt.show()
+```
+
+:::
+:::
+
+## Decoder en PyTorch {.smaller}
+
+```{python}
+#| code-fold: show
+class Decoder(nn.Module):
+    def __init__(self, vocab_size, embed_dim, hidden_dim, n_layers=1, dropout=0.0):
+        super().__init__()
+        self.embedding = nn.Embedding(vocab_size, embed_dim)
+        self.rnn = nn.GRU(embed_dim, hidden_dim,
+                          num_layers=n_layers, batch_first=True,
+                          dropout=dropout if n_layers > 1 else 0.0)
+        self.fc_out = nn.Linear(hidden_dim, vocab_size)
+    
+    def forward(self, input_token, hidden):
+        """
+        input_token: (batch, 1) — token anterior
+        hidden: (n_layers, batch, hidden_dim) — estado oculto
+        Retorna: prediction (batch, vocab_size), hidden actualizado
+        """
+        embedded = self.embedding(input_token)       # (batch, 1, embed_dim)
+        output, hidden = self.rnn(embedded, hidden)  # output: (batch, 1, hidden_dim)
+        prediction = self.fc_out(output.squeeze(1))  # (batch, vocab_size)
+        return prediction, hidden
+
+# Ejemplo
+dec = Decoder(vocab_size=100, embed_dim=32, hidden_dim=64)
+sos_token = torch.zeros(4, 1, dtype=torch.long)  # <SOS> = 0
+pred, new_hidden = dec(sos_token, context)
+print(f"Token entrada:  {sos_token.shape}")     # (4, 1)
+print(f"Predicción:     {pred.shape}")          # (4, 100)
+print(f"Nuevo hidden:   {new_hidden.shape}")    # (1, 4, 64)
+```
+
+::: {.callout-tip}
+## Nota
+El decoder genera **un token a la vez**. Para generar una secuencia completa, llamamos al decoder en un bucle, alimentando cada predicción como entrada del siguiente paso.
+:::
+
+# Entrenamiento: Teacher Forcing 🎓 {background-color="#001219"}
+
+## El Dilema del Entrenamiento {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Sin Teacher Forcing (Free Running)
+- El decoder usa sus **propias predicciones** como entrada
+- Si comete un error temprano → se acumulan
+- Entrenamiento **inestable** y lento
+
+### Con Teacher Forcing
+- El decoder recibe el **token correcto** (ground truth) como entrada en cada paso
+- Ignora sus propias predicciones durante entrenamiento
+- Convergencia **más rápida** y estable
+
+:::
+::: {.column width="50%"}
+
+```{python}
+#| echo: false
+#| fig-align: center
+fig, axes = plt.subplots(1, 2, figsize=(12, 3.5))
+
+for ax, title, inputs, color in zip(
+    axes,
+    ["Sin Teacher Forcing", "Con Teacher Forcing"],
+    [["<SOS>", "le?", "cat?", "sit?"], ["<SOS>", "the", "cat", "sleeps"]],
+    ["#e76f51", "#2a9d8f"]
+):
+    ax.set_xlim(-0.5, 8)
+    ax.set_ylim(-1.5, 4)
+    ax.axis('off')
+    ax.set_title(title, fontsize=13, fontweight='bold', color=color, pad=10)
+    
+    targets = ["the", "cat", "sleeps", "<EOS>"]
+    for i in range(4):
+        rect = mpatches.FancyBboxPatch((i*2, 0.8), 1.3, 1.2, boxstyle="round,pad=0.1",
+                                         facecolor='#023e8a', edgecolor='white', linewidth=2)
+        ax.add_patch(rect)
+        ax.text(i*2+0.65, 1.4, "GRU", ha='center', va='center', fontsize=8, color='white', fontweight='bold')
+        ax.text(i*2+0.65, -0.5, inputs[i], ha='center', fontsize=9, fontweight='bold', color=color)
+        ax.text(i*2+0.65, 3.2, targets[i], ha='center', fontsize=9, fontweight='bold', color='#264653')
+        ax.annotate('', xy=(i*2+0.65, 0.8), xytext=(i*2+0.65, -0.0),
+                    arrowprops=dict(arrowstyle='->', color=color, lw=1.5))
+        ax.annotate('', xy=(i*2+0.65, 2.8), xytext=(i*2+0.65, 2.0),
+                    arrowprops=dict(arrowstyle='->', color='#264653', lw=1.5))
+        if i > 0:
+            ax.annotate('', xy=(i*2, 1.4), xytext=((i-1)*2+1.3, 1.4),
+                        arrowprops=dict(arrowstyle='->', color='#023e8a', lw=2))
+
+plt.tight_layout()
+plt.show()
+```
+
+:::
+:::
+
+::: {.callout-warning}
+## Exposure Bias
+Con teacher forcing, el modelo **nunca ve sus propios errores** durante entrenamiento. En inferencia, debe usar sus predicciones → distribución diferente. Esto se llama *exposure bias*.
+:::
+
+## Seq2Seq Completo en PyTorch {.smaller}
+
+```{python}
+#| code-fold: show
+import random
+
+class Seq2Seq(nn.Module):
+    def __init__(self, encoder, decoder, sos_idx):
+        super().__init__()
+        self.encoder = encoder
+        self.decoder = decoder
+        self.sos_idx = sos_idx
+    
+    def forward(self, src, trg_len, trg=None, teacher_forcing_ratio=0.5):
+        """
+        src: (batch, src_len)
+        trg_len: longitud de la secuencia objetivo
+        trg: (batch, trg_len) — solo durante entrenamiento
+        """
+        batch_size = src.size(0)
+        vocab_size = self.decoder.fc_out.out_features
+        
+        # 1. Codificar: secuencia → vector de contexto
+        hidden = self.encoder(src)
+        
+        # 2. Decodificar: vector de contexto → secuencia
+        outputs = torch.zeros(batch_size, trg_len, vocab_size)
+        input_token = torch.full((batch_size, 1), self.sos_idx, dtype=torch.long)
+        
+        for t in range(trg_len):
+            prediction, hidden = self.decoder(input_token, hidden)
+            outputs[:, t] = prediction
+            
+            # Teacher forcing: usar token real o predicción
+            if trg is not None and random.random() < teacher_forcing_ratio:
+                input_token = trg[:, t:t+1]                       # Token correcto
+            else:
+                input_token = prediction.argmax(1, keepdim=True)  # Predicción
+        
+        return outputs
+```
+
+# Experimento: Invirtiendo Secuencias 🔬 {background-color="#0077b6"}
+
+## Tarea: Invertir una Secuencia {.smaller}
+
+Para validar nuestra implementación, entrenamos un modelo Seq2Seq en una tarea simple:
+
+$$[3, 7, 1, 5] \xrightarrow{\text{Seq2Seq}} [5, 1, 7, 3]$$
+
+```{python}
+#| code-fold: show
+import torch.optim as optim
+
+# --- Configuración ---
+PAD, SOS, EOS = 0, 1, 2
+NUM_DIGITS = 10
+VOCAB_SIZE = NUM_DIGITS + 3   # PAD, SOS, EOS + dígitos 0-9 (mapeados a 3-12)
+
+def generate_pairs(n, min_len=4, max_len=8):
+    """Genera pares (secuencia, secuencia invertida) con padding"""
+    src_list, trg_list = [], []
+    for _ in range(n):
+        length = random.randint(min_len, max_len)
+        seq = [random.randint(3, VOCAB_SIZE - 1) for _ in range(length)]
+        src_list.append(seq + [PAD] * (max_len - length))
+        trg_list.append(list(reversed(seq)) + [EOS] + [PAD] * (max_len - length))
+    return torch.tensor(src_list), torch.tensor(trg_list)
+
+# Datos
+torch.manual_seed(42)
+random.seed(42)
+train_src, train_trg = generate_pairs(3000)
+test_src, test_trg = generate_pairs(200)
+
+print(f"Ejemplo entrada:  {train_src[0].tolist()}")
+print(f"Ejemplo objetivo: {train_trg[0].tolist()}")
+print(f"(PAD=0, SOS=1, EOS=2, dígitos=3..12)")
+```
+
+## Entrenamiento {.smaller}
+
+```{python}
+#| code-fold: show
+# Modelo
+EMBED_DIM = 32
+HIDDEN_DIM = 64
+
+encoder_model = Encoder(VOCAB_SIZE, EMBED_DIM, HIDDEN_DIM)
+decoder_model = Decoder(VOCAB_SIZE, EMBED_DIM, HIDDEN_DIM)
+model = Seq2Seq(encoder_model, decoder_model, sos_idx=SOS)
+
+optimizer = optim.Adam(model.parameters(), lr=0.003)
+criterion = nn.CrossEntropyLoss(ignore_index=PAD)
+
+# Entrenamiento
+losses = []
+BATCH_SIZE = 128
+N_EPOCHS = 40
+
+for epoch in range(N_EPOCHS):
+    model.train()
+    epoch_loss = 0
+    n_batches = 0
+    indices = torch.randperm(len(train_src))
+    
+    for i in range(0, len(train_src), BATCH_SIZE):
+        batch_idx = indices[i:i+BATCH_SIZE]
+        src = train_src[batch_idx]
+        trg = train_trg[batch_idx]
+        
+        output = model(src, trg.size(1), trg, teacher_forcing_ratio=0.5)
+        loss = criterion(output.reshape(-1, VOCAB_SIZE), trg.reshape(-1))
+        
+        optimizer.zero_grad()
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+        optimizer.step()
+        epoch_loss += loss.item()
+        n_batches += 1
+    
+    avg_loss = epoch_loss / n_batches
+    losses.append(avg_loss)
+    if (epoch + 1) % 10 == 0:
+        print(f"Época {epoch+1:3d}/{N_EPOCHS} | Loss: {avg_loss:.4f}")
+```
+
+## Curva de Aprendizaje {.smaller}
+
+```{python}
+#| echo: false
+#| fig-align: center
+fig, ax = plt.subplots(figsize=(9, 4))
+ax.plot(range(1, len(losses)+1), losses, color='#0077b6', linewidth=2.5)
+ax.set_xlabel("Época", fontsize=12)
+ax.set_ylabel("Loss (CrossEntropy)", fontsize=12)
+ax.set_title("Entrenamiento Seq2Seq: Inversión de Secuencias", fontsize=14, fontweight='bold')
+ax.grid(True, alpha=0.3)
+ax.spines[['top', 'right']].set_visible(False)
+plt.tight_layout()
+plt.show()
+```
+
+## Evaluación: ¿Funciona? {.smaller}
+
+```{python}
+#| code-fold: show
+model.eval()
+with torch.no_grad():
+    # Decodificación greedy (sin trg → usa predicciones propias)
+    test_output = model(test_src, test_trg.size(1))
+    predictions = test_output.argmax(dim=-1)
+
+# Calcular accuracy (ignorando PAD)
+correct = 0
+total = 0
+for i in range(len(test_src)):
+    for j in range(test_trg.size(1)):
+        if test_trg[i, j] != PAD:
+            total += 1
+            if predictions[i, j] == test_trg[i, j]:
+                correct += 1
+
+print(f"Accuracy token-level: {correct/total:.1%}\n")
+
+# Mostrar ejemplos
+print("=" * 55)
+print(f"{'Entrada':>25s} → {'Predicción':<25s}")
+print("=" * 55)
+for i in range(8):
+    src_tokens = [t.item() for t in test_src[i] if t.item() != PAD]
+    pred_tokens = [t.item() for t in predictions[i] if t.item() not in (PAD, EOS, SOS)]
+    trg_tokens = [t.item() for t in test_trg[i] if t.item() not in (PAD, EOS, SOS)]
+    
+    src_str = str(src_tokens)
+    pred_str = str(pred_tokens)
+    match = "✅" if pred_tokens == trg_tokens else "❌"
+    print(f"{src_str:>25s} → {pred_str:<20s} {match}")
+```
+
+# Estrategias de Decodificación 🔍 {background-color="#023e8a"}
+
+## Decodificación Greedy vs. Beam Search {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Greedy Decoding
+- En cada paso, elegir el token con **mayor probabilidad**:
+$$y_t = \arg\max_{w} P(w \mid y_{<t}, \mathbf{c})$$
+- **Rápido** pero puede dar resultados subóptimos
+- No considera el efecto de cada elección en el futuro
+
+:::
+::: {.column width="50%"}
+
+### Beam Search
+- Mantener los **top-$k$ candidatos** (beams) en cada paso
+- Expandir cada beam y quedarse con los $k$ mejores globales
+- Resultado: la secuencia con mayor probabilidad **conjunta**:
+$$Y^* = \arg\max_Y \prod_{t=1}^{T_y} P(y_t \mid y_{<t}, \mathbf{c})$$
+
+:::
+:::
+
+## Ejemplo Visual: Beam Search con $k=2$ {.smaller}
+
+```{python}
+#| echo: false
+#| fig-align: center
+fig, ax = plt.subplots(figsize=(12, 5))
+ax.set_xlim(-0.5, 12)
+ax.set_ylim(-0.5, 6)
+ax.axis('off')
+ax.set_title("Beam Search (k=2)", fontsize=14, fontweight='bold', color='#023e8a')
+
+nodes = {
+    (0, 3): ("<SOS>", 1.0, '#023e8a'),
+    (2, 4.5): ("the", 0.6, '#0077b6'),
+    (2, 1.5): ("a", 0.3, '#90e0ef'),
+    (5, 5.2): ("cat", 0.7, '#0077b6'),
+    (5, 3.8): ("dog", 0.2, '#90e0ef'),
+    (5, 2.2): ("cat", 0.5, '#90e0ef'),
+    (5, 0.8): ("dog", 0.4, '#cccccc'),
+    (8, 5.2): ("sleeps", 0.8, '#0077b6'),
+    (8, 3.8): ("runs", 0.3, '#90e0ef'),
+}
+
+for (x, y), (text, prob, color) in nodes.items():
+    rect = mpatches.FancyBboxPatch((x-0.55, y-0.35), 1.1, 0.7, boxstyle="round,pad=0.05",
+                                     facecolor=color, edgecolor='white', linewidth=1.5, alpha=0.9)
+    ax.add_patch(rect)
+    ax.text(x, y, text, ha='center', va='center', fontsize=9, color='white', fontweight='bold')
+    ax.text(x, y-0.55, f"p={prob}", ha='center', va='center', fontsize=7, color=color)
+
+edges = [
+    ((0, 3), (2, 4.5)), ((0, 3), (2, 1.5)),
+    ((2, 4.5), (5, 5.2)), ((2, 4.5), (5, 3.8)),
+    ((2, 1.5), (5, 2.2)), ((2, 1.5), (5, 0.8)),
+    ((5, 5.2), (8, 5.2)), ((5, 5.2), (8, 3.8)),
+]
+
+for (x1, y1), (x2, y2) in edges:
+    color = '#0077b6' if y2 > 3 else '#aaa'
+    ax.annotate('', xy=(x2-0.55, y2), xytext=(x1+0.55, y1),
+                arrowprops=dict(arrowstyle='->', color=color, lw=1.5, alpha=0.7))
+
+ax.annotate("Mejor: <SOS> → the → cat → sleeps\np = 0.6 × 0.7 × 0.8 = 0.336",
+            xy=(10, 5.2), fontsize=10, color='#0077b6', fontweight='bold',
+            bbox=dict(boxstyle='round,pad=0.3', facecolor='#e8f4f8', edgecolor='#0077b6'))
+
+ax.text(5, -0.2, "❌ podado (fuera del top-k)", ha='center', fontsize=9, color='#999')
+
+plt.tight_layout()
+plt.show()
+```
+
+::: {.callout-note}
+## En la práctica
+
+- Beam width $k = 4$–$10$ es típico en traducción automática
+- Se normaliza por longitud para no favorecer secuencias cortas: $\frac{1}{T_y} \sum_t \log P(y_t \mid y_{<t}, \mathbf{c})$
+- Greedy decoding es el caso especial donde $k=1$
+:::
+
+## Implementación: Beam Search {.smaller}
+
+```{python}
+#| code-fold: show
+def beam_search(model, src, beam_width=3, max_len=15):
+    """Beam search para un modelo Seq2Seq"""
+    model.eval()
+    with torch.no_grad():
+        hidden = model.encoder(src.unsqueeze(0))  # (1, 1, hidden_dim)
+        
+        # Beams: (secuencia, log_prob acumulado, hidden state)
+        sos = torch.tensor([[model.sos_idx]])
+        beams = [([], 0.0, hidden)]
+        
+        for _ in range(max_len):
+            candidates = []
+            for seq, score, h in beams:
+                if seq and seq[-1] == EOS:
+                    candidates.append((seq, score, h))
+                    continue
+                
+                last_token = torch.tensor([[seq[-1]]]) if seq else sos
+                pred, new_h = model.decoder(last_token, h)
+                log_probs = torch.log_softmax(pred, dim=-1).squeeze()
+                
+                topk_probs, topk_idx = log_probs.topk(beam_width)
+                for prob, idx in zip(topk_probs, topk_idx):
+                    candidates.append(
+                        (seq + [idx.item()], score + prob.item(), new_h)
+                    )
+            
+            beams = sorted(candidates, key=lambda x: x[1], reverse=True)[:beam_width]
+            
+            if all(b[0] and b[0][-1] == EOS for b in beams):
+                break
+    
+    best_seq = beams[0][0]
+    return [t for t in best_seq if t not in (PAD, SOS, EOS)]
+
+# Comparar greedy vs beam search
+print("Greedy vs. Beam Search:")
+print("=" * 60)
+for i in range(5):
+    src = test_src[i]
+    src_tokens = [t.item() for t in src if t.item() != PAD]
+    greedy_pred = [t.item() for t in predictions[i]
+                   if t.item() not in (PAD, EOS, SOS)]
+    beam_pred = beam_search(model, src, beam_width=3)
+    
+    expected = list(reversed(src_tokens))
+    print(f"Entrada:     {src_tokens}")
+    print(f"  Greedy:    {greedy_pred} {'✅' if greedy_pred == expected else '❌'}")
+    print(f"  Beam(k=3): {beam_pred} {'✅' if beam_pred == expected else '❌'}")
+    print()
+```
+
+# El Cuello de Botella 🔬 {background-color="#03045e"}
+
+## El Problema del Vector de Contexto Fijo {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### La limitación fundamental
+
+Toda la información de la entrada se comprime en **un solo vector** $\mathbf{c} \in \mathbb{R}^{D_h}$:
+
+- Secuencia de 5 tokens → $\mathbf{c}$ de 64 dims ✅
+- Secuencia de 50 tokens → $\mathbf{c}$ de 64 dims ⚠️
+- Secuencia de 500 tokens → $\mathbf{c}$ de 64 dims ❌
+
+El encoder debe comprimir **toda** la semántica en un vector de **dimensión fija**, sin importar la longitud de la entrada.
+
+:::
+::: {.column width="50%"}
+
+```{python}
+#| echo: false
+#| fig-align: center
+fig, ax = plt.subplots(figsize=(6, 4))
+
+lengths = [5, 10, 20, 30, 50]
+accs = []
+for L in lengths:
+    test_s, test_t = generate_pairs(200, min_len=L, max_len=L)
+    model.eval()
+    with torch.no_grad():
+        out = model(test_s, test_t.size(1))
+        preds = out.argmax(dim=-1)
+    c_count, tot = 0, 0
+    for i in range(len(test_s)):
+        for j in range(test_t.size(1)):
+            if test_t[i, j] != PAD:
+                tot += 1
+                if preds[i, j] == test_t[i, j]:
+                    c_count += 1
+    accs.append(c_count / tot if tot > 0 else 0)
+
+colors = ['#2a9d8f' if a > 0.8 else '#e76f51' if a < 0.5 else '#e9c46a' for a in accs]
+ax.bar(range(len(lengths)), [a*100 for a in accs], color=colors,
+       edgecolor='white', linewidth=2, width=0.6)
+ax.set_xticks(range(len(lengths)))
+ax.set_xticklabels([str(l) for l in lengths])
+ax.set_xlabel("Longitud de Secuencia", fontsize=12)
+ax.set_ylabel("Accuracy (%)", fontsize=12)
+ax.set_title("Degradación con Secuencias Largas", fontsize=13, fontweight='bold', color='#023e8a')
+ax.set_ylim(0, 105)
+ax.spines[['top', 'right']].set_visible(False)
+for i, a in enumerate(accs):
+    ax.text(i, a*100+2, f"{a:.0%}", ha='center', fontsize=10, fontweight='bold')
+plt.tight_layout()
+plt.show()
+```
+
+:::
+:::
+
+::: {.callout-important}
+## Adelanto: Semana 7 S3
+La solución a este cuello de botella será el mecanismo de **Atención** (Attention), que permite al decoder "mirar" diferentes partes de la entrada en cada paso de generación.
+:::
+
+# Resumen {background-color="#0077b6"}
+
+## Lo Que Aprendimos Hoy {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Conceptos
+
+- La arquitectura **Seq2Seq** mapea secuencias de longitud variable a otras secuencias
+- El **Encoder** comprime la entrada en un vector de contexto $\mathbf{c}$
+- El **Decoder** genera la salida **autoregresivamente**
+- **Teacher forcing** acelera el entrenamiento pero causa *exposure bias*
+- El vector de contexto fijo es un **cuello de botella**
+
+:::
+::: {.column width="50%"}
+
+### Práctica
+
+- `Encoder`: GRU que produce $h_{T_x}$
+- `Decoder`: GRU + `Linear` que genera token por token
+- `Seq2Seq`: combina ambos con teacher forcing configurable
+- **Greedy decoding:** $\arg\max$ en cada paso
+- **Beam search:** top-$k$ candidatos para mejores resultados
+
+:::
+:::
+
+## Ecuaciones Clave {.smaller}
+
+| Componente | Ecuación |
+|:-----------|:---------|
+| **Encoder** | $h_t = \text{GRU}(x_t, h_{t-1})$; $\mathbf{c} = h_{T_x}$ |
+| **Decoder** | $s_t = \text{GRU}(y_{t-1}, s_{t-1})$; $P(y_t) = \text{softmax}(W_o s_t)$ |
+| **Teacher Forcing** | $\text{input}_t = y_{t-1}^{\text{real}}$ (entrenamiento) vs $\hat{y}_{t-1}$ (inferencia) |
+| **Greedy** | $y_t = \arg\max_w P(w \mid y_{<t}, \mathbf{c})$ |
+| **Beam Search** | $Y^* = \arg\max_Y \frac{1}{T_y}\sum_{t} \log P(y_t \mid y_{<t}, \mathbf{c})$ |
+
+## Para la Próxima Sesión 📚
+
+::: {.callout-note}
+## Semana 7, S2: Traducción Automática Neuronal (NMT)
+
+- **Aplicación principal** de Seq2Seq: traducción automática
+- Pares de idiomas, tokenización, vocabularios separados
+- Métricas de evaluación: **BLEU score**
+- Entrenamiento en datos paralelos
+:::
+
+**Lectura:**
+
+- Sutskever et al. (2014): *Sequence to Sequence Learning with Neural Networks* (secciones 3-4)
+- Jurafsky & Martin, Cap. 10: *Machine Translation and Encoder-Decoder Models*
+- Wu et al. (2016): *Google's Neural Machine Translation System*
+
+# ¿Preguntas? 🙋 {background-color="#03045e"}
+
+:::{.r-fit-text}
+**¡Gracias!**
+:::
+
+📧 fsuarez@ucb.edu.bo
+
+🔗 Materiales: [github.com/fjsuarez/ucb-nlp](https://github.com/fjsuarez/ucb-nlp)

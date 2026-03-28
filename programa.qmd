@@ -30,7 +30,7 @@
 | | [S2: Gradientes que desaparecen y la solución LSTM](slides/semana06/s2_lstm_vanishing_gradients.qmd) | Quiz 5 |
 | | [S3: Unidades Recurrentes con Compuertas (GRU) y RNNs Bidireccionales](slides/semana06/s3_gru_bidireccional.qmd) | |
 | **7** | **Secuencia a Secuencia (Seq2Seq)** | |
-| | S1: Arquitecturas Codificador-Decodificador | |
+| | [S1: Arquitecturas Codificador-Decodificador](slides/semana07/s1_seq2seq_encoder_decoder.qmd) | |
 | | S2: Aplicaciones: Traducción Automática Neuronal (NMT) | |
 | | S3: El problema del "cuello de botella" y el nacimiento de la **Atención** | |
 | **8** | **Redes Neuronales Convolucionales para NLP** | |

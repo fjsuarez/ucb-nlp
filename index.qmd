@@ -36,6 +36,9 @@ format: html
 - [Gradientes que Desaparecen y la Solución LSTM](slides/semana06/s2_lstm_vanishing_gradients.qmd)
 - [GRU y RNNs Bidireccionales](slides/semana06/s3_gru_bidireccional.qmd)
 
+### Semana 7
+- [Arquitecturas Codificador-Decodificador (Seq2Seq)](slides/semana07/s1_seq2seq_encoder_decoder.qmd)
+
 ## Tareas
 
 - [Tarea 1: Analizador de Sentimiento con TF-IDF + Regresión Logística](tareas/tarea01/tarea01_sentimiento.ipynb) — Entrega: Semana 4

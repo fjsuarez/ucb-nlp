@@ -1,0 +1,1303 @@
+---
+title: "Redes Neuronales para NLP"
+subtitle: "S3: Variantes de Descenso de Gradiente y Regularización"
+author: "Prof. Francisco Suárez"
+institute: "Universidad Católica Boliviana"
+date: "2026-03-11"
+format:
+  revealjs:
+    theme: sky
+    transition: slide
+    slide-number: true
+    chalkboard: true
+    code-fold: true
+    code-tools: true
+    highlight-style: github
+    footer: "NLP y Análisis Semántico | Semana 5"
+    logo: ""
+    incremental: false
+    scrollable: true
+execute:
+  echo: true
+  warning: false
+---
+
+## Agenda de Hoy {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+**Primera Parte**
+
+1. 🔙 Repaso: SGD y sus limitaciones
+2. 📈 Momentum: acelerando la convergencia
+3. ⚡ Optimizadores adaptativos: AdaGrad, RMSProp, Adam
+
+:::
+::: {.column width="50%"}
+**Segunda Parte**
+
+4. 🛡️ Regularización: L2, Dropout y Early Stopping
+5. 📐 Batch Normalization
+6. 📅 Learning Rate Scheduling
+
+:::
+:::
+
+# Bloque 1: El Problema con SGD Vanilla {background-color="#0077b6"}
+
+## Recordatorio: Descenso de Gradiente {.smaller}
+
+En S1 y S2, entrenamos redes neuronales con:
+
+$$w \leftarrow w - \eta \nabla_w \mathcal{L}$$
+
+::: {.columns}
+::: {.column width="50%"}
+
+### ¿Qué funciona bien?
+
+- Simple de implementar
+- Garantía de convergencia (con $\eta$ adecuado)
+- Funciona para pérdidas convexas
+
+:::
+::: {.column width="50%"}
+
+### ¿Qué falla?
+
+- $\eta$ fijo para todos los parámetros
+- Oscilaciones en dimensiones con gradientes dispares
+- Puede quedarse en mínimos locales
+- Lento en "valles" estrechos
+
+:::
+:::
+
+## Visualización del Problema {.smaller}
+
+**Función con curvatura desigual:** $f(w_1, w_2) = w_1^2 + 50\,w_2^2$ — el gradiente en $w_2$ es 50× más fuerte que en $w_1$.
+
+```{python}
+#| code-fold: true
+import numpy as np
+import matplotlib.pyplot as plt
+
+# f(w1, w2) = w1^2 + 50*w2^2  →  gradiente desigual entre dimensiones
+def f(w1, w2):
+    return w1**2 + 50 * w2**2
+
+def grad_f(w):
+    return np.array([2 * w[0], 100 * w[1]])
+
+w1 = np.linspace(-5, 5, 300)
+w2 = np.linspace(-5, 5, 300)
+W1, W2 = np.meshgrid(w1, w2)
+Z = f(W1, W2)
+
+fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+w0 = np.array([4.0, 3.0])
+
+# --- Panel 1: SGD oscila en la dimensión de alta curvatura ---
+ax = axes[0]
+ax.contour(W1, W2, Z, levels=30, cmap='Blues', alpha=0.6)
+ax.set_title('SGD con η = 0.018\n(oscila en w₂, lento en w₁)', fontsize=11, fontweight='bold')
+ax.set_xlabel('w₁ (curvatura baja)', fontsize=10)
+ax.set_ylabel('w₂ (curvatura alta)', fontsize=10)
+
+w = w0.copy()
+lr = 0.018
+path = [w.copy()]
+for _ in range(80):
+    g = grad_f(w)
+    w = w - lr * g
+    path.append(w.copy())
+path = np.array(path)
+ax.plot(path[:, 0], path[:, 1], 'r.-', markersize=4, linewidth=1, alpha=0.8)
+ax.plot(w0[0], w0[1], 'ro', markersize=10, label='Inicio', zorder=5)
+ax.plot(0, 0, 'g*', markersize=14, label='Mínimo', zorder=5)
+ax.set_xlim(-5, 5)
+ax.set_ylim(-5, 5)
+ax.set_aspect('equal')
+ax.legend(fontsize=10, loc='lower right')
+
+# --- Panel 2: Momentum suaviza la trayectoria ---
+ax = axes[1]
+ax.contour(W1, W2, Z, levels=30, cmap='Blues', alpha=0.6)
+ax.set_title('SGD + Momentum (β=0.9)\n(oscilaciones amortiguadas)', fontsize=11, fontweight='bold')
+ax.set_xlabel('w₁ (curvatura baja)', fontsize=10)
+ax.set_ylabel('w₂ (curvatura alta)', fontsize=10)
+
+w = w0.copy()
+v = np.zeros(2)
+lr = 0.018
+path_m = [w.copy()]
+for _ in range(80):
+    g = grad_f(w)
+    v = 0.9 * v + g
+    w = w - lr * v
+    path_m.append(w.copy())
+path_m = np.array(path_m)
+ax.plot(path_m[:, 0], path_m[:, 1], '.-', color='#2a9d8f', markersize=4, linewidth=1, alpha=0.8)
+ax.plot(w0[0], w0[1], 'ro', markersize=10, label='Inicio', zorder=5)
+ax.plot(0, 0, 'g*', markersize=14, label='Mínimo', zorder=5)
+ax.set_xlim(-5, 5)
+ax.set_ylim(-5, 5)
+ax.set_aspect('equal')
+ax.legend(fontsize=10, loc='lower right')
+
+plt.tight_layout()
+plt.show()
+```
+
+::: {.callout-note}
+## ¿Qué vemos?
+**Izquierda:** SGD solo — el gradiente grande en $w_2$ causa **oscilaciones** verticales, mientras que el progreso en $w_1$ es muy lento. **Derecha:** Con Momentum, la inercia cancela las oscilaciones y acelera hacia el mínimo.
+:::
+
+## Tres Variantes de SGD {.smaller}
+
+| Variante | Tamaño de batch | Ventajas | Desventajas |
+|:---------|:---------------:|:---------|:------------|
+| **Batch GD** | Todo el dataset | Gradiente estable | Lento, mucha memoria |
+| **SGD** | 1 ejemplo | Rápido, menos memoria | Muy ruidoso |
+| **Mini-batch SGD** | $B$ ejemplos | Balance de velocidad y estabilidad | Requiere elegir $B$ |
+
+En la práctica, siempre usamos **mini-batch SGD** (típicamente $B = 32, 64, 128$).
+
+. . .
+
+::: {.callout-important}
+## El Verdadero Desafío
+El ruido en sí no es tan malo — hasta ayuda a escapar mínimos locales. El problema real es que **un solo learning rate no funciona para todas las dimensiones**.
+:::
+
+# Bloque 2: Momentum y Gradientes Adaptativos {background-color="#023e8a"}
+
+## SGD con Momentum {.smaller}
+
+**Idea:** Acumular "velocidad" en la dirección consistente del gradiente.
+
+$$v_t = \beta v_{t-1} + \nabla_w \mathcal{L}$$
+$$w \leftarrow w - \eta \cdot v_t$$
+
+::: {.columns}
+::: {.column width="50%"}
+
+- $\beta \approx 0.9$ (típico)
+- Acumula gradientes pasados como un promedio exponencial
+- Suaviza las oscilaciones
+- Acelera en "cuestas" largas
+
+:::
+::: {.column width="50%"}
+
+### Analogía: Bola rodando
+
+```{mermaid}
+%%| fig-width: 5
+graph LR
+    A["Inicio"] --> B["Acumula<br>velocidad"]
+    B --> C["Supera<br>baches"]
+    C --> D["Mínimo"]
+    style A fill:#e76f51,color:#fff
+    style B fill:#f4a261,color:#000
+    style C fill:#e9c46a,color:#000
+    style D fill:#2a9d8f,color:#fff
+```
+
+Sin momentum: se detiene en cada bache.
+Con momentum: la inercia ayuda a superar ruido local.
+
+:::
+:::
+
+## Nesterov Accelerated Gradient (NAG) {.smaller}
+
+**Mejora sobre Momentum:** Calcular el gradiente en la posición *futura estimada*.
+
+$$v_t = \beta v_{t-1} + \nabla_w \mathcal{L}(w - \eta \beta v_{t-1})$$
+$$w \leftarrow w - \eta \cdot v_t$$
+
+. . .
+
+::: {.callout-tip}
+## Intuición
+Momentum mira el gradiente **donde estás**. NAG mira el gradiente **hacia donde ibas**, lo que permite "frenar" antes de pasarse del mínimo.
+:::
+
+## AdaGrad: Learning Rate por Parámetro {.smaller}
+
+**Idea:** Cada parámetro tiene su propio learning rate que se adapta según la magnitud acumulada de sus gradientes.
+
+$$G_t = G_{t-1} + g_t^2$$
+$$w \leftarrow w - \frac{\eta}{\sqrt{G_t} + \epsilon} \cdot g_t$$
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Ventajas
+
+- Parámetros con gradientes grandes → $\eta$ más pequeño
+- Parámetros raros (sparse) → $\eta$ se mantiene alto
+- Ideal para **datos sparse** (NLP, recomendaciones)
+
+:::
+::: {.column width="50%"}
+
+### Desventaja
+
+- $G_t$ **crece monotónicamente** → el learning rate eventualmente se hace ~0
+- El entrenamiento puede "morir" prematuramente
+
+:::
+:::
+
+## RMSProp: Corrigiendo AdaGrad {.smaller}
+
+**Idea:** En vez de acumular *todos* los gradientes, usar un promedio exponencial.
+
+$$G_t = \gamma \cdot G_{t-1} + (1-\gamma) \cdot g_t^2$$
+$$w \leftarrow w - \frac{\eta}{\sqrt{G_t} + \epsilon} \cdot g_t$$
+
+Con $\gamma \approx 0.9$.
+
+. . .
+
+::: {.callout-note}
+## Diferencia clave vs. AdaGrad
+$G_t$ no crece sin control: los gradientes viejos se "olvidan" gradualmente. Esto mantiene el learning rate adaptativo durante todo el entrenamiento.
+:::
+
+## Adam: Lo Mejor de Ambos Mundos {.smaller}
+
+**Adaptive Moment Estimation** combina Momentum + RMSProp:
+
+$$m_t = \beta_1 m_{t-1} + (1-\beta_1) g_t \quad \text{(media)}$$
+$$v_t = \beta_2 v_{t-1} + (1-\beta_2) g_t^2 \quad \text{(varianza)}$$
+
+**Corrección de sesgo** (importante en las primeras iteraciones):
+
+$$\hat{m}_t = \frac{m_t}{1-\beta_1^t}, \quad \hat{v}_t = \frac{v_t}{1-\beta_2^t}$$
+
+**Actualización:**
+
+$$w \leftarrow w - \eta \frac{\hat{m}_t}{\sqrt{\hat{v}_t} + \epsilon}$$
+
+Valores por defecto: $\beta_1 = 0.9$, $\beta_2 = 0.999$, $\epsilon = 10^{-8}$.
+
+## ¿Por Qué Adam es el Default? {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Combina lo mejor
+
+| Componente | Viene de |
+|:-----------|:---------|
+| Media de gradientes ($m_t$) | Momentum |
+| Varianza de gradientes ($v_t$) | RMSProp |
+| Corrección de sesgo | Propio de Adam |
+
+:::
+::: {.column width="50%"}
+
+### En la práctica
+
+- **El optimizador por defecto** en la mayoría de papers
+- Funciona bien con poca o ninguna afinación
+- $\eta = 0.001$ funciona en la mayoría de casos
+- Variantes: **AdamW** (weight decay correcto), **RAdam** (warm-up automático)
+
+:::
+:::
+
+. . .
+
+::: {.callout-important}
+## AdamW vs. Adam
+Adam aplica L2 regularization al gradiente, lo cual interactúa con la adaptación de momentos. **AdamW** (Loshchilov & Hutter, 2019) desacopla el weight decay de la adaptación, funcionando mejor para modelos grandes. PyTorch: `torch.optim.AdamW`.
+:::
+
+## Comparación Visual de Optimizadores {.smaller}
+
+```{python}
+#| code-fold: true
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Función simple: f(x,y) = x^2 + 10*y^2 (curvatura desigual)
+def f(x, y):
+    return x**2 + 10 * y**2
+
+def grad_f(w):
+    return np.array([2 * w[0], 20 * w[1]])
+
+def run_optimizer(opt_name, w0, lr, steps):
+    w = w0.copy()
+    path = [w.copy()]
+
+    # State
+    m = np.zeros(2)
+    v = np.zeros(2)
+    G = np.zeros(2)
+
+    for t in range(1, steps + 1):
+        g = grad_f(w)
+
+        if opt_name == 'SGD':
+            w = w - lr * g
+
+        elif opt_name == 'Momentum':
+            m = 0.9 * m + g
+            w = w - lr * m
+
+        elif opt_name == 'AdaGrad':
+            G = G + g**2
+            w = w - lr * g / (np.sqrt(G) + 1e-8)
+
+        elif opt_name == 'RMSProp':
+            G = 0.9 * G + 0.1 * g**2
+            w = w - lr * g / (np.sqrt(G) + 1e-8)
+
+        elif opt_name == 'Adam':
+            m = 0.9 * m + 0.1 * g
+            v = 0.999 * v + 0.001 * g**2
+            m_hat = m / (1 - 0.9**t)
+            v_hat = v / (1 - 0.999**t)
+            w = w - lr * m_hat / (np.sqrt(v_hat) + 1e-8)
+
+        path.append(w.copy())
+    return np.array(path)
+
+# Run optimizers
+w0 = np.array([-5.0, 4.0])
+steps = 50
+configs = [
+    ('SGD', 0.05),
+    ('Momentum', 0.01),
+    ('RMSProp', 0.3),
+    ('Adam', 0.5),
+]
+
+fig, axes = plt.subplots(1, 4, figsize=(16, 3.5))
+x_grid = np.linspace(-6, 6, 200)
+y_grid = np.linspace(-5, 5, 200)
+Xg, Yg = np.meshgrid(x_grid, y_grid)
+Zg = f(Xg, Yg)
+
+colors = {'SGD': '#e76f51', 'Momentum': '#f4a261', 'RMSProp': '#2a9d8f', 'Adam': '#264653'}
+
+for ax, (name, lr) in zip(axes, configs):
+    ax.contour(Xg, Yg, Zg, levels=20, cmap='Blues', alpha=0.6)
+    path = run_optimizer(name, w0, lr, steps)
+    ax.plot(path[:, 0], path[:, 1], '.-', color=colors[name], markersize=4, linewidth=1.5)
+    ax.plot(w0[0], w0[1], 'ro', markersize=7)
+    ax.plot(0, 0, 'g*', markersize=12)
+    ax.set_title(f'{name} (η={lr})', fontsize=11, fontweight='bold')
+    ax.set_xlim(-6, 6)
+    ax.set_ylim(-5, 5)
+    ax.set_aspect('equal')
+
+plt.suptitle('f(x,y) = x² + 10y² — Trayectorias de Optimización', fontsize=13, fontweight='bold')
+plt.tight_layout()
+plt.show()
+```
+
+## Resumen de Optimizadores {.smaller}
+
+| Optimizador | Actualización | Hiperparámetros | Cuándo usar |
+|:------------|:-------------|:----------------|:------------|
+| **SGD** | $w - \eta g$ | $\eta$ | Modelos simples, convexos |
+| **Momentum** | $w - \eta (\beta v + g)$ | $\eta, \beta$ | Cuando SGD oscila mucho |
+| **AdaGrad** | $w - \frac{\eta}{\sqrt{G}} g$ | $\eta$ | Datos sparse (embeddings) |
+| **RMSProp** | $w - \frac{\eta}{\sqrt{G_\gamma}} g$ | $\eta, \gamma$ | RNNs |
+| **Adam** | $w - \eta \frac{\hat{m}}{\sqrt{\hat{v}}}$ | $\eta, \beta_1, \beta_2$ | **Default para casi todo** |
+| **AdamW** | Adam + decoupled WD | $\eta, \beta_1, \beta_2, \lambda$ | Transformers, modelos grandes |
+
+## Optimizadores en PyTorch {.smaller}
+
+```{python}
+#| code-fold: false
+import torch
+import torch.nn as nn
+
+# Modelo dummy
+model = nn.Sequential(
+    nn.Linear(100, 64),
+    nn.ReLU(),
+    nn.Linear(64, 4)
+)
+
+# Diferentes optimizadores — solo cambiar una línea
+sgd       = torch.optim.SGD(model.parameters(), lr=0.01)
+momentum  = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
+adagrad   = torch.optim.Adagrad(model.parameters(), lr=0.01)
+rmsprop   = torch.optim.RMSprop(model.parameters(), lr=0.001, alpha=0.9)
+adam      = torch.optim.Adam(model.parameters(), lr=0.001)
+adamw     = torch.optim.AdamW(model.parameters(), lr=0.001, weight_decay=0.01)
+
+print("Optimizadores disponibles en torch.optim:")
+for name in ['SGD', 'Adagrad', 'RMSprop', 'Adam', 'AdamW']:
+    print(f"  ✓ torch.optim.{name}")
+```
+
+# Bloque 3: Regularización {background-color="#03045e"}
+
+## ¿Qué es el Sobreajuste? {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### El Problema
+
+Un modelo con **demasiada capacidad** memoriza los datos de entrenamiento en lugar de aprender patrones generalizables.
+
+**Señales de alerta:**
+
+- Training loss ↓ pero validation loss ↑
+- Accuracy en train ~ 99%, en val ~ 60%
+- El modelo "recuerda" ejemplos individuales
+
+:::
+::: {.column width="50%"}
+
+### En NLP específicamente
+
+- Vocabularios grandes → muchos parámetros
+- Corpus pequeños (especialmente en español)
+- Palabras raras que aparecen solo en entrenamiento
+- Overfitting a particularidades del dataset
+
+:::
+:::
+
+. . .
+
+::: {.callout-important}
+## Regla de Oro
+Si tu modelo funciona perfecto en entrenamiento pero mal en validación, **no necesitas un modelo más grande**, necesitas **regularización**.
+:::
+
+## Visualización: Underfitting vs. Overfitting {.smaller}
+
+```{python}
+#| code-fold: true
+import numpy as np
+import matplotlib.pyplot as plt
+
+np.random.seed(42)
+n = 30
+x = np.sort(np.random.uniform(0, 2*np.pi, n))
+y_true = np.sin(x)
+y = y_true + np.random.normal(0, 0.3, n)
+
+fig, axes = plt.subplots(1, 3, figsize=(14, 4))
+x_smooth = np.linspace(0, 2*np.pi, 200)
+
+# Underfitting (degree 1)
+coeffs1 = np.polyfit(x, y, 1)
+y_pred1 = np.polyval(coeffs1, x_smooth)
+axes[0].scatter(x, y, c='#264653', s=30, alpha=0.7, zorder=5)
+axes[0].plot(x_smooth, y_pred1, 'r-', linewidth=2)
+axes[0].plot(x_smooth, np.sin(x_smooth), 'g--', linewidth=1, alpha=0.5, label='f(x) real')
+axes[0].set_title('Underfitting\n(modelo muy simple)', fontsize=12, fontweight='bold')
+axes[0].set_ylim(-2, 2)
+axes[0].legend(fontsize=9)
+
+# Good fit (degree 4)
+coeffs4 = np.polyfit(x, y, 4)
+y_pred4 = np.polyval(coeffs4, x_smooth)
+axes[1].scatter(x, y, c='#264653', s=30, alpha=0.7, zorder=5)
+axes[1].plot(x_smooth, y_pred4, 'r-', linewidth=2)
+axes[1].plot(x_smooth, np.sin(x_smooth), 'g--', linewidth=1, alpha=0.5, label='f(x) real')
+axes[1].set_title('Buen ajuste\n(modelo adecuado)', fontsize=12, fontweight='bold')
+axes[1].set_ylim(-2, 2)
+axes[1].legend(fontsize=9)
+
+# Overfitting (degree 15)
+coeffs15 = np.polyfit(x, y, 15)
+y_pred15 = np.polyval(coeffs15, x_smooth)
+axes[2].scatter(x, y, c='#264653', s=30, alpha=0.7, zorder=5)
+axes[2].plot(x_smooth, np.clip(y_pred15, -3, 3), 'r-', linewidth=2)
+axes[2].plot(x_smooth, np.sin(x_smooth), 'g--', linewidth=1, alpha=0.5, label='f(x) real')
+axes[2].set_title('Overfitting\n(modelo muy complejo)', fontsize=12, fontweight='bold')
+axes[2].set_ylim(-2, 2)
+axes[2].legend(fontsize=9)
+
+for ax in axes:
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
+
+plt.tight_layout()
+plt.show()
+```
+
+## Regularización L2 (Weight Decay) {.smaller}
+
+Agrega una penalización a la función de pérdida proporcional al **cuadrado** de los pesos:
+
+$$\mathcal{L}_{\text{reg}} = \mathcal{L}_{\text{original}} + \frac{\lambda}{2} \sum_i w_i^2$$
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Efecto
+
+- Pesos grandes → penalización alta
+- Empuja los pesos hacia cero (pero no exactamente a cero)
+- Modelo más "suave", menos sensible a features individuales
+
+:::
+::: {.column width="50%"}
+
+### En PyTorch
+
+```python
+# Opción 1: weight_decay en el optimizador
+optimizer = torch.optim.Adam(
+    model.parameters(),
+    lr=0.001,
+    weight_decay=1e-4  # λ = 0.0001
+)
+
+# Opción 2: AdamW (recomendado)
+optimizer = torch.optim.AdamW(
+    model.parameters(),
+    lr=0.001,
+    weight_decay=0.01  # λ = 0.01
+)
+```
+
+:::
+:::
+
+## Regularización L1 (Lasso) {.smaller}
+
+Penaliza el **valor absoluto** de los pesos:
+
+$$\mathcal{L}_{\text{reg}} = \mathcal{L}_{\text{original}} + \lambda \sum_i |w_i|$$
+
+::: {.columns}
+::: {.column width="50%"}
+
+### L1 vs. L2
+
+| Propiedad | L1 | L2 |
+|:----------|:---|:---|
+| Penalización | $\lambda \|w\|_1$ | $\frac{\lambda}{2} \|w\|_2^2$ |
+| Efecto en pesos | Lleva a **cero exacto** | Reduce pero no elimina |
+| Sparsity | Sí (selección de features) | No |
+| Uso en NLP | Modelos interpretables | General |
+
+:::
+::: {.column width="50%"}
+
+### Cuándo usar cada una
+
+- **L2:** Default para redes neuronales (weight decay)
+- **L1:** Cuando quieres **selección automática** de features (ej: vocabulario)
+- **Elastic Net:** Combinación de ambas
+
+:::
+:::
+
+## Dropout: Regularización por Aleatoriedad {.smaller}
+
+**Idea (Srivastava et al., 2014):** Durante el entrenamiento, "apagar" neuronas al azar con probabilidad $p$.
+
+$$h_i^{\text{drop}} = h_i \cdot m_i, \quad m_i \sim \text{Bernoulli}(1 - p)$$
+
+```{mermaid}
+%%| fig-width: 10
+graph LR
+    subgraph "Sin Dropout"
+        a1["x₁"] --> b1["h₁"]
+        a1 --> b2["h₂"]
+        a1 --> b3["h₃"]
+        a2["x₂"] --> b1
+        a2 --> b2
+        a2 --> b3
+        b1 --> c1["ŷ"]
+        b2 --> c1
+        b3 --> c1
+    end
+    subgraph "Con Dropout p=0.5"
+        d1["x₁"] --> e1["h₁"]
+        d1 -.->|"✗"| e2["h₂"]
+        d1 --> e3["h₃"]
+        d2["x₂"] --> e1
+        d2 -.->|"✗"| e2
+        d2 --> e3
+        e1 --> f1["ŷ"]
+        e2 -.->|"✗"| f1
+        e3 --> f1
+    end
+    style e2 fill:#ff6b6b,stroke:#c0392b,stroke-dasharray: 5 5
+```
+
+## Dropout: Detalles Importantes {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Durante entrenamiento
+
+- Cada mini-batch usa una **subred diferente**
+- Previene la **co-adaptación** de neuronas
+- Es como entrenar un **ensemble** de $2^n$ redes
+
+### Durante inferencia
+
+- **No se apaga nada** (todas las neuronas activas)
+- Se escalan las activaciones por $(1-p)$ (o se usa *inverted dropout*)
+
+:::
+::: {.column width="50%"}
+
+### En PyTorch
+
+```python
+class TextClassifier(nn.Module):
+    def __init__(self, input_dim, hidden, n_classes):
+        super().__init__()
+        self.fc1 = nn.Linear(input_dim, hidden)
+        self.dropout = nn.Dropout(p=0.5)
+        self.fc2 = nn.Linear(hidden, n_classes)
+
+    def forward(self, x):
+        x = torch.relu(self.fc1(x))
+        x = self.dropout(x)  # Solo activo en train
+        return self.fc2(x)
+
+# model.train()  → dropout ON
+# model.eval()   → dropout OFF
+```
+
+:::
+:::
+
+. . .
+
+::: {.callout-warning}
+## Error Común
+Olvidar llamar `model.eval()` antes de evaluar. Sin esto, el dropout sigue activo y las predicciones son inconsistentes.
+:::
+
+## Dropout en Acción {.smaller}
+
+```{python}
+#| code-fold: true
+import torch
+import torch.nn as nn
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Generar datos con ruido
+np.random.seed(42)
+torch.manual_seed(42)
+
+n = 100
+X_np = np.random.uniform(-3, 3, (n, 1)).astype(np.float32)
+y_np = (np.sin(X_np) + np.random.normal(0, 0.3, (n, 1))).astype(np.float32)
+
+X_train = torch.from_numpy(X_np)
+y_train = torch.from_numpy(y_np)
+
+# Modelo SIN dropout
+class ModelNoReg(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(1, 64), nn.ReLU(),
+            nn.Linear(64, 64), nn.ReLU(),
+            nn.Linear(64, 64), nn.ReLU(),
+            nn.Linear(64, 1)
+        )
+    def forward(self, x):
+        return self.net(x)
+
+# Modelo CON dropout
+class ModelDropout(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(1, 64), nn.ReLU(), nn.Dropout(0.3),
+            nn.Linear(64, 64), nn.ReLU(), nn.Dropout(0.3),
+            nn.Linear(64, 64), nn.ReLU(), nn.Dropout(0.3),
+            nn.Linear(64, 1)
+        )
+    def forward(self, x):
+        return self.net(x)
+
+def train_model(model, X, y, epochs=500, lr=0.01):
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    losses = []
+    for epoch in range(epochs):
+        model.train()
+        pred = model(X)
+        loss = nn.MSELoss()(pred, y)
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        losses.append(loss.item())
+    return losses
+
+model_noreg = ModelNoReg()
+model_drop = ModelDropout()
+
+losses_noreg = train_model(model_noreg, X_train, y_train, epochs=500)
+losses_drop = train_model(model_drop, X_train, y_train, epochs=500)
+
+# Evaluar
+X_test = torch.linspace(-4, 4, 200).unsqueeze(1)
+model_noreg.eval()
+model_drop.eval()
+
+with torch.no_grad():
+    y_noreg = model_noreg(X_test).numpy()
+    y_drop = model_drop(X_test).numpy()
+
+fig, axes = plt.subplots(1, 2, figsize=(12, 4.5))
+
+for ax, y_pred, title in [
+    (axes[0], y_noreg, 'Sin Dropout (sobreajuste)'),
+    (axes[1], y_drop, 'Con Dropout p=0.3'),
+]:
+    ax.scatter(X_np, y_np, c='#264653', s=15, alpha=0.5, label='Datos')
+    ax.plot(X_test.numpy(), np.sin(X_test.numpy()), 'g--', linewidth=2, label='sin(x) real', alpha=0.7)
+    ax.plot(X_test.numpy(), y_pred, 'r-', linewidth=2, label='Predicción')
+    ax.set_title(title, fontsize=12, fontweight='bold')
+    ax.set_ylim(-2.5, 2.5)
+    ax.legend(fontsize=9)
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
+
+plt.tight_layout()
+plt.show()
+```
+
+## Early Stopping {.smaller}
+
+**Idea:** Detener el entrenamiento cuando la pérdida de **validación** deja de mejorar.
+
+```{python}
+#| code-fold: true
+import matplotlib.pyplot as plt
+import numpy as np
+
+epochs = np.arange(1, 101)
+train_loss = 2.5 * np.exp(-0.05 * epochs) + 0.1 + 0.02 * np.random.randn(100)
+val_loss = 2.5 * np.exp(-0.04 * epochs) + 0.3 + 0.05 * (epochs / 30)**1.5 + 0.02 * np.random.randn(100)
+
+best_epoch = np.argmin(val_loss[:60]) + 1
+
+fig, ax = plt.subplots(figsize=(10, 4.5))
+ax.plot(epochs, train_loss, 'b-', linewidth=2, label='Training Loss')
+ax.plot(epochs, val_loss, 'r-', linewidth=2, label='Validation Loss')
+ax.axvline(x=best_epoch, color='green', linestyle='--', linewidth=2, label=f'Early Stop (epoch {best_epoch})')
+ax.fill_between(epochs[best_epoch:], 0, 3, alpha=0.1, color='red')
+ax.annotate('Overfitting Zone', xy=(70, 1.2), fontsize=12, color='red', ha='center')
+ax.set_xlabel('Época', fontsize=12)
+ax.set_ylabel('Loss', fontsize=12)
+ax.set_title('Early Stopping: Parar Antes del Sobreajuste', fontsize=13, fontweight='bold')
+ax.legend(fontsize=11)
+ax.set_ylim(0, 3)
+plt.tight_layout()
+plt.show()
+```
+
+## Implementando Early Stopping {.smaller}
+
+```{python}
+#| code-fold: false
+#| eval: false
+
+class EarlyStopping:
+    """Detiene el entrenamiento cuando val_loss no mejora por 'patience' épocas."""
+    def __init__(self, patience=5, min_delta=0.001):
+        self.patience = patience
+        self.min_delta = min_delta
+        self.best_loss = float('inf')
+        self.counter = 0
+        self.best_model_state = None
+
+    def step(self, val_loss, model):
+        if val_loss < self.best_loss - self.min_delta:
+            self.best_loss = val_loss
+            self.counter = 0
+            self.best_model_state = model.state_dict().copy()
+            return False  # Keep training
+        self.counter += 1
+        return self.counter >= self.patience  # Stop if True
+
+# Uso en el loop de entrenamiento:
+early_stop = EarlyStopping(patience=10)
+for epoch in range(max_epochs):
+    train_loss = train_one_epoch(model, train_loader)
+    val_loss = evaluate(model, val_loader)
+
+    if early_stop.step(val_loss, model):
+        print(f"Early stopping at epoch {epoch}")
+        model.load_state_dict(early_stop.best_model_state)
+        break
+```
+
+# Bloque 4: Batch Normalization {background-color="#001219"}
+
+## ¿Qué es Batch Normalization? {.smaller}
+
+**Problema:** Las distribuciones de activaciones cambian durante el entrenamiento (*internal covariate shift*), haciendo más difícil la convergencia.
+
+**Solución (Ioffe & Szegedy, 2015):** Normalizar las activaciones en cada capa.
+
+$$\hat{h}_i = \frac{h_i - \mu_B}{\sqrt{\sigma_B^2 + \epsilon}} \cdot \gamma + \beta$$
+
+Donde:
+
+- $\mu_B, \sigma_B^2$ son media y varianza **del mini-batch**
+- $\gamma, \beta$ son parámetros **aprendidos** (escalado y desplazamiento)
+
+## BatchNorm: Beneficios y Uso {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Beneficios
+
+- Permite **learning rates más altos**
+- Reduce la dependencia en inicialización
+- Tiene efecto **regularizante** ligero
+- Acelera la convergencia
+- Estabiliza el entrenamiento
+
+:::
+::: {.column width="50%"}
+
+### En PyTorch
+
+```python
+class TextMLP(nn.Module):
+    def __init__(self, input_dim, hidden, n_classes):
+        super().__init__()
+        self.layers = nn.Sequential(
+            nn.Linear(input_dim, hidden),
+            nn.BatchNorm1d(hidden),  # BatchNorm
+            nn.ReLU(),
+            nn.Dropout(0.3),
+            nn.Linear(hidden, hidden),
+            nn.BatchNorm1d(hidden),  # BatchNorm
+            nn.ReLU(),
+            nn.Dropout(0.3),
+            nn.Linear(hidden, n_classes),
+        )
+
+    def forward(self, x):
+        return self.layers(x)
+```
+
+:::
+:::
+
+. . .
+
+::: {.callout-note}
+## BatchNorm vs. LayerNorm
+- **BatchNorm:** Normaliza a través del batch (dimensión 0). Estándar en CNNs y MLPs.
+- **LayerNorm:** Normaliza a través de features (dimensión -1). Preferido en **Transformers** y RNNs porque no depende del tamaño del batch.
+:::
+
+# Bloque 5: Learning Rate Scheduling {background-color="#0077b6"}
+
+## ¿Por Qué Variar el Learning Rate? {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Intuitivamente
+
+- **Inicio:** pasos grandes para explorar
+- **Medio:** pasos moderados para converger
+- **Final:** pasos pequeños para afinar
+
+:::
+::: {.column width="50%"}
+
+### En la práctica
+
+Un $\eta$ fijo causa:
+
+- Si muy alto → no converge
+- Si muy bajo → tarda demasiado
+- **Solución:** empezar alto y reducir gradualmente
+
+:::
+:::
+
+## Estrategias de Scheduling {.smaller}
+
+```{python}
+#| code-fold: true
+import numpy as np
+import matplotlib.pyplot as plt
+
+epochs = np.arange(1, 101)
+lr0 = 0.01
+
+# Step Decay
+step_lr = [lr0 * (0.1 ** (e // 30)) for e in epochs]
+
+# Exponential Decay
+exp_lr = [lr0 * (0.95 ** e) for e in epochs]
+
+# Cosine Annealing
+cos_lr = [lr0 * 0.5 * (1 + np.cos(np.pi * e / 100)) for e in epochs]
+
+# Warmup + Cosine
+warmup_epochs = 10
+warmup_cos_lr = []
+for e in epochs:
+    if e <= warmup_epochs:
+        warmup_cos_lr.append(lr0 * e / warmup_epochs)
+    else:
+        progress = (e - warmup_epochs) / (100 - warmup_epochs)
+        warmup_cos_lr.append(lr0 * 0.5 * (1 + np.cos(np.pi * progress)))
+
+fig, axes = plt.subplots(1, 4, figsize=(16, 3.5))
+schedules = [
+    ('Step Decay\n(×0.1 cada 30 épocas)', step_lr, '#e76f51'),
+    ('Exponential Decay\n(γ=0.95)', exp_lr, '#f4a261'),
+    ('Cosine Annealing', cos_lr, '#2a9d8f'),
+    ('Warmup + Cosine\n(10 épocas warmup)', warmup_cos_lr, '#264653'),
+]
+
+for ax, (title, lrs, color) in zip(axes, schedules):
+    ax.plot(epochs, lrs, color=color, linewidth=2)
+    ax.set_title(title, fontsize=10, fontweight='bold')
+    ax.set_xlabel('Época')
+    ax.set_ylabel('Learning Rate')
+    ax.set_ylim(-0.001, lr0 * 1.1)
+    ax.grid(True, alpha=0.3)
+
+plt.suptitle('Estrategias de Learning Rate Scheduling', fontsize=13, fontweight='bold')
+plt.tight_layout()
+plt.show()
+```
+
+## Schedulers en PyTorch {.smaller}
+
+```{python}
+#| code-fold: false
+import torch
+import torch.nn as nn
+
+model = nn.Linear(10, 2)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+
+# Step Decay: reduce lr cada 30 épocas por factor 0.1
+step_sched = torch.optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1)
+
+# Exponential Decay
+exp_sched = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.95)
+
+# Cosine Annealing
+cos_sched = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=100)
+
+# Reduce on Plateau (reduce cuando val_loss se estanca)
+plateau_sched = torch.optim.lr_scheduler.ReduceLROnPlateau(
+    optimizer, mode='min', factor=0.5, patience=5
+)
+
+print("Schedulers disponibles:")
+for name in ['StepLR', 'ExponentialLR', 'CosineAnnealingLR', 'ReduceLROnPlateau']:
+    print(f"  ✓ torch.optim.lr_scheduler.{name}")
+```
+
+::: {.callout-tip}
+## Recomendación para NLP
+Para modelos de NLP (especialmente fine-tuning de Transformers), **Warmup + Cosine Annealing** o **Linear Warmup + Linear Decay** son los estándares. El warmup previene actualizaciones grandes con gradientes ruidosos al inicio.
+:::
+
+# Bloque 6: Todo Junto — Ejemplo Práctico {background-color="#023e8a"}
+
+## Pipeline Completo con Regularización {.smaller}
+
+```{python}
+#| code-fold: false
+import torch
+import torch.nn as nn
+import numpy as np
+from sklearn.datasets import fetch_20newsgroups
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report
+
+# 1. Datos: 4 categorías de 20 Newsgroups
+categories = ['sci.space', 'rec.sport.baseball', 'comp.graphics', 'talk.politics.misc']
+data = fetch_20newsgroups(subset='all', categories=categories, remove=('headers', 'footers'))
+
+# 2. Vectorización TF-IDF
+vectorizer = TfidfVectorizer(max_features=5000, stop_words='english')
+X = vectorizer.fit_transform(data.data).toarray()
+y = data.target
+
+X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
+
+print(f"Train: {X_train.shape[0]} docs | Val: {X_val.shape[0]} docs")
+print(f"Features: {X_train.shape[1]} | Clases: {len(categories)}")
+```
+
+## Modelo con Todas las Técnicas {.smaller}
+
+```{python}
+#| code-fold: false
+class RegularizedMLP(nn.Module):
+    """MLP con BatchNorm, Dropout y múltiples capas."""
+    def __init__(self, input_dim, hidden_dim, n_classes, dropout_rate=0.4):
+        super().__init__()
+        self.layers = nn.Sequential(
+            # Capa 1
+            nn.Linear(input_dim, hidden_dim),
+            nn.BatchNorm1d(hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(dropout_rate),
+            # Capa 2
+            nn.Linear(hidden_dim, hidden_dim // 2),
+            nn.BatchNorm1d(hidden_dim // 2),
+            nn.ReLU(),
+            nn.Dropout(dropout_rate),
+            # Salida
+            nn.Linear(hidden_dim // 2, n_classes),
+        )
+
+    def forward(self, x):
+        return self.layers(x)
+
+model = RegularizedMLP(
+    input_dim=X_train.shape[1],
+    hidden_dim=256,
+    n_classes=len(categories),
+    dropout_rate=0.4
+)
+
+total_params = sum(p.numel() for p in model.parameters())
+print(f"Arquitectura: {X_train.shape[1]} → 256 → 128 → {len(categories)}")
+print(f"Parámetros totales: {total_params:,}")
+print(f"\n{model}")
+```
+
+## Entrenamiento con AdamW + Scheduling {.smaller}
+
+```{python}
+#| code-fold: false
+# Convertir a tensores
+X_train_t = torch.FloatTensor(X_train)
+y_train_t = torch.LongTensor(y_train)
+X_val_t = torch.FloatTensor(X_val)
+y_val_t = torch.LongTensor(y_val)
+
+# DataLoader para mini-batches
+train_ds = torch.utils.data.TensorDataset(X_train_t, y_train_t)
+train_loader = torch.utils.data.DataLoader(train_ds, batch_size=64, shuffle=True)
+
+# Optimizador: AdamW con weight decay (L2 regularization)
+optimizer = torch.optim.AdamW(model.parameters(), lr=0.001, weight_decay=0.01)
+
+# Scheduler: Cosine Annealing
+scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=50)
+
+# Loss
+criterion = nn.CrossEntropyLoss()
+
+# Early stopping
+best_val_loss = float('inf')
+patience = 10
+patience_counter = 0
+best_state = None
+
+# Entrenamiento
+train_losses, val_losses = [], []
+
+for epoch in range(50):
+    # Train
+    model.train()
+    epoch_loss = 0
+    for X_batch, y_batch in train_loader:
+        optimizer.zero_grad()
+        output = model(X_batch)
+        loss = criterion(output, y_batch)
+        loss.backward()
+        optimizer.step()
+        epoch_loss += loss.item()
+
+    train_loss = epoch_loss / len(train_loader)
+    train_losses.append(train_loss)
+
+    # Validation
+    model.eval()
+    with torch.no_grad():
+        val_output = model(X_val_t)
+        val_loss = criterion(val_output, y_val_t).item()
+    val_losses.append(val_loss)
+
+    # Early stopping check
+    if val_loss < best_val_loss - 0.001:
+        best_val_loss = val_loss
+        patience_counter = 0
+        best_state = {k: v.clone() for k, v in model.state_dict().items()}
+    else:
+        patience_counter += 1
+
+    # Scheduler step
+    scheduler.step()
+
+    if patience_counter >= patience:
+        print(f"Early stopping at epoch {epoch + 1}")
+        break
+
+    if (epoch + 1) % 10 == 0:
+        lr = optimizer.param_groups[0]['lr']
+        print(f"Epoch {epoch+1:3d} | Train: {train_loss:.4f} | Val: {val_loss:.4f} | LR: {lr:.6f}")
+
+# Restaurar mejor modelo
+if best_state:
+    model.load_state_dict(best_state)
+print(f"\nMejor val_loss: {best_val_loss:.4f}")
+```
+
+## Resultados y Curvas {.smaller}
+
+```{python}
+#| code-fold: true
+import matplotlib.pyplot as plt
+
+fig, axes = plt.subplots(1, 2, figsize=(13, 4.5))
+
+# Loss curves
+ax = axes[0]
+ax.plot(train_losses, 'b-', linewidth=2, label='Train Loss')
+ax.plot(val_losses, 'r-', linewidth=2, label='Val Loss')
+ax.set_xlabel('Época', fontsize=11)
+ax.set_ylabel('Loss', fontsize=11)
+ax.set_title('Curvas de Entrenamiento', fontsize=12, fontweight='bold')
+ax.legend(fontsize=10)
+ax.grid(True, alpha=0.3)
+
+# Evaluate
+model.eval()
+with torch.no_grad():
+    predictions = model(X_val_t).argmax(dim=1).numpy()
+
+# Confusion matrix
+from sklearn.metrics import confusion_matrix
+cm = confusion_matrix(y_val, predictions)
+short_names = ['sci.space', 'baseball', 'graphics', 'politics']
+ax = axes[1]
+im = ax.imshow(cm, cmap='Blues')
+ax.set_xticks(range(len(short_names)))
+ax.set_yticks(range(len(short_names)))
+ax.set_xticklabels(short_names, rotation=45, ha='right', fontsize=9)
+ax.set_yticklabels(short_names, fontsize=9)
+for i in range(len(short_names)):
+    for j in range(len(short_names)):
+        color = 'white' if cm[i, j] > cm.max() / 2 else 'black'
+        ax.text(j, i, str(cm[i, j]), ha='center', va='center', color=color, fontsize=11)
+ax.set_title('Matriz de Confusión', fontsize=12, fontweight='bold')
+ax.set_xlabel('Predicción')
+ax.set_ylabel('Real')
+
+plt.tight_layout()
+plt.show()
+
+# Classification report
+print("\n" + classification_report(y_val, predictions, target_names=short_names))
+```
+
+# Resumen {background-color="#0077b6"}
+
+## Lo Que Aprendimos Hoy {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Optimización
+
+- **SGD** tiene limitaciones con superficies de pérdida complejas
+- **Momentum** acumula velocidad en direcciones consistentes
+- **AdaGrad/RMSProp** adaptan el LR por parámetro
+- **Adam/AdamW** combinan momentum + adaptación → **default**
+- **LR Scheduling** varía el LR durante el entrenamiento
+
+:::
+::: {.column width="50%"}
+
+### Regularización
+
+- **L2 (Weight Decay):** Penaliza pesos grandes
+- **Dropout:** Apaga neuronas al azar → previene co-adaptación
+- **Early Stopping:** Detener cuando val_loss sube
+- **BatchNorm:** Estabiliza activaciones, efecto regularizante
+- Todas se **complementan** — usarlas juntas
+
+:::
+:::
+
+## Fórmulas Clave {.smaller}
+
+| Concepto | Fórmula |
+|:---------|:--------|
+| **Momentum** | $v_t = \beta v_{t-1} + g_t$; $w \leftarrow w - \eta v_t$ |
+| **Adam** | $w \leftarrow w - \eta \frac{\hat{m}_t}{\sqrt{\hat{v}_t} + \epsilon}$ |
+| **L2 Reg.** | $\mathcal{L}_{\text{reg}} = \mathcal{L} + \frac{\lambda}{2}\|w\|_2^2$ |
+| **Dropout** | $h_i^{\text{drop}} = h_i \cdot m_i$, $m_i \sim \text{Bernoulli}(1-p)$ |
+| **BatchNorm** | $\hat{h} = \gamma \frac{h - \mu_B}{\sqrt{\sigma_B^2 + \epsilon}} + \beta$ |
+
+## Guía Rápida: ¿Qué Usar? {.smaller}
+
+| Decisión | Recomendación |
+|:---------|:-------------|
+| **Optimizador** | AdamW ($\eta=0.001$, WD=0.01) |
+| **Dropout** | $p = 0.3$–$0.5$ |
+| **BatchNorm** | Sí, antes de la activación |
+| **Weight Decay** | $\lambda = 0.01$ (en AdamW) |
+| **Early Stopping** | patience = 5–10 épocas |
+| **LR Schedule** | Cosine Annealing o ReduceOnPlateau |
+| **Batch size** | 32–128 |
+
+. . .
+
+::: {.callout-tip}
+## Orden de Prueba
+1. Empezar con **Adam** y los defaults
+2. Agregar **Dropout** si hay overfitting
+3. Agregar **LR scheduling** para mejor convergencia
+4. Probar **AdamW** si el modelo es grande
+:::
+
+## Para la Próxima Sesión 📚
+
+::: {.callout-note}
+## Semana 6, S1: Arquitectura RNN — Manejando Longitud Variable
+
+- Redes Neuronales Recurrentes para secuencias
+- Cómo procesar texto de longitud variable
+- La memoria a corto plazo de las RNNs
+:::
+
+**Lectura:**
+
+- Jurafsky & Martin, Cap. 9: *Deep Learning Architectures for Sequence Processing*
+- Goodfellow et al., *Deep Learning*, Cap. 10: *Sequence Modeling: Recurrent and Recursive Nets*
+
+**Recordatorio:**
+
+- Quiz 4 cubrirá: perceptrones (S1), MLPs/PyTorch (S2), y optimización/regularización (S3) 🧮
+
+# ¿Preguntas? 🙋 {background-color="#03045e"}
+
+:::{.r-fit-text}
+**¡Gracias!**
+:::
+
+📧 fsuarez@ucb.edu.bo
+
+🔗 Materiales: [github.com/fjsuarez/ucb-nlp](https://github.com/fjsuarez/ucb-nlp)
