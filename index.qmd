@@ -38,10 +38,17 @@ format: html
 
 ### Semana 7
 - [Arquitecturas Codificador-Decodificador (Seq2Seq)](slides/semana07/s1_seq2seq_encoder_decoder.qmd)
+- [Traducción Automática Neuronal (NMT)](slides/semana07/s2_nmt_traduccion.qmd)
+- [El Mecanismo de Atención](slides/semana07/s3_atencion.qmd)
+
+### Semana 8
+- [Convoluciones 1D para Texto](slides/semana08/s1_conv1d_texto.qmd)
+- [Max Pooling Global vs. Local](slides/semana08/s2_pooling.qmd)
 
 ## Tareas
 
 - [Tarea 1: Analizador de Sentimiento con TF-IDF + Regresión Logística](tareas/tarea01/tarea01_sentimiento.ipynb) — Entrega: Semana 4
+- [Tarea 2: Generador de Nombres a Nivel de Caracteres con LSTM](tareas/tarea02/tarea02_generador_nombres.ipynb) — Entrega: Semana 8
 
 ## Información general
 - [Programa del Curso](programa.qmd)

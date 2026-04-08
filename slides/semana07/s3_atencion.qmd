@@ -1,0 +1,855 @@
+---
+title: "Secuencia a Secuencia (Seq2Seq)"
+subtitle: "S3: El Mecanismo de Atención"
+author: "Prof. Francisco Suárez"
+institute: "Universidad Católica Boliviana"
+date: "2026-03-31"
+format:
+  revealjs:
+    theme: sky
+    transition: slide
+    slide-number: true
+    chalkboard: true
+    code-fold: true
+    code-tools: true
+    highlight-style: github
+    footer: "NLP y Análisis Semántico | Semana 7"
+    logo: ""
+    incremental: false
+    scrollable: true
+execute:
+  echo: true
+  warning: false
+---
+
+## Agenda de Hoy {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+1. 🔍 Repaso: el **cuello de botella**
+2. 💡 Intuición de la **Atención**
+3. 📐 Atención de **Bahdanau** (aditiva)
+4. ⚡ Atención de **Luong** (multiplicativa)
+5. 🧪 Experimento: Seq2Seq **con atención**
+6. 🗺️ **Mapas de atención** y visualización
+
+:::
+::: {.column width="50%"}
+
+::: {.callout-tip}
+## Objetivo
+Entender el mecanismo de **Atención** que permite al decoder consultar selectivamente diferentes partes de la entrada, resolviendo el cuello de botella del vector de contexto fijo.
+:::
+
+**Prerequisitos:** Seq2Seq, NMT (Semana 7 S1-S2)
+
+:::
+:::
+
+# El Cuello de Botella (Repaso) {background-color="#0077b6"}
+
+## El Problema que Resolvemos Hoy {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Seq2Seq sin atención
+
+El encoder comprime **toda** la secuencia en un solo vector:
+
+$$x_1, x_2, \ldots, x_{T_x} \rightarrow \mathbf{c} \in \mathbb{R}^{D_h}$$
+
+El decoder solo ve $\mathbf{c}$ → pierde detalles de la entrada.
+
+**Problemas observados:**
+
+- Rendimiento se degrada con secuencias largas
+- El decoder no sabe **dónde mirar** en la entrada
+- Información temprana se pierde por el vanishing gradient
+
+:::
+::: {.column width="50%"}
+
+```{python}
+#| echo: false
+#| fig-align: center
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+import numpy as np
+
+fig, ax = plt.subplots(figsize=(7, 4))
+ax.set_xlim(-0.5, 10)
+ax.set_ylim(-1, 4)
+ax.axis('off')
+
+# Encoder tokens
+enc_color = '#0077b6'
+tokens = ["el", "gato", "negro", "duerme", "mucho"]
+for i, tok in enumerate(tokens):
+    rect = mpatches.FancyBboxPatch((i*1.6, 1.2), 1.2, 1, boxstyle="round,pad=0.08",
+                                     facecolor=enc_color, edgecolor='white', linewidth=1.5,
+                                     alpha=max(0.3, 1 - i*0.15))
+    ax.add_patch(rect)
+    ax.text(i*1.6+0.6, 1.7, tok, ha='center', va='center', fontsize=9, color='white', fontweight='bold')
+    if i > 0:
+        ax.annotate('', xy=(i*1.6, 1.7), xytext=((i-1)*1.6+1.2, 1.7),
+                    arrowprops=dict(arrowstyle='->', color=enc_color, lw=1.5, alpha=0.5))
+
+# Funnel to context
+ax.annotate('', xy=(8.5, 1.7), xytext=(4*1.6+1.2, 1.7),
+            arrowprops=dict(arrowstyle='->', color='#e76f51', lw=2.5))
+circle = plt.Circle((9.2, 1.7), 0.5, color='#e76f51', ec='white', linewidth=2)
+ax.add_patch(circle)
+ax.text(9.2, 1.7, "c", ha='center', va='center', fontsize=14, color='white', fontweight='bold')
+
+ax.text(4, 3.3, "Toda la información → un solo vector", ha='center',
+        fontsize=12, fontweight='bold', color='#e76f51')
+ax.text(4, -0.5, "⚠️ Información temprana se pierde", ha='center',
+        fontsize=11, color='#e76f51', style='italic')
+
+plt.tight_layout()
+plt.show()
+```
+
+:::
+:::
+
+::: {.callout-important}
+## Cho et al. (2014) confirmaron
+El rendimiento de NMT cae dramáticamente en oraciones de más de ~20 tokens. El cuello de botella del vector fijo es la causa principal.
+:::
+
+# La Idea de la Atención 💡 {background-color="#023e8a"}
+
+## Intuición: "Mirar Hacia Atrás" {.smaller}
+
+> En lugar de comprimir toda la entrada en un solo vector, ¿qué tal si el decoder pudiera **consultar** las representaciones de todos los tokens de entrada en cada paso?
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Analogía humana
+Cuando un traductor traduce una oración:
+
+- No lee toda la oración, la memoriza, y luego traduce de memoria
+- **Consulta** diferentes partes del texto original según la palabra que está traduciendo
+- "el **gato**" → mira "the **cat**"
+- "**duerme**" → mira "**sleeps**"
+
+:::
+::: {.column width="50%"}
+
+### La solución
+
+En cada paso de decodificación $t$:
+
+1. **Almacenar** todos los estados del encoder: $h_1, h_2, \ldots, h_{T_x}$
+2. **Calcular** qué tan relevante es cada $h_j$ para el paso actual
+3. **Promediar** ponderadamente estos estados → **vector de contexto dinámico** $\mathbf{c}_t$
+
+$$\mathbf{c}_t = \sum_{j=1}^{T_x} \alpha_{t,j} \cdot h_j$$
+
+:::
+:::
+
+## Atención: Visión General {.smaller}
+
+```{python}
+#| echo: false
+#| fig-align: center
+fig, ax = plt.subplots(figsize=(13, 5.5))
+ax.set_xlim(-0.5, 14)
+ax.set_ylim(-1.5, 6.5)
+ax.axis('off')
+
+enc_color = '#0077b6'
+dec_color = '#023e8a'
+att_color = '#e76f51'
+
+# Encoder states (bottom row)
+enc_tokens = ["el", "gato", "negro", "duerme"]
+for i, tok in enumerate(enc_tokens):
+    x = i * 2.5 + 0.5
+    rect = mpatches.FancyBboxPatch((x, 0.5), 1.4, 1.2, boxstyle="round,pad=0.1",
+                                     facecolor=enc_color, edgecolor='white', linewidth=2)
+    ax.add_patch(rect)
+    ax.text(x+0.7, 1.1, f"$h_{i+1}$", ha='center', va='center', fontsize=12, color='white', fontweight='bold')
+    ax.text(x+0.7, -0.3, f'"{tok}"', ha='center', fontsize=10, fontweight='bold', color=enc_color)
+    ax.annotate('', xy=(x+0.7, 0.5), xytext=(x+0.7, 0.0),
+                arrowprops=dict(arrowstyle='->', color=enc_color, lw=1.5))
+
+# Decoder step (right side)
+dec_x = 11.5
+rect = mpatches.FancyBboxPatch((dec_x, 3), 1.8, 1.5, boxstyle="round,pad=0.1",
+                                 facecolor=dec_color, edgecolor='white', linewidth=2)
+ax.add_patch(rect)
+ax.text(dec_x+0.9, 3.75, "Decoder\n$s_t$", ha='center', va='center', fontsize=11, color='white', fontweight='bold')
+ax.text(dec_x+0.9, 5.3, '"the"', ha='center', fontsize=11, fontweight='bold', color=dec_color)
+ax.annotate('', xy=(dec_x+0.9, 5.0), xytext=(dec_x+0.9, 4.5),
+            arrowprops=dict(arrowstyle='->', color=dec_color, lw=2))
+
+# Context vector (middle)
+ctx_x = 8.5
+circle = plt.Circle((ctx_x, 3.75), 0.6, color=att_color, ec='white', linewidth=2)
+ax.add_patch(circle)
+ax.text(ctx_x, 3.75, "$\\mathbf{c}_t$", ha='center', va='center', fontsize=13, color='white', fontweight='bold')
+
+# Arrow from context to decoder
+ax.annotate('', xy=(dec_x, 3.75), xytext=(ctx_x+0.6, 3.75),
+            arrowprops=dict(arrowstyle='->', color=att_color, lw=2.5))
+
+# Attention weights (arrows from encoder to context)
+alphas = [0.05, 0.70, 0.20, 0.05]
+for i, (alpha, tok) in enumerate(zip(alphas, enc_tokens)):
+    x = i * 2.5 + 0.5 + 0.7
+    lw = max(0.5, alpha * 6)
+    al = max(0.2, alpha)
+    ax.annotate('', xy=(ctx_x-0.4, 3.3), xytext=(x, 1.7),
+                arrowprops=dict(arrowstyle='->', color=att_color, lw=lw, alpha=al))
+    ax.text(x, 2.5, f"$\\alpha$={alpha:.2f}", ha='center', fontsize=8,
+            color=att_color, fontweight='bold', alpha=max(0.4, alpha))
+
+ax.text(5, 5.8, "Atención: pesos diferentes para cada estado del encoder",
+        ha='center', fontsize=12, fontweight='bold', color=att_color)
+ax.text(ctx_x, 2.7, "Promedio\nponderado", ha='center', fontsize=9, color=att_color)
+
+plt.tight_layout()
+plt.show()
+```
+
+::: {.callout-note}
+## Diferencia clave con Seq2Seq estándar
+El vector de contexto $\mathbf{c}_t$ es **diferente** en cada paso de decodificación. Ya no es un vector fijo — es una **combinación ponderada** de los estados del encoder que cambia según lo que el decoder necesita.
+:::
+
+# Atención de Bahdanau (Aditiva) 📐 {background-color="#03045e"}
+
+## Bahdanau et al. (2015) {.smaller}
+
+El paper fundacional: *"Neural Machine Translation by Jointly Learning to Align and Translate"*
+
+### Paso a paso
+
+**1. Score de alineación** — ¿qué tan relevante es $h_j$ para el estado del decoder $s_{t-1}$?
+
+$$e_{t,j} = v_a^\top \tanh(W_a \cdot s_{t-1} + U_a \cdot h_j)$$
+
+**2. Pesos de atención** — normalizar con softmax:
+
+$$\alpha_{t,j} = \frac{\exp(e_{t,j})}{\sum_{k=1}^{T_x} \exp(e_{t,k})}$$
+
+**3. Vector de contexto dinámico** — combinar estados del encoder:
+
+$$\mathbf{c}_t = \sum_{j=1}^{T_x} \alpha_{t,j} \cdot h_j$$
+
+**4. Actualizar el decoder** — usando contexto + input:
+
+$$s_t = \text{GRU}([\text{emb}(y_{t-1}); \mathbf{c}_t], \; s_{t-1})$$
+
+::: {.callout-note}
+## ¿Por qué "aditiva"?
+Porque el score combina $s_{t-1}$ y $h_j$ con una **suma** seguida de $\tanh$ y un vector aprendido $v_a$. Los parámetros $W_a$, $U_a$ y $v_a$ se aprenden durante entrenamiento.
+:::
+
+## Implementación: Atención de Bahdanau {.smaller}
+
+```{python}
+#| code-fold: show
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+class BahdanauAttention(nn.Module):
+    def __init__(self, hidden_dim):
+        super().__init__()
+        self.W_a = nn.Linear(hidden_dim, hidden_dim, bias=False)
+        self.U_a = nn.Linear(hidden_dim, hidden_dim, bias=False)
+        self.v_a = nn.Linear(hidden_dim, 1, bias=False)
+    
+    def forward(self, decoder_hidden, encoder_outputs):
+        """
+        decoder_hidden: (batch, hidden_dim) — s_{t-1}
+        encoder_outputs: (batch, src_len, hidden_dim) — h_1, ..., h_{T_x}
+        """
+        # decoder_hidden → (batch, 1, hidden_dim) para broadcasting
+        dec_expanded = decoder_hidden.unsqueeze(1)
+        
+        # Score: v^T tanh(W·s + U·h) → (batch, src_len, 1)
+        energy = self.v_a(torch.tanh(
+            self.W_a(dec_expanded) + self.U_a(encoder_outputs)
+        ))
+        
+        # Pesos: softmax sobre src_len → (batch, src_len)
+        attention_weights = F.softmax(energy.squeeze(-1), dim=-1)
+        
+        # Contexto: promedio ponderado → (batch, hidden_dim)
+        context = torch.bmm(attention_weights.unsqueeze(1),
+                           encoder_outputs).squeeze(1)
+        
+        return context, attention_weights
+
+# Demo
+torch.manual_seed(42)
+attn = BahdanauAttention(hidden_dim=64)
+fake_dec_h = torch.randn(4, 64)        # batch=4
+fake_enc_out = torch.randn(4, 8, 64)   # src_len=8
+ctx, weights = attn(fake_dec_h, fake_enc_out)
+print(f"Contexto:  {ctx.shape}")          # (4, 64)
+print(f"Pesos:     {weights.shape}")      # (4, 8)
+print(f"Suma pesos: {weights[0].sum().item():.4f}")  # = 1.0
+print(f"Pesos[0]:  {weights[0].data.numpy().round(3)}")
+```
+
+# Atención de Luong (Multiplicativa) ⚡ {background-color="#001219"}
+
+## Luong et al. (2015) {.smaller}
+
+*"Effective Approaches to Attention-based Neural Machine Translation"* — versión más simple y eficiente.
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Tres variantes de score
+
+| Nombre | Score $e_{t,j}$ |
+|:-------|:-----------------|
+| **dot** | $s_t^\top h_j$ |
+| **general** | $s_t^\top W_a h_j$ |
+| **concat** | $v_a^\top \tanh(W_a [s_t; h_j])$ |
+
+La variante **dot** es la más usada:
+
+- No tiene parámetros aprendibles
+- Extremadamente eficiente (solo producto punto)
+- Funciona bien cuando $s_t$ y $h_j$ están en el mismo espacio
+
+:::
+::: {.column width="50%"}
+
+### Diferencias con Bahdanau
+
+| Aspecto | Bahdanau | Luong |
+|:--------|:---------|:------|
+| Score | Aditivo (MLP) | Multiplicativo (dot) |
+| Estado decoder | $s_{t-1}$ | $s_t$ (actual) |
+| Contexto se usa en | Input del GRU | Output layer |
+| Complejidad | $O(D_h^2)$ | $O(D_h)$ para dot |
+
+::: {.callout-tip}
+## En la práctica
+La variante **dot product** de Luong evolucionó en el **Scaled Dot-Product Attention** del Transformer (Semana 9).
+:::
+
+:::
+:::
+
+## Implementación: Atención de Luong (dot) {.smaller}
+
+```{python}
+#| code-fold: show
+class LuongAttention(nn.Module):
+    def __init__(self, hidden_dim, method='dot'):
+        super().__init__()
+        self.method = method
+        if method == 'general':
+            self.W_a = nn.Linear(hidden_dim, hidden_dim, bias=False)
+    
+    def forward(self, decoder_hidden, encoder_outputs):
+        """
+        decoder_hidden: (batch, hidden_dim) — s_t (estado actual)
+        encoder_outputs: (batch, src_len, hidden_dim)
+        """
+        if self.method == 'dot':
+            # Score: s_t^T · h_j → (batch, src_len)
+            energy = torch.bmm(encoder_outputs,
+                              decoder_hidden.unsqueeze(-1)).squeeze(-1)
+        elif self.method == 'general':
+            energy = torch.bmm(self.W_a(encoder_outputs),
+                              decoder_hidden.unsqueeze(-1)).squeeze(-1)
+        
+        attention_weights = F.softmax(energy, dim=-1)
+        context = torch.bmm(attention_weights.unsqueeze(1),
+                           encoder_outputs).squeeze(1)
+        
+        return context, attention_weights
+
+# Comparar ambas
+luong_attn = LuongAttention(hidden_dim=64, method='dot')
+ctx_l, weights_l = luong_attn(fake_dec_h, fake_enc_out)
+print(f"Bahdanau pesos: {weights[0].data.numpy().round(3)}")
+print(f"Luong    pesos: {weights_l[0].data.numpy().round(3)}")
+print(f"\nBahdanau: {sum(p.numel() for p in attn.parameters()):,} parámetros")
+print(f"Luong (dot): {sum(p.numel() for p in luong_attn.parameters()):,} parámetros")
+```
+
+## Comparación Visual: Bahdanau vs. Luong {.smaller}
+
+```{python}
+#| echo: false
+#| fig-align: center
+fig, axes = plt.subplots(1, 2, figsize=(13, 4.5))
+
+for ax, title, color, steps in zip(
+    axes,
+    ["Bahdanau (Aditiva)", "Luong (Multiplicativa)"],
+    ['#03045e', '#001219'],
+    [
+        ["1. $e_{t,j} = v^T \\tanh(Ws_{t-1} + Uh_j)$",
+         "2. $\\alpha_{t,j} = \\mathrm{softmax}(e_{t,j})$",
+         "3. $c_t = \\sum \\alpha_{t,j} h_j$",
+         "4. $s_t = \\mathrm{GRU}([y_{t-1}; c_t], s_{t-1})$",
+         "5. $\\hat{y}_t = \\mathrm{softmax}(W_o s_t)$"],
+        ["1. $s_t = \\mathrm{GRU}(y_{t-1}, s_{t-1})$",
+         "2. $e_{t,j} = s_t^T h_j$",
+         "3. $\\alpha_{t,j} = \\mathrm{softmax}(e_{t,j})$",
+         "4. $c_t = \\sum \\alpha_{t,j} h_j$",
+         "5. $\\hat{y}_t = \\mathrm{softmax}(W_o [s_t; c_t])$"]
+    ]
+):
+    ax.set_xlim(-0.5, 10)
+    ax.set_ylim(-0.5, 6)
+    ax.axis('off')
+    ax.set_title(title, fontsize=14, fontweight='bold', color=color, pad=10)
+    
+    for i, step in enumerate(steps):
+        y = 5 - i * 1.1
+        rect = mpatches.FancyBboxPatch((0.3, y-0.35), 9, 0.7, boxstyle="round,pad=0.1",
+                                         facecolor=color, edgecolor='white', linewidth=1.5,
+                                         alpha=0.7 + i*0.06)
+        ax.add_patch(rect)
+        ax.text(4.8, y, step, ha='center', va='center', fontsize=10, color='white')
+
+plt.tight_layout()
+plt.show()
+```
+
+::: {.callout-note}
+## Observación clave
+Bahdanau calcula la atención **antes** de actualizar el decoder (usa $s_{t-1}$). Luong calcula la atención **después** (usa $s_t$). En la práctica, ambas funcionan bien.
+:::
+
+# Experimento: Seq2Seq con Atención 🧪 {background-color="#0077b6"}
+
+## Modelo Completo con Atención {.smaller}
+
+```{python}
+#| code-fold: show
+import random
+
+class AttentionEncoder(nn.Module):
+    def __init__(self, vocab_size, embed_dim, hidden_dim):
+        super().__init__()
+        self.embedding = nn.Embedding(vocab_size, embed_dim)
+        self.rnn = nn.GRU(embed_dim, hidden_dim, batch_first=True)
+    
+    def forward(self, src):
+        embedded = self.embedding(src)
+        outputs, hidden = self.rnn(embedded)
+        return outputs, hidden  # ← Ahora retornamos TODOS los estados
+
+class AttentionDecoder(nn.Module):
+    def __init__(self, vocab_size, embed_dim, hidden_dim):
+        super().__init__()
+        self.embedding = nn.Embedding(vocab_size, embed_dim)
+        self.attention = BahdanauAttention(hidden_dim)
+        self.rnn = nn.GRU(embed_dim + hidden_dim, hidden_dim, batch_first=True)
+        self.fc_out = nn.Linear(hidden_dim * 2, vocab_size)
+    
+    def forward(self, input_token, hidden, encoder_outputs):
+        embedded = self.embedding(input_token)          # (batch, 1, embed_dim)
+        
+        # Atención: contexto dinámico
+        context, attn_weights = self.attention(
+            hidden.squeeze(0), encoder_outputs           # s_{t-1}, h_1..h_T
+        )
+        
+        # Concatenar embedding + contexto como input del GRU
+        rnn_input = torch.cat([embedded, context.unsqueeze(1)], dim=-1)
+        output, hidden = self.rnn(rnn_input, hidden)
+        
+        # Predicción: concatenar output + contexto
+        prediction = self.fc_out(torch.cat([output.squeeze(1), context], dim=-1))
+        
+        return prediction, hidden, attn_weights
+```
+
+## Entrenamiento: Inversión de Secuencias {.smaller}
+
+```{python}
+#| code-fold: show
+import torch.optim as optim
+
+PAD, SOS, EOS = 0, 1, 2
+NUM_DIGITS = 10
+VOCAB_SIZE = NUM_DIGITS + 3
+
+def generate_pairs(n, min_len=4, max_len=10):
+    src_list, trg_list = [], []
+    for _ in range(n):
+        length = random.randint(min_len, max_len)
+        seq = [random.randint(3, VOCAB_SIZE - 1) for _ in range(length)]
+        src_list.append(seq + [PAD] * (max_len - length))
+        trg_list.append(list(reversed(seq)) + [EOS] + [PAD] * (max_len - length))
+    return torch.tensor(src_list), torch.tensor(trg_list)
+
+torch.manual_seed(42)
+random.seed(42)
+train_src, train_trg = generate_pairs(3000)
+test_src, test_trg = generate_pairs(300)
+
+EMBED_DIM = 32
+HIDDEN_DIM = 64
+BATCH_SIZE = 128
+N_EPOCHS = 40
+
+enc_attn = AttentionEncoder(VOCAB_SIZE, EMBED_DIM, HIDDEN_DIM)
+dec_attn = AttentionDecoder(VOCAB_SIZE, EMBED_DIM, HIDDEN_DIM)
+
+params = list(enc_attn.parameters()) + list(dec_attn.parameters())
+optimizer = optim.Adam(params, lr=0.003)
+criterion = nn.CrossEntropyLoss(ignore_index=PAD)
+
+losses_attn = []
+for epoch in range(N_EPOCHS):
+    enc_attn.train(); dec_attn.train()
+    epoch_loss, n_b = 0, 0
+    idx = torch.randperm(len(train_src))
+    for i in range(0, len(train_src), BATCH_SIZE):
+        bi = idx[i:i+BATCH_SIZE]
+        src, trg = train_src[bi], train_trg[bi]
+        
+        enc_out, hidden = enc_attn(src)
+        input_tok = torch.full((src.size(0), 1), SOS, dtype=torch.long)
+        
+        all_preds = []
+        for t in range(trg.size(1)):
+            pred, hidden, _ = dec_attn(input_tok, hidden, enc_out)
+            all_preds.append(pred)
+            if random.random() < max(0.1, 1 - epoch/N_EPOCHS):
+                input_tok = trg[:, t:t+1]
+            else:
+                input_tok = pred.argmax(1, keepdim=True)
+        
+        outputs = torch.stack(all_preds, dim=1)
+        loss = criterion(outputs.reshape(-1, VOCAB_SIZE), trg.reshape(-1))
+        
+        optimizer.zero_grad()
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(params, 1.0)
+        optimizer.step()
+        epoch_loss += loss.item()
+        n_b += 1
+    
+    losses_attn.append(epoch_loss / n_b)
+    if (epoch+1) % 10 == 0:
+        print(f"Época {epoch+1:3d}/{N_EPOCHS} | Loss: {losses_attn[-1]:.4f}")
+```
+
+## Evaluación y Comparación {.smaller}
+
+```{python}
+#| code-fold: show
+# Evaluación con atención
+enc_attn.eval(); dec_attn.eval()
+all_preds_attn = []
+all_weights = []
+
+with torch.no_grad():
+    enc_out, hidden = enc_attn(test_src)
+    input_tok = torch.full((test_src.size(0), 1), SOS, dtype=torch.long)
+    
+    for t in range(test_trg.size(1)):
+        pred, hidden, attn_w = dec_attn(input_tok, hidden, enc_out)
+        all_preds_attn.append(pred.argmax(1))
+        all_weights.append(attn_w)
+        input_tok = pred.argmax(1, keepdim=True)
+
+predictions_attn = torch.stack(all_preds_attn, dim=1)
+attention_matrix = torch.stack(all_weights, dim=1)  # (batch, trg_len, src_len)
+
+# Token accuracy
+correct, total = 0, 0
+for i in range(len(test_src)):
+    for j in range(test_trg.size(1)):
+        if test_trg[i, j] != PAD:
+            total += 1
+            if predictions_attn[i, j] == test_trg[i, j]:
+                correct += 1
+
+print(f"Accuracy (con atención): {correct/total:.1%}\n")
+
+# Mostrar ejemplos
+print("=" * 55)
+print(f"{'Entrada':>25s} → {'Predicción':<25s}")
+print("=" * 55)
+for i in range(8):
+    src_tok = [t.item() for t in test_src[i] if t.item() != PAD]
+    pred_tok = [t.item() for t in predictions_attn[i] if t.item() not in (PAD, EOS, SOS)][:len(src_tok)]
+    trg_tok = [t.item() for t in test_trg[i] if t.item() not in (PAD, EOS, SOS)]
+    match = "✅" if pred_tok == trg_tok else "❌"
+    print(f"{str(src_tok):>25s} → {str(pred_tok):<20s} {match}")
+```
+
+# Visualización: Mapas de Atención 🗺️ {background-color="#023e8a"}
+
+## ¿Dónde "Mira" el Decoder? {.smaller}
+
+```{python}
+#| echo: false
+#| fig-align: center
+fig, axes = plt.subplots(1, 3, figsize=(14, 4.5))
+
+for ax_idx, sample_idx in enumerate([0, 1, 2]):
+    ax = axes[ax_idx]
+    src_tok = [t.item() for t in test_src[sample_idx] if t.item() != PAD]
+    trg_tok = [t.item() for t in test_trg[sample_idx] if t.item() not in (PAD,)]
+    src_len = len(src_tok)
+    trg_len = len([t for t in trg_tok if t not in (PAD,)])
+    
+    attn_map = attention_matrix[sample_idx, :trg_len, :src_len].numpy()
+    
+    im = ax.imshow(attn_map, cmap='YlOrRd', aspect='auto', vmin=0, vmax=1)
+    ax.set_xticks(range(src_len))
+    ax.set_xticklabels([str(t) for t in src_tok], fontsize=9)
+    ax.set_yticks(range(trg_len))
+    trg_labels = [str(t) for t in trg_tok[:trg_len]]
+    ax.set_yticklabels(trg_labels, fontsize=9)
+    ax.set_xlabel("Entrada (src)", fontsize=10)
+    if ax_idx == 0:
+        ax.set_ylabel("Salida (trg)", fontsize=10)
+    ax.set_title(f"Ejemplo {sample_idx+1}", fontsize=11, fontweight='bold', color='#023e8a')
+
+plt.colorbar(im, ax=axes, shrink=0.8, label="Peso de atención $\\alpha_{t,j}$")
+plt.suptitle("Mapas de Atención: Inversión de Secuencias", fontsize=14, fontweight='bold', color='#023e8a', y=1.02)
+plt.tight_layout()
+plt.show()
+```
+
+::: {.callout-note}
+## Interpretación
+En la tarea de inversión, esperamos ver una **diagonal invertida**: el primer token generado debe atender al último token de entrada, y viceversa. Los mapas de atención nos permiten **interpretar** qué aprendió el modelo.
+:::
+
+## Mapas de Atención en Traducción (Conceptual) {.smaller}
+
+```{python}
+#| echo: false
+#| fig-align: center
+fig, ax = plt.subplots(figsize=(8, 5))
+
+src_words = ["el", "gato", "negro", "duerme", "tranquilo"]
+trg_words = ["the", "black", "cat", "sleeps", "calmly"]
+
+# Simulated attention pattern for translation
+attn_sim = np.array([
+    [0.85, 0.05, 0.05, 0.03, 0.02],  # the ← el
+    [0.02, 0.10, 0.80, 0.05, 0.03],  # black ← negro
+    [0.05, 0.80, 0.08, 0.05, 0.02],  # cat ← gato
+    [0.02, 0.03, 0.05, 0.85, 0.05],  # sleeps ← duerme
+    [0.03, 0.02, 0.05, 0.10, 0.80],  # calmly ← tranquilo
+])
+
+im = ax.imshow(attn_sim, cmap='Blues', aspect='auto', vmin=0, vmax=1)
+ax.set_xticks(range(len(src_words)))
+ax.set_xticklabels(src_words, fontsize=12, fontweight='bold')
+ax.set_yticks(range(len(trg_words)))
+ax.set_yticklabels(trg_words, fontsize=12, fontweight='bold')
+ax.set_xlabel("Español (fuente)", fontsize=13, fontweight='bold', color='#0077b6')
+ax.set_ylabel("Inglés (objetivo)", fontsize=13, fontweight='bold', color='#023e8a')
+
+for i in range(len(trg_words)):
+    for j in range(len(src_words)):
+        color = 'white' if attn_sim[i,j] > 0.5 else 'black'
+        ax.text(j, i, f"{attn_sim[i,j]:.2f}", ha='center', va='center',
+                fontsize=10, fontweight='bold', color=color)
+
+ax.set_title("Mapa de Atención: ES → EN", fontsize=14, fontweight='bold', color='#023e8a')
+plt.colorbar(im, label="$\\alpha_{t,j}$")
+plt.tight_layout()
+plt.show()
+```
+
+::: {.callout-tip}
+## Observaciones interesantes
+
+- **"the"** atiende a **"el"** → alineación directa
+- **"black"** atiende a **"negro"** → el adjetivo se reordenó (español: post-nominal, inglés: pre-nominal)
+- Los mapas de atención revelan **alineamientos** entre idiomas, incluyendo **reordenamientos**
+:::
+
+## Efecto en Secuencias Largas {.smaller}
+
+```{python}
+#| echo: false
+#| fig-align: center
+fig, ax = plt.subplots(figsize=(9, 4.5))
+
+lengths = [4, 6, 8, 10]
+accs_attn = []
+for L in lengths:
+    ts, tt = generate_pairs(200, min_len=L, max_len=L)
+    enc_attn.eval(); dec_attn.eval()
+    with torch.no_grad():
+        eo, h = enc_attn(ts)
+        inp = torch.full((ts.size(0), 1), SOS, dtype=torch.long)
+        preds_list = []
+        for t in range(tt.size(1)):
+            p, h, _ = dec_attn(inp, h, eo)
+            preds_list.append(p.argmax(1))
+            inp = p.argmax(1, keepdim=True)
+        preds_t = torch.stack(preds_list, dim=1)
+    c, tot = 0, 0
+    for i in range(len(ts)):
+        for j in range(tt.size(1)):
+            if tt[i,j] != PAD:
+                tot += 1
+                if preds_t[i,j] == tt[i,j]:
+                    c += 1
+    accs_attn.append(c/tot if tot > 0 else 0)
+
+x = np.arange(len(lengths))
+width = 0.35
+
+bars2 = ax.bar(x + width/2, [a*100 for a in accs_attn], width,
+               label='Con Atención', color='#2a9d8f', edgecolor='white', linewidth=2)
+
+ax.set_xticks(x + width/2)
+ax.set_xticklabels([str(l) for l in lengths])
+ax.set_xlabel("Longitud de Secuencia", fontsize=12)
+ax.set_ylabel("Accuracy (%)", fontsize=12)
+ax.set_title("Rendimiento con Atención vs. Longitud", fontsize=13, fontweight='bold', color='#023e8a')
+ax.set_ylim(0, 110)
+ax.legend(fontsize=11)
+ax.spines[['top', 'right']].set_visible(False)
+
+for bar_group in [bars2]:
+    for bar in bar_group:
+        h = bar.get_height()
+        ax.text(bar.get_x() + bar.get_width()/2, h + 1.5, f"{h:.0f}%",
+                ha='center', fontsize=9, fontweight='bold')
+
+plt.tight_layout()
+plt.show()
+```
+
+::: {.callout-note}
+## Resultado
+La atención mitiga significativamente el problema del cuello de botella. El decoder puede "consultar" directamente los estados relevantes del encoder, sin depender de un solo vector comprimido.
+:::
+
+# De la Atención al Transformer 🔮 {background-color="#03045e"}
+
+## El Camino por Delante {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Lo que logramos hoy
+
+- Resolvimos el **cuello de botella** del vector fijo
+- La atención proporciona **contexto dinámico** en cada paso
+- Los **mapas de atención** son interpretables
+- Mejor rendimiento en secuencias largas
+
+### Pero todavía hay limitaciones...
+
+- El encoder sigue siendo **secuencial** (RNN)
+- No podemos **paralelizar** el procesamiento
+- ¿Necesitamos la RNN? 🤔
+
+:::
+::: {.column width="50%"}
+
+::: {.callout-important}
+## La pregunta revolucionaria (Vaswani et al., 2017)
+
+> *"Attention Is All You Need"*
+
+¿Qué pasaría si elimináramos las RNNs por completo y usáramos **solo atención**?
+
+→ El **Transformer** (Semana 9)
+:::
+
+### Timeline
+
+| Año | Hito |
+|:----|:-----|
+| 2014 | Seq2Seq (Sutskever, Cho) |
+| 2015 | Atención (Bahdanau, Luong) |
+| 2017 | **Transformer** |
+| 2018 | BERT, GPT |
+| 2020+ | GPT-3, LLMs |
+
+:::
+:::
+
+# Resumen {background-color="#0077b6"}
+
+## Lo Que Aprendimos Hoy {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Conceptos
+
+- El **cuello de botella** del vector fijo limita Seq2Seq
+- La **atención** permite al decoder consultar todos los estados del encoder
+- **Bahdanau** (aditiva): $v^\top \tanh(Ws + Uh)$
+- **Luong** (multiplicativa): $s^\top h$ (producto punto)
+- Los pesos $\alpha_{t,j}$ suman 1 (softmax) y son **interpretables**
+
+:::
+::: {.column width="50%"}
+
+### Práctica
+
+- `BahdanauAttention`: MLP con $W_a$, $U_a$, $v_a$
+- `LuongAttention`: dot product sin parámetros
+- Vector de contexto dinámico: $\mathbf{c}_t = \sum \alpha_{t,j} h_j$
+- **Mapas de atención** revelan alineamientos
+- La atención dot-product evoluciona en el **Transformer**
+
+:::
+:::
+
+## Ecuaciones Clave {.smaller}
+
+| Concepto | Ecuación |
+|:---------|:--------|
+| **Score (Bahdanau)** | $e_{t,j} = v_a^\top \tanh(W_a s_{t-1} + U_a h_j)$ |
+| **Score (Luong dot)** | $e_{t,j} = s_t^\top h_j$ |
+| **Pesos de atención** | $\alpha_{t,j} = \text{softmax}_j(e_{t,j})$ |
+| **Contexto dinámico** | $\mathbf{c}_t = \sum_{j=1}^{T_x} \alpha_{t,j} \cdot h_j$ |
+| **Decoder (Bahdanau)** | $s_t = \text{GRU}([\text{emb}(y_{t-1}); \mathbf{c}_t], s_{t-1})$ |
+
+## Para la Próxima Semana 📚
+
+::: {.callout-note}
+## Semana 8: Redes Neuronales Convolucionales para NLP
+
+- **S1:** Convoluciones 1D para texto
+- **S2:** Max Pooling Global vs. Local
+- **S3:** Comparación RNNs vs. CNNs para clasificación
+:::
+
+**Lectura:**
+
+- Kim (2014): *Convolutional Neural Networks for Sentence Classification*
+- Jurafsky & Martin, Cap. 9.3: *CNNs for NLP*
+- Zhang et al. (2015): *Character-level Convolutional Networks for Text Classification*
+
+**Recordatorio:**
+
+- Quiz 6 la próxima semana cubre Seq2Seq y Atención 🧮
+- **Tarea 2:** Generador de nombres a nivel de caracteres con LSTM (se publica esta semana)
+
+# ¿Preguntas? 🙋 {background-color="#03045e"}
+
+:::{.r-fit-text}
+**¡Gracias!**
+:::
+
+📧 fsuarez@ucb.edu.bo
+
+🔗 Materiales: [github.com/fjsuarez/ucb-nlp](https://github.com/fjsuarez/ucb-nlp)

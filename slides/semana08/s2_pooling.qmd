@@ -1,0 +1,738 @@
+---
+title: "Redes Neuronales Convolucionales para NLP"
+subtitle: "S2: Max Pooling Global vs. Local"
+author: "Prof. Francisco Suárez"
+institute: "Universidad Católica Boliviana"
+date: "2026-04-08"
+format:
+  revealjs:
+    theme: sky
+    transition: slide
+    slide-number: true
+    chalkboard: true
+    code-fold: true
+    code-tools: true
+    highlight-style: github
+    footer: "NLP y Análisis Semántico | Semana 8"
+    logo: ""
+    incremental: false
+    scrollable: true
+execute:
+  echo: true
+  warning: false
+---
+
+## Agenda de Hoy {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+1. 🔁 Repaso: Conv1D y el problema de longitud
+2. 🏊 **Global Max Pooling**: la estrategia dominante
+3. 📊 **Average Pooling**: la alternativa suave
+4. 🏆 **K-Max Pooling**: retener los top-$k$
+5. 🧪 Comparación experimental
+6. ⚙️ Pooling adaptativo para secuencias variables
+
+:::
+::: {.column width="50%"}
+
+::: {.callout-tip}
+## Objetivo
+Comparar diferentes estrategias de **pooling** para agregar información de secuencias de longitud variable en un vector de tamaño fijo, y entender cuándo usar cada una.
+:::
+
+**Prerequisitos:** Conv1D para texto (S1)
+
+:::
+:::
+
+# El Problema de la Longitud Variable {background-color="#0077b6"}
+
+## Repaso: ¿Dónde Estamos? {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Pipeline CNN para texto
+
+1. Tokens → **Embeddings** ($T \times d$)
+2. Conv1D → **Feature maps** ($T - k + 1$ valores por filtro)
+3. **??? Pooling ???** → Vector de tamaño fijo
+4. Linear → **Clasificación**
+
+### El problema
+Las oraciones tienen **longitud diferente**:
+
+- "Great!" → $T = 1$
+- "The movie was absolutely fantastic" → $T = 5$
+- Después de Conv1D($k=3$): salida de $T-2$ valores
+- Necesitamos un vector de **tamaño fijo** para el clasificador
+
+:::
+::: {.column width="50%"}
+
+```{python}
+#| echo: false
+#| fig-align: center
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+import numpy as np
+
+fig, ax = plt.subplots(figsize=(6, 4.5))
+ax.set_xlim(-0.5, 8)
+ax.set_ylim(-0.5, 5.5)
+ax.axis('off')
+
+# Feature maps of different lengths
+lengths = [3, 5, 8]
+labels = ['Oración corta', 'Oración media', 'Oración larga']
+colors = ['#0077b6', '#023e8a', '#03045e']
+
+for j, (L, label, color) in enumerate(zip(lengths, labels, colors)):
+    y = 4 - j * 1.8
+    for i in range(L):
+        rect = mpatches.FancyBboxPatch((i*0.85, y), 0.7, 1.0,
+                                         boxstyle="round,pad=0.03", facecolor=color,
+                                         edgecolor='white', linewidth=1, alpha=0.7)
+        ax.add_patch(rect)
+    ax.text(-0.3, y + 0.5, label, ha='right', fontsize=9, color=color, fontweight='bold',
+            rotation=0)
+    ax.text(L * 0.85 + 0.3, y + 0.5, f"T-k+1 = {L}", ha='left', fontsize=9, color=color)
+
+ax.text(3.5, 5.2, "Feature maps después de Conv1D",
+        ha='center', fontsize=12, fontweight='bold', color='#023e8a')
+ax.text(3.5, -0.3, "¿Cómo reducir a un vector de tamaño fijo?",
+        ha='center', fontsize=11, fontweight='bold', color='#e76f51')
+
+plt.tight_layout()
+plt.show()
+```
+
+:::
+:::
+
+# Global Max Pooling 🏊 {background-color="#023e8a"}
+
+## La Estrategia Más Popular {.smaller}
+
+De cada feature map (lista de activaciones), tomar el **valor máximo**:
+
+$$\hat{h}_j = \max_{i=1}^{T-k+1} h_j^{(i)}$$
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Intuición
+- Cada filtro detecta un **patrón** (n-grama)
+- Max pooling pregunta: *"¿Este patrón aparece en algún lugar de la oración?"*
+- No importa **dónde** aparece
+- Invariante a la posición
+
+:::
+::: {.column width="50%"}
+
+### Propiedades
+- Entrada: $(N_{\text{filtros}}, T-k+1)$
+- Salida: $(N_{\text{filtros}},)$ — un escalar por filtro
+- **Siempre** produce vector de tamaño fijo
+- Pierde información posicional
+
+:::
+:::
+
+```{python}
+#| code-fold: show
+import torch
+import torch.nn as nn
+
+# Simular feature maps de un filtro para 3 oraciones de diferente longitud
+torch.manual_seed(42)
+
+maps = {
+    "short  (T=5)":  torch.relu(torch.randn(1, 4, 3)),   # 4 filtros, 3 posiciones
+    "medium (T=8)":  torch.relu(torch.randn(1, 4, 6)),   # 4 filtros, 6 posiciones
+    "long   (T=15)": torch.relu(torch.randn(1, 4, 13)),  # 4 filtros, 13 posiciones
+}
+
+print("Global Max Pooling: extrae 1 valor (máximo) por filtro")
+print("=" * 55)
+for name, fmap in maps.items():
+    pooled = fmap.max(dim=2).values  # (1, 4)
+    print(f"  {name}:  feature map {list(fmap.shape)} → max pooled {list(pooled.shape)}")
+```
+
+## Visualización: ¿Qué Captura Max Pooling? {.smaller}
+
+```{python}
+#| echo: false
+#| fig-align: center
+fig, axes = plt.subplots(1, 2, figsize=(13, 4))
+
+# Left: activations
+ax = axes[0]
+np.random.seed(42)
+tokens = ["the", "movie", "was", "not", "great", "at", "all"]
+activations_filters = {
+    'Filtro "not _"': [0.1, 0.0, 0.2, 2.8, 0.1, 0.3],
+    'Filtro "great _"': [0.0, 0.1, 0.0, 0.3, 2.5, 0.1],
+    'Filtro "movie was"': [0.0, 2.1, 0.0, 0.0, 0.0, 0.0],
+}
+
+colors_filters = ['#e76f51', '#2a9d8f', '#0077b6']
+x_pos = np.arange(6)
+width = 0.25
+for idx, ((name, vals), color) in enumerate(zip(activations_filters.items(), colors_filters)):
+    ax.bar(x_pos + idx * width, vals, width, label=name, color=color, alpha=0.8)
+
+bigram_labels = [f"{tokens[i]}\n{tokens[i+1]}" for i in range(6)]
+ax.set_xticks(x_pos + width)
+ax.set_xticklabels(bigram_labels, fontsize=8)
+ax.set_ylabel("Activación", fontsize=10)
+ax.set_title("Activaciones por posición", fontsize=11, fontweight='bold', color='#023e8a')
+ax.legend(fontsize=8, loc='upper left')
+ax.spines[['top', 'right']].set_visible(False)
+
+# Right: max pooled
+ax = axes[1]
+filter_names = list(activations_filters.keys())
+max_vals = [max(v) for v in activations_filters.values()]
+ax.barh(filter_names, max_vals, color=colors_filters, edgecolor='white', linewidth=2)
+for i, v in enumerate(max_vals):
+    ax.text(v + 0.05, i, f"{v:.1f}", va='center', fontsize=11, fontweight='bold')
+ax.set_xlabel("Valor después de Max Pooling", fontsize=10)
+ax.set_title("Global Max Pooling", fontsize=11, fontweight='bold', color='#023e8a')
+ax.set_xlim(0, 3.5)
+ax.spines[['top', 'right']].set_visible(False)
+
+plt.tight_layout()
+plt.show()
+```
+
+::: {.callout-important}
+## Lo que se pierde
+Max pooling solo retiene la activación **más fuerte**. Si un patrón aparece 3 veces o 30 veces, el resultado es el **mismo**. Perdemos información sobre frecuencia y posición.
+:::
+
+# Average Pooling 📊 {background-color="#03045e"}
+
+## La Alternativa Suave {.smaller}
+
+En lugar del máximo, tomar el **promedio** de las activaciones:
+
+$$\hat{h}_j = \frac{1}{T-k+1} \sum_{i=1}^{T-k+1} h_j^{(i)}$$
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Ventajas
+- Captura **frecuencia**: si un patrón aparece muchas veces, el promedio es alto
+- Más **suave** que max: menos sensible a outliers
+- Funciona bien cuando el **tono general** importa
+
+:::
+::: {.column width="50%"}
+
+### Desventajas
+- Diluye señales **fuertes pero poco frecuentes**
+- Una negación en una oración larga puede perderse
+- No captura "al menos una vez" como max pooling
+
+:::
+:::
+
+```{python}
+#| code-fold: show
+# Comparar max vs average pooling
+feature_map = torch.tensor([[[0.1, 0.0, 3.5, 0.2, 0.1]]])  # (1, 1, 5)
+
+max_pool = feature_map.max(dim=2).values
+avg_pool = feature_map.mean(dim=2)
+
+print("Feature map:", feature_map.squeeze().tolist())
+print(f"Max pooling: {max_pool.item():.2f}  ← captura el pico")
+print(f"Avg pooling: {avg_pool.item():.2f}  ← diluye el pico")
+
+# Caso: patrón frecuente
+feature_map2 = torch.tensor([[[1.2, 1.5, 1.3, 1.4, 1.1]]])
+max_pool2 = feature_map2.max(dim=2).values
+avg_pool2 = feature_map2.mean(dim=2)
+
+print(f"\nFeature map: {feature_map2.squeeze().tolist()}")
+print(f"Max pooling: {max_pool2.item():.2f}  ← similar al promedio")
+print(f"Avg pooling: {avg_pool2.item():.2f}  ← captura la consistencia")
+```
+
+## Ejemplo: ¿Cuándo Importa la Diferencia? {.smaller}
+
+```{python}
+#| echo: false
+#| fig-align: center
+fig, axes = plt.subplots(1, 2, figsize=(13, 4))
+
+# Case 1: Strong single signal
+ax = axes[0]
+vals1 = [0.1, 0.0, 0.2, 3.8, 0.1, 0.0, 0.2, 0.1]
+x = range(len(vals1))
+ax.bar(x, vals1, color='#0077b6', alpha=0.7, edgecolor='white')
+ax.axhline(y=max(vals1), color='#e76f51', linewidth=2, linestyle='--', label=f'Max = {max(vals1):.1f}')
+ax.axhline(y=np.mean(vals1), color='#2a9d8f', linewidth=2, linestyle='-.', label=f'Avg = {np.mean(vals1):.2f}')
+ax.set_title('"NOT good" — señal fuerte, una vez', fontsize=11, fontweight='bold', color='#023e8a')
+ax.legend(fontsize=9)
+ax.set_xlabel("Posición")
+ax.set_ylabel("Activación")
+ax.spines[['top', 'right']].set_visible(False)
+
+# Case 2: Diffuse positive signal
+ax = axes[1]
+vals2 = [1.2, 0.8, 1.5, 0.9, 1.3, 1.1, 0.7, 1.0]
+x = range(len(vals2))
+ax.bar(x, vals2, color='#0077b6', alpha=0.7, edgecolor='white')
+ax.axhline(y=max(vals2), color='#e76f51', linewidth=2, linestyle='--', label=f'Max = {max(vals2):.1f}')
+ax.axhline(y=np.mean(vals2), color='#2a9d8f', linewidth=2, linestyle='-.', label=f'Avg = {np.mean(vals2):.2f}')
+ax.set_title('"Consistently positive" — señal difusa', fontsize=11, fontweight='bold', color='#023e8a')
+ax.legend(fontsize=9)
+ax.set_xlabel("Posición")
+ax.spines[['top', 'right']].set_visible(False)
+
+plt.tight_layout()
+plt.show()
+```
+
+::: {.callout-note}
+## La clave
+- **Max pooling** es mejor para patrones **específicos y puntuales** (negación, palabras clave)
+- **Avg pooling** es mejor para **tono general** (un texto consistentemente positivo)
+- En la práctica, max pooling domina para clasificación de texto (Kim, 2014)
+:::
+
+# K-Max Pooling 🏆 {background-color="#001219"}
+
+## Retener los Top-$k$ Valores {.smaller}
+
+Propuesto por Kalchbrenner et al. (2014): en lugar de 1 solo valor, retener los **$k$ valores más altos** (preservando su orden):
+
+$$\text{k-max}(\mathbf{h}) = \text{sort}(\text{top-}k(\mathbf{h}))$$
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Ventajas
+- Retiene **múltiples señales** relevantes
+- Preserva el **orden relativo** de los top-$k$ valores
+- Más información que max pooling
+- $k=1$ es equivalente a global max pooling
+
+:::
+::: {.column width="50%"}
+
+### Desventajas
+- Introduce hiperparámetro $k$
+- Vector de salida es de tamaño $k \times N_{\text{filtros}}$
+- Puede ser excesivo para textos cortos
+
+:::
+:::
+
+```{python}
+#| code-fold: show
+def k_max_pooling(x, k):
+    """
+    x: (batch, channels, length)
+    Retorna: (batch, channels, k) — top-k valores en orden original
+    """
+    topk_vals, topk_idx = x.topk(k, dim=2)
+    # Ordenar por posición para preservar el orden de la secuencia
+    sorted_idx = topk_idx.sort(dim=2).values
+    return x.gather(2, sorted_idx)
+
+# Ejemplo
+feature_map = torch.tensor([[[0.1, 2.5, 0.3, 3.1, 0.8, 1.9, 0.2]]])
+print(f"Feature map:   {feature_map.squeeze().tolist()}")
+print(f"Max pooling:   {feature_map.max(dim=2).values.squeeze().tolist()}")
+print(f"K-max (k=3):   {k_max_pooling(feature_map, k=3).squeeze().tolist()}")
+print(f"Avg pooling:   {feature_map.mean(dim=2).squeeze().item():.2f}")
+```
+
+## Comparación Visual de las 3 Estrategias {.smaller}
+
+```{python}
+#| echo: false
+#| fig-align: center
+fig, axes = plt.subplots(1, 4, figsize=(16, 3.5))
+
+vals = [0.3, 2.1, 0.5, 3.4, 0.8, 1.7, 0.2, 2.8, 0.4]
+x = range(len(vals))
+
+# Original
+ax = axes[0]
+ax.bar(x, vals, color='#023e8a', alpha=0.7, edgecolor='white')
+ax.set_title("Feature Map\nOriginal", fontsize=10, fontweight='bold', color='#023e8a')
+ax.set_ylim(0, 4)
+ax.spines[['top', 'right']].set_visible(False)
+
+# Max pooling
+ax = axes[1]
+max_val = max(vals)
+ax.bar([0], [max_val], color='#e76f51', edgecolor='white', width=0.5)
+ax.text(0, max_val + 0.1, f"{max_val}", ha='center', fontsize=11, fontweight='bold')
+ax.set_title("Global Max\n(1 valor)", fontsize=10, fontweight='bold', color='#e76f51')
+ax.set_ylim(0, 4)
+ax.set_xlim(-0.5, 1)
+ax.spines[['top', 'right']].set_visible(False)
+
+# K-max pooling
+ax = axes[2]
+sorted_vals = sorted(enumerate(vals), key=lambda x: x[1], reverse=True)
+top3 = sorted(sorted_vals[:3], key=lambda x: x[0])  # preserve order
+ax.bar(range(3), [v for _, v in top3], color='#2a9d8f', edgecolor='white', width=0.5)
+for i, (_, v) in enumerate(top3):
+    ax.text(i, v + 0.1, f"{v}", ha='center', fontsize=10, fontweight='bold')
+ax.set_title("K-Max (k=3)\n(3 valores)", fontsize=10, fontweight='bold', color='#2a9d8f')
+ax.set_ylim(0, 4)
+ax.spines[['top', 'right']].set_visible(False)
+
+# Average pooling
+ax = axes[3]
+avg_val = np.mean(vals)
+ax.bar([0], [avg_val], color='#e9c46a', edgecolor='white', width=0.5)
+ax.text(0, avg_val + 0.1, f"{avg_val:.2f}", ha='center', fontsize=11, fontweight='bold')
+ax.set_title("Global Average\n(1 valor)", fontsize=10, fontweight='bold', color='#e9c46a')
+ax.set_ylim(0, 4)
+ax.set_xlim(-0.5, 1)
+ax.spines[['top', 'right']].set_visible(False)
+
+plt.tight_layout()
+plt.show()
+```
+
+| Estrategia | Salida por filtro | Información retenida | Mejor para |
+|:-----------|:------------------|:--------------------|:-----------|
+| **Global Max** | 1 escalar | Solo el pico | Patrones puntuales |
+| **Global Average** | 1 escalar | Promedio general | Tono difuso |
+| **K-Max** | $k$ escalares | Top-$k$ en orden | Balance de ambos |
+
+# Comparación Experimental 🧪 {background-color="#0077b6"}
+
+## Clasificador CNN con Diferentes Poolings {.smaller}
+
+```{python}
+#| code-fold: show
+import random
+import torch.optim as optim
+
+torch.manual_seed(42)
+random.seed(42)
+np.random.seed(42)
+
+# --- Datos: sentimiento sintético (reusar vocabulario simple) ---
+positive_words = ["great", "amazing", "wonderful", "excellent", "fantastic", "brilliant",
+                  "superb", "loved", "enjoyed", "outstanding", "perfect", "best"]
+negative_words = ["terrible", "horrible", "awful", "worst", "dreadful", "boring",
+                  "bad", "hated", "poor", "disappointing", "weak", "disaster"]
+neutral_words = ["the", "a", "movie", "film", "was", "is", "this", "that", "very",
+                 "really", "quite", "it", "and", "but", "with", "not"]
+
+all_words = sorted(set(positive_words + negative_words + neutral_words))
+word2idx = {"<PAD>": 0}
+for w in all_words:
+    word2idx[w] = len(word2idx)
+VOCAB = len(word2idx)
+
+def make_sentence(label, min_len=5, max_len=12):
+    length = random.randint(min_len, max_len)
+    words_pool = positive_words if label == 1 else negative_words
+    n_key = random.randint(1, 3)
+    sent = random.choices(neutral_words, k=length - n_key) + random.choices(words_pool, k=n_key)
+    random.shuffle(sent)
+    return sent
+
+def encode(sent, max_len=12):
+    ids = [word2idx.get(w, 0) for w in sent[:max_len]]
+    return ids + [0] * (max_len - len(ids))
+
+# Generar
+data = []
+for _ in range(800):
+    data.append((make_sentence(1), 1))
+    data.append((make_sentence(0), 0))
+random.shuffle(data)
+
+X = torch.tensor([encode(s) for s, _ in data])
+y = torch.tensor([l for _, l in data])
+split = int(0.8 * len(X))
+X_train, y_train = X[:split], y[:split]
+X_test, y_test = X[split:], y[split:]
+print(f"Vocab: {VOCAB} | Train: {len(X_train)} | Test: {len(X_test)}")
+```
+
+```{python}
+#| code-fold: show
+class CNNWithPooling(nn.Module):
+    def __init__(self, vocab_size, embed_dim, n_filters, kernel_sizes,
+                 n_classes, pooling='max', k_max=3, pad_idx=0):
+        super().__init__()
+        self.pooling = pooling
+        self.k_max_val = k_max
+        self.embedding = nn.Embedding(vocab_size, embed_dim, padding_idx=pad_idx)
+        self.convs = nn.ModuleList([
+            nn.Conv1d(embed_dim, n_filters, k) for k in kernel_sizes
+        ])
+        
+        if pooling == 'kmax':
+            fc_input = n_filters * len(kernel_sizes) * k_max
+        else:
+            fc_input = n_filters * len(kernel_sizes)
+        
+        self.dropout = nn.Dropout(0.3)
+        self.fc = nn.Linear(fc_input, n_classes)
+    
+    def forward(self, x):
+        emb = self.embedding(x).permute(0, 2, 1)
+        
+        conv_outs = []
+        for conv in self.convs:
+            h = torch.relu(conv(emb))
+            if self.pooling == 'max':
+                h = h.max(dim=2).values
+            elif self.pooling == 'avg':
+                h = h.mean(dim=2)
+            elif self.pooling == 'kmax':
+                k = min(self.k_max_val, h.size(2))
+                h = h.topk(k, dim=2).values
+                h = h.view(h.size(0), -1)
+            conv_outs.append(h)
+        
+        cat = torch.cat(conv_outs, dim=1)
+        return self.fc(self.dropout(cat))
+
+# Entrenar las 3 variantes
+def train_eval(pooling, k_max=3, n_epochs=40):
+    model = CNNWithPooling(VOCAB, embed_dim=32, n_filters=32, kernel_sizes=[2,3,4],
+                            n_classes=2, pooling=pooling, k_max=k_max)
+    opt = optim.Adam(model.parameters(), lr=0.003)
+    crit = nn.CrossEntropyLoss()
+    losses = []
+    for epoch in range(n_epochs):
+        model.train()
+        idx = torch.randperm(len(X_train))
+        e_loss, n_b = 0, 0
+        for i in range(0, len(X_train), 64):
+            bi = idx[i:i+64]
+            loss = crit(model(X_train[bi]), y_train[bi])
+            opt.zero_grad(); loss.backward(); opt.step()
+            e_loss += loss.item(); n_b += 1
+        losses.append(e_loss / n_b)
+    model.eval()
+    with torch.no_grad():
+        acc = (model(X_test).argmax(1) == y_test).float().mean().item()
+    n_params = sum(p.numel() for p in model.parameters())
+    return losses, acc, n_params
+
+results = {}
+for pool in ['max', 'avg', 'kmax']:
+    losses, acc, n_params = train_eval(pool)
+    results[pool] = {'losses': losses, 'acc': acc, 'params': n_params}
+    label = f"{'K-Max (k=3)' if pool == 'kmax' else pool.capitalize()}"
+    print(f"{label:>12s}:  Acc = {acc:.1%}  |  Params = {n_params:,}")
+```
+
+## Resultados: Curvas y Accuracy {.smaller}
+
+```{python}
+#| echo: false
+#| fig-align: center
+fig, axes = plt.subplots(1, 2, figsize=(13, 4.5))
+
+colors_pool = {'max': '#0077b6', 'avg': '#e9c46a', 'kmax': '#2a9d8f'}
+labels_pool = {'max': 'Global Max', 'avg': 'Global Average', 'kmax': 'K-Max (k=3)'}
+
+# Loss curves
+ax = axes[0]
+for pool, data in results.items():
+    ax.plot(data['losses'], color=colors_pool[pool], linewidth=2.5, label=labels_pool[pool])
+ax.set_xlabel("Época", fontsize=11)
+ax.set_ylabel("Loss", fontsize=11)
+ax.set_title("Curvas de Entrenamiento", fontsize=12, fontweight='bold', color='#023e8a')
+ax.legend(fontsize=10)
+ax.grid(True, alpha=0.3)
+ax.spines[['top', 'right']].set_visible(False)
+
+# Accuracy comparison
+ax = axes[1]
+names = [labels_pool[p] for p in results]
+accs = [results[p]['acc'] * 100 for p in results]
+cs = [colors_pool[p] for p in results]
+bars = ax.bar(names, accs, color=cs, edgecolor='white', linewidth=2, width=0.5)
+for bar, acc in zip(bars, accs):
+    ax.text(bar.get_x() + bar.get_width()/2, acc + 1, f"{acc:.1f}%",
+            ha='center', fontsize=12, fontweight='bold')
+ax.set_ylabel("Accuracy (%)", fontsize=11)
+ax.set_title("Test Accuracy", fontsize=12, fontweight='bold', color='#023e8a')
+ax.set_ylim(0, 105)
+ax.spines[['top', 'right']].set_visible(False)
+
+plt.tight_layout()
+plt.show()
+```
+
+## Tabla Resumen {.smaller}
+
+```{python}
+#| echo: false
+# Print markdown table
+print("| Pooling | Accuracy | Parámetros | Salida por filtro |")
+print("|:--------|:---------|:-----------|:------------------|")
+for pool in ['max', 'avg', 'kmax']:
+    d = results[pool]
+    name = labels_pool[pool]
+    out = "1 escalar" if pool != 'kmax' else "3 escalares"
+    print(f"| **{name}** | {d['acc']:.1%} | {d['params']:,} | {out} |")
+```
+
+::: {.callout-note}
+## Observaciones
+
+- **Max pooling** suele ganar en tareas donde hay **palabras clave discriminativas** (sentimiento)
+- **Average pooling** puede ser mejor en tareas donde el **tono general** importa (detección de tópicos)
+- **K-max pooling** ofrece más información pero con más parámetros en la capa `Linear`
+- En la literatura, **max pooling** es la opción por defecto para CNNs de texto
+:::
+
+# Pooling para Secuencias Variables ⚙️ {background-color="#023e8a"}
+
+## Padding y su Efecto en Pooling {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### El problema del padding
+
+Cuando hay tokens `<PAD>`, las activaciones convolucionales sobre padding deberían ser **cero** o cercanas a cero.
+
+- **Max pooling**: no se ve afectado (ignora valores bajos/cero)
+- **Average pooling**: ¡sí se ve afectado! Los ceros diluyen el promedio
+
+:::
+::: {.column width="50%"}
+
+### Solución: Average pooling adaptativo
+
+Dividir solo por la **longitud real**, no la longitud con padding:
+
+$$\hat{h}_j = \frac{1}{L_{\text{real}}} \sum_{i=1}^{L_{\text{real}}} h_j^{(i)}$$
+
+:::
+:::
+
+```{python}
+#| code-fold: show
+# Demostrar el efecto del padding en average pooling
+activations_real = torch.tensor([[[2.1, 1.5, 1.8, 0.0, 0.0]]])  # 3 reales + 2 PAD
+
+# Average naive (incluye padding)
+avg_naive = activations_real.mean(dim=2)
+
+# Average adaptativo (solo cuenta tokens reales)
+real_length = 3
+avg_adaptive = activations_real[:, :, :real_length].mean(dim=2)
+
+max_pool = activations_real.max(dim=2).values
+
+print(f"Activaciones:     {activations_real.squeeze().tolist()}")
+print(f"  (3 reales + 2 PAD)")
+print(f"\nMax pooling:      {max_pool.item():.2f}  ← no afectado por PAD")
+print(f"Avg naive:        {avg_naive.item():.2f}  ← diluido por PAD (÷5)")
+print(f"Avg adaptativo:   {avg_adaptive.item():.2f}  ← correcto (÷3)")
+```
+
+## `AdaptiveMaxPool1d` en PyTorch {.smaller}
+
+PyTorch ofrece capas adaptativas que producen un tamaño **fijo** sin importar la entrada:
+
+```{python}
+#| code-fold: show
+# AdaptiveMaxPool1d: salida de tamaño fijo independiente de la entrada
+pool_1 = nn.AdaptiveMaxPool1d(output_size=1)   # Global max pooling
+pool_3 = nn.AdaptiveMaxPool1d(output_size=3)   # K-max-like (k=3)
+
+# Secuencias de diferente longitud
+short = torch.relu(torch.randn(1, 4, 5))   # 4 filtros, 5 posiciones
+long = torch.relu(torch.randn(1, 4, 20))   # 4 filtros, 20 posiciones
+
+print("AdaptiveMaxPool1d(output_size=1):")
+print(f"  Input (1,4,5)  → Output {pool_1(short).shape}")
+print(f"  Input (1,4,20) → Output {pool_1(long).shape}")
+print(f"\nAdaptiveMaxPool1d(output_size=3):")
+print(f"  Input (1,4,5)  → Output {pool_3(short).shape}")
+print(f"  Input (1,4,20) → Output {pool_3(long).shape}")
+```
+
+::: {.callout-tip}
+## En la práctica
+`nn.AdaptiveMaxPool1d(1)` es equivalente a global max pooling y es la forma "limpia" de implementarlo en PyTorch. Es independiente de la longitud de la secuencia.
+:::
+
+# Resumen {background-color="#0077b6"}
+
+## Lo Que Aprendimos Hoy {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Estrategias de Pooling
+
+| Tipo | Captura |
+|:-----|:--------|
+| **Max** | ¿Aparece el patrón? (binario) |
+| **Average** | ¿Cuánto aparece en promedio? |
+| **K-Max** | ¿Cuáles son las top-$k$ activaciones? |
+
+- **Max pooling** es el estándar para clasificación de texto
+- Average pooling sufre con **padding** → usar versión adaptativa
+- K-max pooling ofrece más información, pero con más parámetros
+
+:::
+::: {.column width="50%"}
+
+### Práctica
+
+- `Tensor.max(dim=2)` — global max pooling manual
+- `nn.AdaptiveMaxPool1d(1)` — versión PyTorch
+- `Tensor.mean(dim=2)` — average pooling (cuidado con padding)
+- `Tensor.topk(k, dim=2)` — k-max pooling
+- Combinar poolings → **concatenar** (max + avg)
+
+:::
+:::
+
+## Para la Próxima Sesión 📚
+
+::: {.callout-note}
+## Semana 8, S3: Comparación RNNs vs. CNNs para Clasificación
+
+- Benchmark sistemático: **GRU vs. LSTM vs. BiLSTM vs. CNN**
+- ¿Cuándo usar cada arquitectura?
+- Eficiencia computacional (tiempo, parámetros, memoria)
+- Modelos híbridos: **CNN + RNN**
+:::
+
+**Lectura:**
+
+- Yin et al. (2017): *Comparative Study of CNN and RNN for NLP*
+- Conneau et al. (2017): *Very Deep Convolutional Networks for Text Classification*
+- Kim (2014): *Convolutional Neural Networks for Sentence Classification*
+
+**Recordatorio:**
+
+- Quiz 6 cubre Seq2Seq y Atención (Semana 7) 🧮
+
+# ¿Preguntas? 🙋 {background-color="#03045e"}
+
+:::{.r-fit-text}
+**¡Gracias!**
+:::
+
+📧 fsuarez@ucb.edu.bo
+
+🔗 Materiales: [github.com/fjsuarez/ucb-nlp](https://github.com/fjsuarez/ucb-nlp)

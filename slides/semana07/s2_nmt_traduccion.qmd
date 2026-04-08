@@ -1,0 +1,868 @@
+---
+title: "Secuencia a Secuencia (Seq2Seq)"
+subtitle: "S2: Traducción Automática Neuronal (NMT)"
+author: "Prof. Francisco Suárez"
+institute: "Universidad Católica Boliviana"
+date: "2026-03-31"
+format:
+  revealjs:
+    theme: sky
+    transition: slide
+    slide-number: true
+    chalkboard: true
+    code-fold: true
+    code-tools: true
+    highlight-style: github
+    footer: "NLP y Análisis Semántico | Semana 7"
+    logo: ""
+    incremental: false
+    scrollable: true
+execute:
+  echo: true
+  warning: false
+---
+
+## Agenda de Hoy {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+1. 🌍 Breve historia de la **Traducción Automática**
+2. 🧠 NMT como aplicación de **Seq2Seq**
+3. 📝 Preprocesamiento para NMT: **tokenización y vocabularios**
+4. 🔬 Experimento: un traductor **Español → Inglés**
+5. 📏 Evaluación: **BLEU score**
+6. ⚡ Trucos prácticos de los sistemas NMT reales
+
+:::
+::: {.column width="50%"}
+
+::: {.callout-tip}
+## Objetivo
+Aplicar la arquitectura Seq2Seq para construir un sistema de **traducción automática neuronal**, entender su pipeline completo y aprender a evaluar con **BLEU**.
+:::
+
+**Prerequisitos:** Codificador-Decodificador, Teacher Forcing (S1)
+
+:::
+:::
+
+# Historia de la Traducción Automática 🌍 {background-color="#0077b6"}
+
+## Del Rule-Based al Neural MT {.smaller}
+
+```{python}
+#| echo: false
+#| fig-align: center
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+import numpy as np
+
+fig, ax = plt.subplots(figsize=(14, 4))
+ax.set_xlim(-0.5, 14)
+ax.set_ylim(-1, 3.5)
+ax.axis('off')
+
+eras = [
+    (0, "1950s-80s", "Rule-Based\n(RBMT)", "Reglas lingüísticas\nmanuales", "#264653"),
+    (3.5, "1990s-2000s", "Estadístico\n(SMT)", "Modelos de frases\nalineadas", "#2a9d8f"),
+    (7, "2014-2017", "Neural\n(NMT)", "Seq2Seq + Atención\nend-to-end", "#e76f51"),
+    (10.5, "2017+", "Transformer\nNMT", "Atención pura\nsin RNNs", "#0077b6"),
+]
+
+for x, years, name, desc, color in eras:
+    rect = mpatches.FancyBboxPatch((x, 0.3), 2.8, 2.0, boxstyle="round,pad=0.15",
+                                     facecolor=color, edgecolor='white', linewidth=2, alpha=0.9)
+    ax.add_patch(rect)
+    ax.text(x+1.4, 1.8, name, ha='center', va='center', fontsize=10, color='white', fontweight='bold')
+    ax.text(x+1.4, 0.8, desc, ha='center', va='center', fontsize=8, color='white')
+    ax.text(x+1.4, -0.3, years, ha='center', va='center', fontsize=9, color=color, fontweight='bold')
+    if x > 0:
+        ax.annotate('', xy=(x, 1.3), xytext=(x-0.7, 1.3),
+                    arrowprops=dict(arrowstyle='->', color='#555', lw=2))
+
+ax.set_title("Evolución de la Traducción Automática", fontsize=14, fontweight='bold', color='#023e8a', pad=15)
+plt.tight_layout()
+plt.show()
+```
+
+::: {.callout-note}
+## Hito clave
+En 2016, Google reemplazó su sistema estadístico por **Google Neural Machine Translation (GNMT)** — un sistema Seq2Seq con atención de 8 capas. La calidad mejoró más en un solo salto que en los 10 años previos.
+:::
+
+## SMT vs. NMT {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Statistical MT (SMT)
+- Pipeline complejo: alineación → modelo de traducción → modelo de lenguaje → decodificación
+- Componentes entrenados **por separado**
+- Traduce **frase por frase** (phrase-based)
+- Requiere ingeniería de features manual
+- Difícil capturar dependencias largas
+
+:::
+::: {.column width="50%"}
+
+### Neural MT (NMT)
+- Modelo **end-to-end** con un solo objetivo
+- Entrenamiento conjunto de todos los parámetros
+- Contexto de la **oración completa**
+- Representaciones aprendidas automáticamente
+- Mejor con dependencias a distancia
+
+:::
+:::
+
+::: {.callout-important}
+## ¿Por qué ganó NMT?
+NMT produce traducciones más **fluidas** y **coherentes** porque modela la oración completa como un todo, no como fragmentos pegados.
+:::
+
+# NMT como Aplicación de Seq2Seq 🧠 {background-color="#023e8a"}
+
+## Arquitectura NMT Básica {.smaller}
+
+```{python}
+#| echo: false
+#| fig-align: center
+fig, ax = plt.subplots(figsize=(14, 5))
+ax.set_xlim(-1, 16)
+ax.set_ylim(-2, 4.5)
+ax.axis('off')
+
+enc_color = '#0077b6'
+dec_color = '#023e8a'
+
+# Source tokens
+src_tokens = ["el", "gato", "duerme", "<EOS>"]
+for i, tok in enumerate(src_tokens):
+    rect = mpatches.FancyBboxPatch((i*2.2, 1), 1.6, 1.3, boxstyle="round,pad=0.1",
+                                     facecolor=enc_color, edgecolor='white', linewidth=2)
+    ax.add_patch(rect)
+    ax.text(i*2.2+0.8, 1.65, "LSTM", ha='center', va='center', fontsize=9, color='white', fontweight='bold')
+    ax.text(i*2.2+0.8, -0.4, tok, ha='center', fontsize=11, fontweight='bold', color=enc_color)
+    ax.annotate('', xy=(i*2.2+0.8, 1.0), xytext=(i*2.2+0.8, 0.0),
+                arrowprops=dict(arrowstyle='->', color=enc_color, lw=1.5))
+    if i > 0:
+        ax.annotate('', xy=(i*2.2, 1.65), xytext=((i-1)*2.2+1.6, 1.65),
+                    arrowprops=dict(arrowstyle='->', color=enc_color, lw=2))
+
+# Context
+cx = 9.2
+ax.annotate('', xy=(cx, 1.65), xytext=(3*2.2+1.6, 1.65),
+            arrowprops=dict(arrowstyle='->', color='#e76f51', lw=3))
+circle = plt.Circle((cx+0.5, 1.65), 0.5, color='#e76f51', ec='white', linewidth=2)
+ax.add_patch(circle)
+ax.text(cx+0.5, 1.65, "c", ha='center', va='center', fontsize=14, color='white', fontweight='bold')
+
+# Decoder
+tgt_in = ["<SOS>", "the", "cat", "sleeps"]
+tgt_out = ["the", "cat", "sleeps", "<EOS>"]
+dec_x = 10.8
+for i in range(4):
+    rect = mpatches.FancyBboxPatch((dec_x+i*1.3, 1), 1.0, 1.3, boxstyle="round,pad=0.1",
+                                     facecolor=dec_color, edgecolor='white', linewidth=2)
+    ax.add_patch(rect)
+    ax.text(dec_x+i*1.3+0.5, 1.65, "LSTM", ha='center', va='center', fontsize=8, color='white', fontweight='bold')
+    ax.text(dec_x+i*1.3+0.5, -0.4, tgt_in[i], ha='center', fontsize=9, fontweight='bold', color='#264653')
+    ax.text(dec_x+i*1.3+0.5, 3.5, tgt_out[i], ha='center', fontsize=9, fontweight='bold', color='#e76f51')
+    ax.annotate('', xy=(dec_x+i*1.3+0.5, 1.0), xytext=(dec_x+i*1.3+0.5, 0.0),
+                arrowprops=dict(arrowstyle='->', color='#264653', lw=1.3))
+    ax.annotate('', xy=(dec_x+i*1.3+0.5, 3.1), xytext=(dec_x+i*1.3+0.5, 2.3),
+                arrowprops=dict(arrowstyle='->', color='#e76f51', lw=1.5))
+    if i > 0:
+        ax.annotate('', xy=(dec_x+i*1.3, 1.65), xytext=(dec_x+(i-1)*1.3+1.0, 1.65),
+                    arrowprops=dict(arrowstyle='->', color=dec_color, lw=2))
+
+ax.annotate('', xy=(dec_x, 1.65), xytext=(cx+1.0, 1.65),
+            arrowprops=dict(arrowstyle='->', color='#e76f51', lw=3))
+
+# Labels
+ax.text(3.3, 3.8, "ENCODER (Español)", ha='center', fontsize=13, fontweight='bold', color=enc_color)
+ax.text(dec_x+2.5, -1.3, "DECODER (Inglés)", ha='center', fontsize=13, fontweight='bold', color=dec_color)
+ax.text(cx+0.5, -1.3, "Contexto", ha='center', fontsize=10, fontweight='bold', color='#e76f51')
+
+plt.tight_layout()
+plt.show()
+```
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Componentes clave
+1. **Vocabulario fuente** $V_{\text{src}}$ (español)
+2. **Vocabulario objetivo** $V_{\text{tgt}}$ (inglés)
+3. **Embeddings separados** por idioma
+4. **Encoder** sobre idioma fuente
+5. **Decoder** sobre idioma objetivo
+
+:::
+::: {.column width="50%"}
+
+::: {.callout-tip}
+## Truco de Sutskever (2014)
+Invertir la secuencia de entrada mejora significativamente la traducción. ¿Por qué? Las primeras palabras del decoder están **más cerca** del inicio de la secuencia fuente invertida.
+:::
+
+:::
+:::
+
+## ¿Qué necesitamos para entrenar un NMT? {.smaller}
+
+| Componente | Descripción | Ejemplo |
+|:-----------|:------------|:--------|
+| **Corpus paralelo** | Pares de oraciones alineadas | "el gato duerme" ↔ "the cat sleeps" |
+| **Tokenizador fuente** | Segmentar texto en idioma fuente | `["el", "gato", "duerme"]` |
+| **Tokenizador objetivo** | Segmentar texto en idioma objetivo | `["the", "cat", "sleeps"]` |
+| **Vocabulario fuente** | Mapeo token → índice (español) | `{"el": 5, "gato": 12, ...}` |
+| **Vocabulario objetivo** | Mapeo token → índice (inglés) | `{"the": 5, "cat": 8, ...}` |
+| **Tokens especiales** | `<PAD>`, `<SOS>`, `<EOS>`, `<UNK>` | Señales de control |
+
+::: {.callout-warning}
+## Desafío: vocabulario abierto
+En la vida real, aparecen palabras **nunca vistas** (`<UNK>`). Soluciones: tokenización por subpalabras (BPE, WordPiece, SentencePiece) → la veremos en detalle con Transformers.
+:::
+
+# Preprocesamiento para NMT 📝 {background-color="#03045e"}
+
+## Construyendo el Pipeline de Datos {.smaller}
+
+```{python}
+#| code-fold: show
+import torch
+import torch.nn as nn
+import random
+import re
+
+# --- Corpus paralelo español → inglés (simplificado) ---
+raw_pairs = [
+    ("el gato duerme", "the cat sleeps"),
+    ("el perro corre", "the dog runs"),
+    ("el pájaro vuela", "the bird flies"),
+    ("el gato come", "the cat eats"),
+    ("el perro duerme", "the dog sleeps"),
+    ("un gato grande corre", "a big cat runs"),
+    ("un perro pequeño duerme", "a small dog sleeps"),
+    ("el pájaro pequeño canta", "the small bird sings"),
+    ("un gato pequeño come", "a small cat eats"),
+    ("el perro grande corre rápido", "the big dog runs fast"),
+    ("el gato negro duerme mucho", "the black cat sleeps a lot"),
+    ("un pájaro bonito vuela alto", "a beautiful bird flies high"),
+    ("el perro blanco come mucho", "the white dog eats a lot"),
+    ("un gato negro corre rápido", "a black cat runs fast"),
+    ("el pájaro grande vuela lejos", "the big bird flies far"),
+    ("un perro bonito duerme aquí", "a beautiful dog sleeps here"),
+    ("el gato blanco come pescado", "the white cat eats fish"),
+    ("un pájaro negro canta fuerte", "a black bird sings loud"),
+    ("el perro negro corre lejos", "the black dog runs far"),
+    ("un gato bonito duerme mucho", "a beautiful cat sleeps a lot"),
+    ("el gato duerme aquí", "the cat sleeps here"),
+    ("un perro come pescado", "a dog eats fish"),
+    ("el pájaro canta fuerte", "the bird sings loud"),
+    ("un gato corre rápido", "a cat runs fast"),
+    ("el perro grande duerme mucho", "the big dog sleeps a lot"),
+    ("un pájaro blanco vuela alto", "a white bird flies high"),
+    ("el gato grande come mucho", "the big cat eats a lot"),
+    ("un perro negro duerme aquí", "a black dog sleeps here"),
+    ("el pájaro bonito canta fuerte", "the beautiful bird sings loud"),
+    ("un gato blanco corre lejos", "a white cat runs far"),
+]
+
+print(f"Total pares: {len(raw_pairs)}")
+print(f"Ejemplo: '{raw_pairs[0][0]}' → '{raw_pairs[0][1]}'")
+```
+
+## Vocabularios y Codificación {.smaller}
+
+```{python}
+#| code-fold: show
+# Tokens especiales
+PAD, SOS, EOS, UNK = 0, 1, 2, 3
+SPECIAL_TOKENS = {"<PAD>": PAD, "<SOS>": SOS, "<EOS>": EOS, "<UNK>": UNK}
+
+class Vocabulary:
+    def __init__(self):
+        self.token2idx = dict(SPECIAL_TOKENS)
+        self.idx2token = {v: k for k, v in SPECIAL_TOKENS.items()}
+        self.n_tokens = len(SPECIAL_TOKENS)
+    
+    def add_sentence(self, sentence):
+        for token in sentence.lower().split():
+            if token not in self.token2idx:
+                self.token2idx[token] = self.n_tokens
+                self.idx2token[self.n_tokens] = token
+                self.n_tokens += 1
+    
+    def encode(self, sentence, add_eos=True):
+        indices = [self.token2idx.get(t, UNK) for t in sentence.lower().split()]
+        if add_eos:
+            indices.append(EOS)
+        return indices
+    
+    def decode(self, indices):
+        return " ".join(self.idx2token.get(i, "<UNK>") for i in indices 
+                       if i not in (PAD, SOS, EOS))
+
+# Construir vocabularios separados
+src_vocab = Vocabulary()
+tgt_vocab = Vocabulary()
+
+for src, tgt in raw_pairs:
+    src_vocab.add_sentence(src)
+    tgt_vocab.add_sentence(tgt)
+
+print(f"Vocabulario español: {src_vocab.n_tokens} tokens")
+print(f"Vocabulario inglés:  {tgt_vocab.n_tokens} tokens")
+print(f"\nEspañol: {list(src_vocab.token2idx.items())[:10]}...")
+print(f"Inglés:  {list(tgt_vocab.token2idx.items())[:10]}...")
+```
+
+## Preparación de los Datos {.smaller}
+
+```{python}
+#| code-fold: show
+def prepare_batch(pairs, src_vocab, tgt_vocab):
+    """Codifica pares y crea tensores con padding"""
+    src_encoded = [src_vocab.encode(s) for s, _ in pairs]
+    tgt_encoded = [tgt_vocab.encode(t) for _, t in pairs]
+    
+    # Padding
+    max_src = max(len(s) for s in src_encoded)
+    max_tgt = max(len(t) for t in tgt_encoded)
+    
+    src_padded = [s + [PAD] * (max_src - len(s)) for s in src_encoded]
+    tgt_padded = [t + [PAD] * (max_tgt - len(t)) for t in tgt_encoded]
+    
+    return torch.tensor(src_padded), torch.tensor(tgt_padded)
+
+# Dividir datos
+random.seed(42)
+shuffled = list(raw_pairs)
+random.shuffle(shuffled)
+train_pairs = shuffled[:24]
+test_pairs = shuffled[24:]
+
+train_src, train_tgt = prepare_batch(train_pairs, src_vocab, tgt_vocab)
+test_src, test_tgt = prepare_batch(test_pairs, src_vocab, tgt_vocab)
+
+print(f"Train: {train_src.shape[0]} pares, src_len={train_src.shape[1]}, tgt_len={train_tgt.shape[1]}")
+print(f"Test:  {test_src.shape[0]} pares")
+print(f"\nEjemplo codificado:")
+print(f"  src: {train_src[0].tolist()} → '{src_vocab.decode(train_src[0].tolist())}'")
+print(f"  tgt: {train_tgt[0].tolist()} → '{tgt_vocab.decode(train_tgt[0].tolist())}'")
+```
+
+# Experimento: Traductor ES → EN 🔬 {background-color="#0077b6"}
+
+## Modelo NMT Seq2Seq {.smaller}
+
+```{python}
+#| code-fold: show
+import torch.optim as optim
+
+class Encoder(nn.Module):
+    def __init__(self, vocab_size, embed_dim, hidden_dim, n_layers=1):
+        super().__init__()
+        self.embedding = nn.Embedding(vocab_size, embed_dim, padding_idx=PAD)
+        self.rnn = nn.GRU(embed_dim, hidden_dim, num_layers=n_layers, batch_first=True)
+    
+    def forward(self, src):
+        embedded = self.embedding(src)
+        outputs, hidden = self.rnn(embedded)
+        return hidden
+
+class Decoder(nn.Module):
+    def __init__(self, vocab_size, embed_dim, hidden_dim, n_layers=1):
+        super().__init__()
+        self.embedding = nn.Embedding(vocab_size, embed_dim, padding_idx=PAD)
+        self.rnn = nn.GRU(embed_dim, hidden_dim, num_layers=n_layers, batch_first=True)
+        self.fc_out = nn.Linear(hidden_dim, vocab_size)
+    
+    def forward(self, input_token, hidden):
+        embedded = self.embedding(input_token)
+        output, hidden = self.rnn(embedded, hidden)
+        prediction = self.fc_out(output.squeeze(1))
+        return prediction, hidden
+
+class NMTModel(nn.Module):
+    def __init__(self, encoder, decoder, sos_idx=SOS):
+        super().__init__()
+        self.encoder = encoder
+        self.decoder = decoder
+        self.sos_idx = sos_idx
+    
+    def forward(self, src, trg_len, trg=None, teacher_forcing_ratio=0.5):
+        batch_size = src.size(0)
+        vocab_size = self.decoder.fc_out.out_features
+        
+        hidden = self.encoder(src)
+        outputs = torch.zeros(batch_size, trg_len, vocab_size)
+        input_token = torch.full((batch_size, 1), self.sos_idx, dtype=torch.long)
+        
+        for t in range(trg_len):
+            prediction, hidden = self.decoder(input_token, hidden)
+            outputs[:, t] = prediction
+            if trg is not None and random.random() < teacher_forcing_ratio:
+                input_token = trg[:, t:t+1]
+            else:
+                input_token = prediction.argmax(1, keepdim=True)
+        
+        return outputs
+
+# Hiperparámetros
+EMBED_DIM = 64
+HIDDEN_DIM = 128
+
+encoder = Encoder(src_vocab.n_tokens, EMBED_DIM, HIDDEN_DIM)
+decoder = Decoder(tgt_vocab.n_tokens, EMBED_DIM, HIDDEN_DIM)
+model = NMTModel(encoder, decoder)
+
+total_params = sum(p.numel() for p in model.parameters())
+print(f"Parámetros totales: {total_params:,}")
+```
+
+## Entrenamiento del Traductor {.smaller}
+
+```{python}
+#| code-fold: show
+optimizer = optim.Adam(model.parameters(), lr=0.005)
+criterion = nn.CrossEntropyLoss(ignore_index=PAD)
+
+# Aumentar datos repitiendo el corpus (simular más datos)
+N_EPOCHS = 200
+losses = []
+
+torch.manual_seed(42)
+random.seed(42)
+
+for epoch in range(N_EPOCHS):
+    model.train()
+    
+    # Teacher forcing decrece con el tiempo (scheduled sampling)
+    tf_ratio = max(0.1, 1.0 - epoch / N_EPOCHS)
+    
+    output = model(train_src, train_tgt.size(1), train_tgt, teacher_forcing_ratio=tf_ratio)
+    loss = criterion(output.reshape(-1, tgt_vocab.n_tokens), train_tgt.reshape(-1))
+    
+    optimizer.zero_grad()
+    loss.backward()
+    torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+    optimizer.step()
+    
+    losses.append(loss.item())
+    if (epoch + 1) % 50 == 0:
+        print(f"Época {epoch+1:3d}/{N_EPOCHS} | Loss: {loss.item():.4f} | TF ratio: {tf_ratio:.2f}")
+```
+
+## Curva de Aprendizaje {.smaller}
+
+```{python}
+#| echo: false
+#| fig-align: center
+fig, ax = plt.subplots(figsize=(9, 4))
+ax.plot(range(1, len(losses)+1), losses, color='#0077b6', linewidth=2, alpha=0.8)
+ax.set_xlabel("Época", fontsize=12)
+ax.set_ylabel("Loss (CrossEntropy)", fontsize=12)
+ax.set_title("Entrenamiento NMT: Español → Inglés", fontsize=14, fontweight='bold', color='#023e8a')
+ax.grid(True, alpha=0.3)
+ax.spines[['top', 'right']].set_visible(False)
+plt.tight_layout()
+plt.show()
+```
+
+## Probando el Traductor {.smaller}
+
+```{python}
+#| code-fold: show
+def translate(model, sentence, src_vocab, tgt_vocab, max_len=15):
+    """Traduce una oración usando greedy decoding"""
+    model.eval()
+    with torch.no_grad():
+        src = torch.tensor([src_vocab.encode(sentence)])
+        hidden = model.encoder(src)
+        
+        input_token = torch.tensor([[SOS]])
+        translated = []
+        
+        for _ in range(max_len):
+            pred, hidden = model.decoder(input_token, hidden)
+            token_idx = pred.argmax(1).item()
+            if token_idx == EOS:
+                break
+            translated.append(tgt_vocab.idx2token.get(token_idx, "<UNK>"))
+            input_token = torch.tensor([[token_idx]])
+    
+    return " ".join(translated)
+
+# Traducir los datos de prueba
+print("=" * 65)
+print(f"{'Español':>30s}  →  {'Traducción':<30s}")
+print("=" * 65)
+
+for src_sent, tgt_sent in test_pairs:
+    translation = translate(model, src_sent, src_vocab, tgt_vocab)
+    match = "✅" if translation == tgt_sent else "❌"
+    print(f"{src_sent:>30s}  →  {translation:<25s} {match}")
+
+print("\n--- Oraciones del conjunto de entrenamiento ---")
+for src_sent, tgt_sent in train_pairs[:6]:
+    translation = translate(model, src_sent, src_vocab, tgt_vocab)
+    match = "✅" if translation == tgt_sent else "❌"
+    print(f"{src_sent:>30s}  →  {translation:<25s} {match}")
+```
+
+# Evaluación: BLEU Score 📏 {background-color="#023e8a"}
+
+## ¿Cómo evaluamos traducciones? {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### El problema de la evaluación
+- No hay una **única** traducción correcta
+- Evaluación humana es costosa y lenta
+- Necesitamos métricas **automáticas**
+
+### BLEU (Bilingual Evaluation Understudy)
+Papineni et al. (2002) — la métrica estándar durante 20+ años:
+
+> Mide cuántos **n-gramas** de la traducción candidata aparecen en la referencia.
+
+:::
+::: {.column width="50%"}
+
+::: {.callout-note}
+## Idea intuitiva
+Si mi traducción comparte muchas frases (1-gramas, 2-gramas, 3-gramas, 4-gramas) con la referencia humana, probablemente es buena.
+:::
+
+**Ejemplo:**
+
+- Referencia: "the cat sleeps on the mat"
+- Candidato A: "the cat sleeps on the mat" → BLEU alto
+- Candidato B: "the the the the the the" → BLEU bajo (con penalización)
+
+:::
+:::
+
+## Cálculo de BLEU Paso a Paso {.smaller}
+
+$$\text{BLEU} = \text{BP} \cdot \exp\left(\sum_{n=1}^{N} w_n \log p_n\right)$$
+
+::: {.columns}
+::: {.column width="50%"}
+
+### 1. Precisión de n-gramas ($p_n$)
+
+$$p_n = \frac{\text{n-gramas comunes (con clipping)}}{\text{n-gramas en candidato}}$$
+
+**Clipping:** cada n-grama de la referencia se puede contar máximo tantas veces como aparece en la referencia.
+
+### 2. Penalización por brevedad (BP)
+
+$$\text{BP} = \begin{cases} 1 & \text{si } c > r \\ e^{1-r/c} & \text{si } c \leq r \end{cases}$$
+
+donde $c$ = longitud del candidato, $r$ = longitud de la referencia.
+
+:::
+::: {.column width="50%"}
+
+### 3. Pesos ($w_n$)
+
+- Típicamente uniformes: $w_n = 1/N$
+- $N = 4$ (BLEU-4 es el estándar)
+
+### Rango
+
+- BLEU ∈ [0, 1] (o [0, 100] como porcentaje)
+- BLEU > 0.30 = traducción razonable
+- BLEU > 0.50 = traducción buena
+- BLEU = 1.0 = idéntica a la referencia
+
+:::
+:::
+
+## Implementación de BLEU {.smaller}
+
+```{python}
+#| code-fold: show
+from collections import Counter
+import math
+
+def compute_ngrams(tokens, n):
+    """Extrae n-gramas de una lista de tokens"""
+    return [tuple(tokens[i:i+n]) for i in range(len(tokens)-n+1)]
+
+def bleu_score(candidate, reference, max_n=4):
+    """Calcula BLEU score entre candidato y referencia (strings)"""
+    cand_tokens = candidate.lower().split()
+    ref_tokens = reference.lower().split()
+    
+    c = len(cand_tokens)
+    r = len(ref_tokens)
+    
+    # Penalización por brevedad
+    if c == 0:
+        return 0.0
+    bp = math.exp(1 - r/c) if c <= r else 1.0
+    
+    # Precisión de n-gramas con clipping
+    log_precisions = []
+    for n in range(1, max_n + 1):
+        cand_ngrams = compute_ngrams(cand_tokens, n)
+        ref_ngrams = compute_ngrams(ref_tokens, n)
+        
+        if not cand_ngrams:
+            log_precisions.append(float('-inf'))
+            continue
+        
+        ref_counts = Counter(ref_ngrams)
+        clipped = sum(min(count, ref_counts[ng]) 
+                      for ng, count in Counter(cand_ngrams).items())
+        precision = clipped / len(cand_ngrams)
+        
+        log_precisions.append(math.log(precision) if precision > 0 else float('-inf'))
+    
+    # Promedio geométrico ponderado
+    avg_log = sum(lp / max_n for lp in log_precisions)
+    
+    return bp * math.exp(avg_log) if avg_log > float('-inf') else 0.0
+```
+
+## BLEU en Acción {.smaller}
+
+```{python}
+#| code-fold: show
+# Ejemplos ilustrativos
+examples = [
+    ("the cat sleeps", "the cat sleeps", "Perfecta"),
+    ("the cat sleeps", "a cat is sleeping", "Sinónimos"),
+    ("cat sleeps the", "the cat sleeps", "Orden incorrecto"),
+    ("the", "the cat sleeps", "Muy corta"),
+    ("the cat sleeps on the mat today", "the cat sleeps", "Muy larga"),
+]
+
+print("=" * 75)
+print(f"{'Candidato':>30s} | {'Referencia':<20s} | {'BLEU':>6s} | Nota")
+print("=" * 75)
+for cand, ref, note in examples:
+    score = bleu_score(cand, ref, max_n=2)  # BLEU-2 para oraciones cortas
+    bar = "█" * int(score * 20)
+    print(f"{cand:>30s} | {ref:<20s} | {score:.3f} | {note} {bar}")
+```
+
+## Evaluando Nuestro Traductor con BLEU {.smaller}
+
+```{python}
+#| code-fold: show
+# BLEU sobre datos de prueba
+print("Evaluación BLEU del traductor ES → EN")
+print("=" * 65)
+
+bleu_scores = []
+for src_sent, ref_sent in test_pairs:
+    hyp = translate(model, src_sent, src_vocab, tgt_vocab)
+    score = bleu_score(hyp, ref_sent, max_n=2)  # BLEU-2 (oraciones cortas)
+    bleu_scores.append(score)
+    print(f"  src: {src_sent}")
+    print(f"  ref: {ref_sent}")
+    print(f"  hyp: {hyp}")
+    print(f"  BLEU-2: {score:.3f}")
+    print()
+
+avg_bleu = sum(bleu_scores) / len(bleu_scores) if bleu_scores else 0
+print(f"BLEU-2 promedio (test): {avg_bleu:.3f}")
+```
+
+```{python}
+#| echo: false
+#| fig-align: center
+fig, ax = plt.subplots(figsize=(9, 3.5))
+
+if bleu_scores:
+    colors = ['#2a9d8f' if s > 0.5 else '#e9c46a' if s > 0.2 else '#e76f51' for s in bleu_scores]
+    bars = ax.bar(range(len(bleu_scores)), bleu_scores, color=colors, edgecolor='white', linewidth=2)
+    ax.set_xticks(range(len(bleu_scores)))
+    ax.set_xticklabels([f"Par {i+1}" for i in range(len(bleu_scores))], fontsize=9)
+    ax.axhline(y=avg_bleu, color='#023e8a', linestyle='--', linewidth=2, label=f'Promedio: {avg_bleu:.3f}')
+    ax.legend(fontsize=11)
+
+ax.set_ylabel("BLEU-2", fontsize=12)
+ax.set_title("BLEU Score por Par de Prueba", fontsize=13, fontweight='bold', color='#023e8a')
+ax.set_ylim(0, 1.05)
+ax.spines[['top', 'right']].set_visible(False)
+plt.tight_layout()
+plt.show()
+```
+
+# Trucos de los Sistemas NMT Reales ⚡ {background-color="#03045e"}
+
+## Técnicas que Mejoran la Traducción {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Arquitectura
+| Técnica | Efecto |
+|:--------|:-------|
+| **Encoder bidireccional** | Captura contexto en ambas direcciones |
+| **Stacked layers** (2-8) | Mayor capacidad de representación |
+| **Residual connections** | Permite entrenar redes más profundas |
+| **Dropout** (0.1-0.3) | Regularización |
+
+### Decodificación
+| Técnica | Efecto |
+|:--------|:-------|
+| **Beam search** ($k$=4-10) | Mejores traducciones que greedy |
+| **Length normalization** | Evita sesgo hacia traducciones cortas |
+| **Coverage penalty** | Evita repeticiones y omisiones |
+
+:::
+::: {.column width="50%"}
+
+### Datos y Entrenamiento
+| Técnica | Efecto |
+|:--------|:-------|
+| **Subword tokenization** (BPE) | Vocabulario abierto, maneja OOV |
+| **Back-translation** | Datos sintéticos para aumentar corpus |
+| **Label smoothing** | Mejor generalización |
+| **Scheduled sampling** | Reduce exposure bias |
+| **Reversing source** | Mejora alineación (Sutskever 2014) |
+
+### Escala real (GNMT, 2016)
+- 8 capas LSTM encoder + 8 decoder
+- 36M pares de oraciones
+- Entrenamiento: ~6 días en 96 GPUs
+- BLEU en WMT14 EN→FR: **41.16**
+
+:::
+:::
+
+## Limitaciones del Seq2Seq Vanilla {.smaller}
+
+```{python}
+#| echo: false
+#| fig-align: center
+fig, ax = plt.subplots(figsize=(10, 4))
+ax.set_xlim(-0.5, 10)
+ax.set_ylim(-1, 5)
+ax.axis('off')
+
+# Bottleneck visualization
+words = ["El", "presidente", "de", "la", "república", "anunció", "nuevas", "medidas"]
+for i, w in enumerate(words):
+    ax.text(i*1.2 + 0.1, 0, w, fontsize=9, ha='center', va='center', color='#0077b6',
+            fontweight='bold', rotation=30)
+
+# Funnel
+from matplotlib.patches import Polygon
+funnel_x = [0, len(words)*1.2-1, 5.5, 4.5]
+funnel_y = [1, 1, 2.5, 2.5]
+funnel = Polygon(list(zip(funnel_x, funnel_y)), closed=True, facecolor='#0077b6', alpha=0.2)
+ax.add_patch(funnel)
+
+# Context vector
+circle = plt.Circle((5, 3.2), 0.4, color='#e76f51', ec='white', linewidth=2)
+ax.add_patch(circle)
+ax.text(5, 3.2, "c", ha='center', va='center', fontsize=16, color='white', fontweight='bold')
+ax.text(5, 4.2, "¿64-256 dimensiones pueden\ncodificar 8+ palabras?", ha='center', fontsize=11,
+        fontweight='bold', color='#e76f51')
+
+ax.annotate('', xy=(5, 2.8), xytext=(5, 2.5),
+            arrowprops=dict(arrowstyle='->', color='#e76f51', lw=2))
+
+plt.tight_layout()
+plt.show()
+```
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Problemas identificados
+
+1. **Cuello de botella de información:** toda la oración → un vector fijo
+2. **Degradación con longitud:** calidad cae con oraciones > 20 tokens
+3. **No hay alineación explícita:** decoder no sabe qué parte de la entrada mirar
+
+:::
+::: {.column width="50%"}
+
+::: {.callout-important}
+## La pregunta clave
+¿Qué pasaría si el decoder pudiera **consultar** diferentes partes de la entrada en cada paso, en lugar de depender de un solo vector?
+
+**→ Esto es exactamente lo que hace la Atención (S3)**
+:::
+
+:::
+:::
+
+# Resumen {background-color="#0077b6"}
+
+## Lo Que Aprendimos Hoy {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Conceptos
+
+- La **traducción automática neuronal** (NMT) aplica Seq2Seq a pares de idiomas
+- Requiere **corpus paralelo** y **vocabularios separados**
+- **BLEU score** mide similitud de n-gramas con referencia humana
+- Técnicas como **beam search**, **subword tokenization** y **scheduled sampling** mejoran resultados
+- El **cuello de botella** del vector fijo limita la calidad
+
+:::
+::: {.column width="50%"}
+
+### Práctica
+
+- Pipeline: tokenización → vocabularios → padding → Seq2Seq
+- Entrenamos un traductor ES→EN funcional
+- Evaluamos con **BLEU-2** (adaptado a oraciones cortas)
+- `bleu_score()`: precisión de n-gramas + penalización por brevedad
+- Identificamos las limitaciones → motivación para **Atención**
+
+:::
+:::
+
+## Fórmulas Clave {.smaller}
+
+| Concepto | Fórmula |
+|:---------|:--------|
+| **Precisión n-grama** | $p_n = \frac{\sum \min(\text{count}_{cand}, \text{count}_{ref})}{\sum \text{count}_{cand}}$ |
+| **Brevity Penalty** | $\text{BP} = \min(1, e^{1-r/c})$ |
+| **BLEU** | $\text{BLEU} = \text{BP} \cdot \exp\left(\sum_{n=1}^{N} \frac{1}{N} \log p_n\right)$ |
+| **NMT Loss** | $\mathcal{L} = -\sum_{t=1}^{T_y} \log P(y_t^* \mid y_{<t}, \mathbf{c})$ |
+| **Scheduled Sampling** | $\text{TF ratio} = \max(\epsilon, 1 - \text{epoch}/E)$ |
+
+## Para la Próxima Sesión 📚
+
+::: {.callout-note}
+## Semana 7, S3: El Mecanismo de Atención
+
+- El **cuello de botella** del vector de contexto fijo
+- **Atención** de Bahdanau (aditiva) vs. Luong (multiplicativa)
+- Pesos de atención: ¿qué partes de la entrada son relevantes?
+- Visualización de **mapas de atención**
+- De la atención al **Transformer** (preview Semana 8)
+:::
+
+**Lectura:**
+
+- Bahdanau et al. (2015): *Neural Machine Translation by Jointly Learning to Align and Translate*
+- Luong et al. (2015): *Effective Approaches to Attention-based Neural Machine Translation*
+- Jurafsky & Martin, Cap. 10.4: *Attention*
+
+# ¿Preguntas? 🙋 {background-color="#03045e"}
+
+:::{.r-fit-text}
+**¡Gracias!**
+:::
+
+📧 fsuarez@ucb.edu.bo
+
+🔗 Materiales: [github.com/fjsuarez/ucb-nlp](https://github.com/fjsuarez/ucb-nlp)

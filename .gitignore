@@ -20,3 +20,4 @@ general.qmd
 # Google OAuth credentials
 scripts/credentials.json
 scripts/token.json
+tareas/tarea02/tarea02_generador_nombres_soluciones.ipynb

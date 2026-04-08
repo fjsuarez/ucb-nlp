@@ -31,11 +31,11 @@
 | | [S3: Unidades Recurrentes con Compuertas (GRU) y RNNs Bidireccionales](slides/semana06/s3_gru_bidireccional.qmd) | |
 | **7** | **Secuencia a Secuencia (Seq2Seq)** | |
 | | [S1: Arquitecturas Codificador-Decodificador](slides/semana07/s1_seq2seq_encoder_decoder.qmd) | |
-| | S2: Aplicaciones: Traducción Automática Neuronal (NMT) | |
-| | S3: El problema del "cuello de botella" y el nacimiento de la **Atención** | |
+| | [S2: Aplicaciones: Traducción Automática Neuronal (NMT)](slides/semana07/s2_nmt_traduccion.qmd) | |
+| | [S3: El problema del "cuello de botella" y el nacimiento de la **Atención**](slides/semana07/s3_atencion.qmd) | |
 | **8** | **Redes Neuronales Convolucionales para NLP** | |
-| | S1: Convoluciones 1D para texto | |
-| | S2: Max Pooling Global vs. Local | Quiz 6 |
+| | [S1: Convoluciones 1D para texto](slides/semana08/s1_conv1d_texto.qmd) | |
+| | [S2: Max Pooling Global vs. Local](slides/semana08/s2_pooling.qmd) | Quiz 6 |
 | | S3: Comparación RNNs vs. CNNs para clasificación | **📝 Tarea 2:** Generador de nombres a nivel de caracteres con LSTM |
 | **9** | **Auto-Atención & Transformers** | |
 | | S1: Atención de Producto Escalar (Queries, Keys, Values) | |
