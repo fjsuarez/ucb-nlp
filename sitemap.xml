@@ -1,8 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>https://fjsuarez.me/slides/semana08/s2_pooling.html</loc>
+    <lastmod>2026-04-08T18:02:04.767Z</lastmod>
+  </url>
+  <url>
+    <loc>https://fjsuarez.me/slides/semana07/s3_atencion.html</loc>
+    <lastmod>2026-03-31T21:11:49.548Z</lastmod>
+  </url>
+  <url>
     <loc>https://fjsuarez.me/slides/semana07/s1_seq2seq_encoder_decoder.html</loc>
-    <lastmod>2026-03-25T18:16:09.581Z</lastmod>
+    <lastmod>2026-03-31T21:11:51.738Z</lastmod>
   </url>
   <url>
     <loc>https://fjsuarez.me/slides/semana06/s2_lstm_vanishing_gradients.html</loc>
@@ -42,7 +50,7 @@
   </url>
   <url>
     <loc>https://fjsuarez.me/index.html</loc>
-    <lastmod>2026-03-25T18:16:40.420Z</lastmod>
+    <lastmod>2026-04-08T18:02:41.858Z</lastmod>
   </url>
   <url>
     <loc>https://fjsuarez.me/general.html</loc>
@@ -50,7 +58,7 @@
   </url>
   <url>
     <loc>https://fjsuarez.me/programa.html</loc>
-    <lastmod>2026-03-25T18:16:40.420Z</lastmod>
+    <lastmod>2026-04-08T18:02:41.858Z</lastmod>
   </url>
   <url>
     <loc>https://fjsuarez.me/slides/semana01/s2_regex.html</loc>
@@ -87,5 +95,13 @@
   <url>
     <loc>https://fjsuarez.me/slides/semana06/s3_gru_bidireccional.html</loc>
     <lastmod>2026-03-17T19:31:03.094Z</lastmod>
+  </url>
+  <url>
+    <loc>https://fjsuarez.me/slides/semana07/s2_nmt_traduccion.html</loc>
+    <lastmod>2026-03-31T21:11:50.848Z</lastmod>
+  </url>
+  <url>
+    <loc>https://fjsuarez.me/slides/semana08/s1_conv1d_texto.html</loc>
+    <lastmod>2026-04-08T17:59:38.311Z</lastmod>
   </url>
 </urlset>

@@ -1,5 +1,243 @@
 [
   {
+    "objectID": "slides/semana08/s2_pooling.html#agenda-de-hoy",
+    "href": "slides/semana08/s2_pooling.html#agenda-de-hoy",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Agenda de Hoy",
+    "text": "Agenda de Hoy\n\n\n\n🔁 Repaso: Conv1D y el problema de longitud\n🏊 Global Max Pooling: la estrategia dominante\n📊 Average Pooling: la alternativa suave\n🏆 K-Max Pooling: retener los top-\\(k\\)\n🧪 Comparación experimental\n⚙️ Pooling adaptativo para secuencias variables\n\n\n\n\n\n\n\n\nObjetivo\n\n\nComparar diferentes estrategias de pooling para agregar información de secuencias de longitud variable en un vector de tamaño fijo, y entender cuándo usar cada una.\n\n\n\nPrerequisitos: Conv1D para texto (S1)"
+  },
+  {
+    "objectID": "slides/semana08/s2_pooling.html#repaso-dónde-estamos",
+    "href": "slides/semana08/s2_pooling.html#repaso-dónde-estamos",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Repaso: ¿Dónde Estamos?",
+    "text": "Repaso: ¿Dónde Estamos?\n\n\nPipeline CNN para texto\n\nTokens → Embeddings (\\(T \\times d\\))\nConv1D → Feature maps (\\(T - k + 1\\) valores por filtro)\n??? Pooling ??? → Vector de tamaño fijo\nLinear → Clasificación\n\nEl problema\nLas oraciones tienen longitud diferente:\n\n“Great!” → \\(T = 1\\)\n“The movie was absolutely fantastic” → \\(T = 5\\)\nDespués de Conv1D(\\(k=3\\)): salida de \\(T-2\\) valores\nNecesitamos un vector de tamaño fijo para el clasificador"
+  },
+  {
+    "objectID": "slides/semana08/s2_pooling.html#la-estrategia-más-popular",
+    "href": "slides/semana08/s2_pooling.html#la-estrategia-más-popular",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "La Estrategia Más Popular",
+    "text": "La Estrategia Más Popular\nDe cada feature map (lista de activaciones), tomar el valor máximo:\n\\[\\hat{h}_j = \\max_{i=1}^{T-k+1} h_j^{(i)}\\]\n\n\nIntuición\n\nCada filtro detecta un patrón (n-grama)\nMax pooling pregunta: “¿Este patrón aparece en algún lugar de la oración?”\nNo importa dónde aparece\nInvariante a la posición\n\n\nPropiedades\n\nEntrada: \\((N_{\\text{filtros}}, T-k+1)\\)\nSalida: \\((N_{\\text{filtros}},)\\) — un escalar por filtro\nSiempre produce vector de tamaño fijo\nPierde información posicional\n\n\n\n\nCode\nimport torch\nimport torch.nn as nn\n\n# Simular feature maps de un filtro para 3 oraciones de diferente longitud\ntorch.manual_seed(42)\n\nmaps = {\n    \"short  (T=5)\":  torch.relu(torch.randn(1, 4, 3)),   # 4 filtros, 3 posiciones\n    \"medium (T=8)\":  torch.relu(torch.randn(1, 4, 6)),   # 4 filtros, 6 posiciones\n    \"long   (T=15)\": torch.relu(torch.randn(1, 4, 13)),  # 4 filtros, 13 posiciones\n}\n\nprint(\"Global Max Pooling: extrae 1 valor (máximo) por filtro\")\nprint(\"=\" * 55)\nfor name, fmap in maps.items():\n    pooled = fmap.max(dim=2).values  # (1, 4)\n    print(f\"  {name}:  feature map {list(fmap.shape)} → max pooled {list(pooled.shape)}\")\n\n\nGlobal Max Pooling: extrae 1 valor (máximo) por filtro\n=======================================================\n  short  (T=5):  feature map [1, 4, 3] → max pooled [1, 4]\n  medium (T=8):  feature map [1, 4, 6] → max pooled [1, 4]\n  long   (T=15):  feature map [1, 4, 13] → max pooled [1, 4]"
+  },
+  {
+    "objectID": "slides/semana08/s2_pooling.html#visualización-qué-captura-max-pooling",
+    "href": "slides/semana08/s2_pooling.html#visualización-qué-captura-max-pooling",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Visualización: ¿Qué Captura Max Pooling?",
+    "text": "Visualización: ¿Qué Captura Max Pooling?\n\n\n\n\n\n\n\nLo que se pierde\n\n\nMax pooling solo retiene la activación más fuerte. Si un patrón aparece 3 veces o 30 veces, el resultado es el mismo. Perdemos información sobre frecuencia y posición."
+  },
+  {
+    "objectID": "slides/semana08/s2_pooling.html#la-alternativa-suave",
+    "href": "slides/semana08/s2_pooling.html#la-alternativa-suave",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "La Alternativa Suave",
+    "text": "La Alternativa Suave\nEn lugar del máximo, tomar el promedio de las activaciones:\n\\[\\hat{h}_j = \\frac{1}{T-k+1} \\sum_{i=1}^{T-k+1} h_j^{(i)}\\]\n\n\nVentajas\n\nCaptura frecuencia: si un patrón aparece muchas veces, el promedio es alto\nMás suave que max: menos sensible a outliers\nFunciona bien cuando el tono general importa\n\n\nDesventajas\n\nDiluye señales fuertes pero poco frecuentes\nUna negación en una oración larga puede perderse\nNo captura “al menos una vez” como max pooling\n\n\n\n\nCode\n# Comparar max vs average pooling\nfeature_map = torch.tensor([[[0.1, 0.0, 3.5, 0.2, 0.1]]])  # (1, 1, 5)\n\nmax_pool = feature_map.max(dim=2).values\navg_pool = feature_map.mean(dim=2)\n\nprint(\"Feature map:\", feature_map.squeeze().tolist())\nprint(f\"Max pooling: {max_pool.item():.2f}  ← captura el pico\")\nprint(f\"Avg pooling: {avg_pool.item():.2f}  ← diluye el pico\")\n\n# Caso: patrón frecuente\nfeature_map2 = torch.tensor([[[1.2, 1.5, 1.3, 1.4, 1.1]]])\nmax_pool2 = feature_map2.max(dim=2).values\navg_pool2 = feature_map2.mean(dim=2)\n\nprint(f\"\\nFeature map: {feature_map2.squeeze().tolist()}\")\nprint(f\"Max pooling: {max_pool2.item():.2f}  ← similar al promedio\")\nprint(f\"Avg pooling: {avg_pool2.item():.2f}  ← captura la consistencia\")\n\n\nFeature map: [0.10000000149011612, 0.0, 3.5, 0.20000000298023224, 0.10000000149011612]\nMax pooling: 3.50  ← captura el pico\nAvg pooling: 0.78  ← diluye el pico\n\nFeature map: [1.2000000476837158, 1.5, 1.2999999523162842, 1.399999976158142, 1.100000023841858]\nMax pooling: 1.50  ← similar al promedio\nAvg pooling: 1.30  ← captura la consistencia"
+  },
+  {
+    "objectID": "slides/semana08/s2_pooling.html#ejemplo-cuándo-importa-la-diferencia",
+    "href": "slides/semana08/s2_pooling.html#ejemplo-cuándo-importa-la-diferencia",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Ejemplo: ¿Cuándo Importa la Diferencia?",
+    "text": "Ejemplo: ¿Cuándo Importa la Diferencia?\n\n\n\n\n\n\n\nLa clave\n\n\n\nMax pooling es mejor para patrones específicos y puntuales (negación, palabras clave)\nAvg pooling es mejor para tono general (un texto consistentemente positivo)\nEn la práctica, max pooling domina para clasificación de texto (Kim, 2014)"
+  },
+  {
+    "objectID": "slides/semana08/s2_pooling.html#retener-los-top-k-valores",
+    "href": "slides/semana08/s2_pooling.html#retener-los-top-k-valores",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Retener los Top-\\(k\\) Valores",
+    "text": "Retener los Top-\\(k\\) Valores\nPropuesto por Kalchbrenner et al. (2014): en lugar de 1 solo valor, retener los \\(k\\) valores más altos (preservando su orden):\n\\[\\text{k-max}(\\mathbf{h}) = \\text{sort}(\\text{top-}k(\\mathbf{h}))\\]\n\n\nVentajas\n\nRetiene múltiples señales relevantes\nPreserva el orden relativo de los top-\\(k\\) valores\nMás información que max pooling\n\\(k=1\\) es equivalente a global max pooling\n\n\nDesventajas\n\nIntroduce hiperparámetro \\(k\\)\nVector de salida es de tamaño \\(k \\times N_{\\text{filtros}}\\)\nPuede ser excesivo para textos cortos\n\n\n\n\nCode\ndef k_max_pooling(x, k):\n    \"\"\"\n    x: (batch, channels, length)\n    Retorna: (batch, channels, k) — top-k valores en orden original\n    \"\"\"\n    topk_vals, topk_idx = x.topk(k, dim=2)\n    # Ordenar por posición para preservar el orden de la secuencia\n    sorted_idx = topk_idx.sort(dim=2).values\n    return x.gather(2, sorted_idx)\n\n# Ejemplo\nfeature_map = torch.tensor([[[0.1, 2.5, 0.3, 3.1, 0.8, 1.9, 0.2]]])\nprint(f\"Feature map:   {feature_map.squeeze().tolist()}\")\nprint(f\"Max pooling:   {feature_map.max(dim=2).values.squeeze().tolist()}\")\nprint(f\"K-max (k=3):   {k_max_pooling(feature_map, k=3).squeeze().tolist()}\")\nprint(f\"Avg pooling:   {feature_map.mean(dim=2).squeeze().item():.2f}\")\n\n\nFeature map:   [0.10000000149011612, 2.5, 0.30000001192092896, 3.0999999046325684, 0.800000011920929, 1.899999976158142, 0.20000000298023224]\nMax pooling:   3.0999999046325684\nK-max (k=3):   [2.5, 3.0999999046325684, 1.899999976158142]\nAvg pooling:   1.27"
+  },
+  {
+    "objectID": "slides/semana08/s2_pooling.html#comparación-visual-de-las-3-estrategias",
+    "href": "slides/semana08/s2_pooling.html#comparación-visual-de-las-3-estrategias",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Comparación Visual de las 3 Estrategias",
+    "text": "Comparación Visual de las 3 Estrategias\n\n\n\n\nEstrategia\nSalida por filtro\nInformación retenida\nMejor para\n\n\n\n\nGlobal Max\n1 escalar\nSolo el pico\nPatrones puntuales\n\n\nGlobal Average\n1 escalar\nPromedio general\nTono difuso\n\n\nK-Max\n\\(k\\) escalares\nTop-\\(k\\) en orden\nBalance de ambos"
+  },
+  {
+    "objectID": "slides/semana08/s2_pooling.html#clasificador-cnn-con-diferentes-poolings",
+    "href": "slides/semana08/s2_pooling.html#clasificador-cnn-con-diferentes-poolings",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Clasificador CNN con Diferentes Poolings",
+    "text": "Clasificador CNN con Diferentes Poolings\n\n\nCode\nimport random\nimport torch.optim as optim\n\ntorch.manual_seed(42)\nrandom.seed(42)\nnp.random.seed(42)\n\n# --- Datos: sentimiento sintético (reusar vocabulario simple) ---\npositive_words = [\"great\", \"amazing\", \"wonderful\", \"excellent\", \"fantastic\", \"brilliant\",\n                  \"superb\", \"loved\", \"enjoyed\", \"outstanding\", \"perfect\", \"best\"]\nnegative_words = [\"terrible\", \"horrible\", \"awful\", \"worst\", \"dreadful\", \"boring\",\n                  \"bad\", \"hated\", \"poor\", \"disappointing\", \"weak\", \"disaster\"]\nneutral_words = [\"the\", \"a\", \"movie\", \"film\", \"was\", \"is\", \"this\", \"that\", \"very\",\n                 \"really\", \"quite\", \"it\", \"and\", \"but\", \"with\", \"not\"]\n\nall_words = sorted(set(positive_words + negative_words + neutral_words))\nword2idx = {\"&lt;PAD&gt;\": 0}\nfor w in all_words:\n    word2idx[w] = len(word2idx)\nVOCAB = len(word2idx)\n\ndef make_sentence(label, min_len=5, max_len=12):\n    length = random.randint(min_len, max_len)\n    words_pool = positive_words if label == 1 else negative_words\n    n_key = random.randint(1, 3)\n    sent = random.choices(neutral_words, k=length - n_key) + random.choices(words_pool, k=n_key)\n    random.shuffle(sent)\n    return sent\n\ndef encode(sent, max_len=12):\n    ids = [word2idx.get(w, 0) for w in sent[:max_len]]\n    return ids + [0] * (max_len - len(ids))\n\n# Generar\ndata = []\nfor _ in range(800):\n    data.append((make_sentence(1), 1))\n    data.append((make_sentence(0), 0))\nrandom.shuffle(data)\n\nX = torch.tensor([encode(s) for s, _ in data])\ny = torch.tensor([l for _, l in data])\nsplit = int(0.8 * len(X))\nX_train, y_train = X[:split], y[:split]\nX_test, y_test = X[split:], y[split:]\nprint(f\"Vocab: {VOCAB} | Train: {len(X_train)} | Test: {len(X_test)}\")\n\n\nVocab: 41 | Train: 1280 | Test: 320\n\n\n\n\nCode\nclass CNNWithPooling(nn.Module):\n    def __init__(self, vocab_size, embed_dim, n_filters, kernel_sizes,\n                 n_classes, pooling='max', k_max=3, pad_idx=0):\n        super().__init__()\n        self.pooling = pooling\n        self.k_max_val = k_max\n        self.embedding = nn.Embedding(vocab_size, embed_dim, padding_idx=pad_idx)\n        self.convs = nn.ModuleList([\n            nn.Conv1d(embed_dim, n_filters, k) for k in kernel_sizes\n        ])\n        \n        if pooling == 'kmax':\n            fc_input = n_filters * len(kernel_sizes) * k_max\n        else:\n            fc_input = n_filters * len(kernel_sizes)\n        \n        self.dropout = nn.Dropout(0.3)\n        self.fc = nn.Linear(fc_input, n_classes)\n    \n    def forward(self, x):\n        emb = self.embedding(x).permute(0, 2, 1)\n        \n        conv_outs = []\n        for conv in self.convs:\n            h = torch.relu(conv(emb))\n            if self.pooling == 'max':\n                h = h.max(dim=2).values\n            elif self.pooling == 'avg':\n                h = h.mean(dim=2)\n            elif self.pooling == 'kmax':\n                k = min(self.k_max_val, h.size(2))\n                h = h.topk(k, dim=2).values\n                h = h.view(h.size(0), -1)\n            conv_outs.append(h)\n        \n        cat = torch.cat(conv_outs, dim=1)\n        return self.fc(self.dropout(cat))\n\n# Entrenar las 3 variantes\ndef train_eval(pooling, k_max=3, n_epochs=40):\n    model = CNNWithPooling(VOCAB, embed_dim=32, n_filters=32, kernel_sizes=[2,3,4],\n                            n_classes=2, pooling=pooling, k_max=k_max)\n    opt = optim.Adam(model.parameters(), lr=0.003)\n    crit = nn.CrossEntropyLoss()\n    losses = []\n    for epoch in range(n_epochs):\n        model.train()\n        idx = torch.randperm(len(X_train))\n        e_loss, n_b = 0, 0\n        for i in range(0, len(X_train), 64):\n            bi = idx[i:i+64]\n            loss = crit(model(X_train[bi]), y_train[bi])\n            opt.zero_grad(); loss.backward(); opt.step()\n            e_loss += loss.item(); n_b += 1\n        losses.append(e_loss / n_b)\n    model.eval()\n    with torch.no_grad():\n        acc = (model(X_test).argmax(1) == y_test).float().mean().item()\n    n_params = sum(p.numel() for p in model.parameters())\n    return losses, acc, n_params\n\nresults = {}\nfor pool in ['max', 'avg', 'kmax']:\n    losses, acc, n_params = train_eval(pool)\n    results[pool] = {'losses': losses, 'acc': acc, 'params': n_params}\n    label = f\"{'K-Max (k=3)' if pool == 'kmax' else pool.capitalize()}\"\n    print(f\"{label:&gt;12s}:  Acc = {acc:.1%}  |  Params = {n_params:,}\")\n\n\n         Max:  Acc = 99.7%  |  Params = 10,818\n         Avg:  Acc = 99.7%  |  Params = 10,818\n K-Max (k=3):  Acc = 99.7%  |  Params = 11,202"
+  },
+  {
+    "objectID": "slides/semana08/s2_pooling.html#resultados-curvas-y-accuracy",
+    "href": "slides/semana08/s2_pooling.html#resultados-curvas-y-accuracy",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Resultados: Curvas y Accuracy",
+    "text": "Resultados: Curvas y Accuracy"
+  },
+  {
+    "objectID": "slides/semana08/s2_pooling.html#tabla-resumen",
+    "href": "slides/semana08/s2_pooling.html#tabla-resumen",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Tabla Resumen",
+    "text": "Tabla Resumen\n\n\n| Pooling | Accuracy | Parámetros | Salida por filtro |\n|:--------|:---------|:-----------|:------------------|\n| **Global Max** | 99.7% | 10,818 | 1 escalar |\n| **Global Average** | 99.7% | 10,818 | 1 escalar |\n| **K-Max (k=3)** | 99.7% | 11,202 | 3 escalares |\n\n\n\n\n\n\n\n\nObservaciones\n\n\n\nMax pooling suele ganar en tareas donde hay palabras clave discriminativas (sentimiento)\nAverage pooling puede ser mejor en tareas donde el tono general importa (detección de tópicos)\nK-max pooling ofrece más información pero con más parámetros en la capa Linear\nEn la literatura, max pooling es la opción por defecto para CNNs de texto"
+  },
+  {
+    "objectID": "slides/semana08/s2_pooling.html#padding-y-su-efecto-en-pooling",
+    "href": "slides/semana08/s2_pooling.html#padding-y-su-efecto-en-pooling",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Padding y su Efecto en Pooling",
+    "text": "Padding y su Efecto en Pooling\n\n\nEl problema del padding\nCuando hay tokens &lt;PAD&gt;, las activaciones convolucionales sobre padding deberían ser cero o cercanas a cero.\n\nMax pooling: no se ve afectado (ignora valores bajos/cero)\nAverage pooling: ¡sí se ve afectado! Los ceros diluyen el promedio\n\n\nSolución: Average pooling adaptativo\nDividir solo por la longitud real, no la longitud con padding:\n\\[\\hat{h}_j = \\frac{1}{L_{\\text{real}}} \\sum_{i=1}^{L_{\\text{real}}} h_j^{(i)}\\]\n\n\n\nCode\n# Demostrar el efecto del padding en average pooling\nactivations_real = torch.tensor([[[2.1, 1.5, 1.8, 0.0, 0.0]]])  # 3 reales + 2 PAD\n\n# Average naive (incluye padding)\navg_naive = activations_real.mean(dim=2)\n\n# Average adaptativo (solo cuenta tokens reales)\nreal_length = 3\navg_adaptive = activations_real[:, :, :real_length].mean(dim=2)\n\nmax_pool = activations_real.max(dim=2).values\n\nprint(f\"Activaciones:     {activations_real.squeeze().tolist()}\")\nprint(f\"  (3 reales + 2 PAD)\")\nprint(f\"\\nMax pooling:      {max_pool.item():.2f}  ← no afectado por PAD\")\nprint(f\"Avg naive:        {avg_naive.item():.2f}  ← diluido por PAD (÷5)\")\nprint(f\"Avg adaptativo:   {avg_adaptive.item():.2f}  ← correcto (÷3)\")\n\n\nActivaciones:     [2.0999999046325684, 1.5, 1.7999999523162842, 0.0, 0.0]\n  (3 reales + 2 PAD)\n\nMax pooling:      2.10  ← no afectado por PAD\nAvg naive:        1.08  ← diluido por PAD (÷5)\nAvg adaptativo:   1.80  ← correcto (÷3)"
+  },
+  {
+    "objectID": "slides/semana08/s2_pooling.html#adaptivemaxpool1d-en-pytorch",
+    "href": "slides/semana08/s2_pooling.html#adaptivemaxpool1d-en-pytorch",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "AdaptiveMaxPool1d en PyTorch",
+    "text": "AdaptiveMaxPool1d en PyTorch\nPyTorch ofrece capas adaptativas que producen un tamaño fijo sin importar la entrada:\n\n\nCode\n# AdaptiveMaxPool1d: salida de tamaño fijo independiente de la entrada\npool_1 = nn.AdaptiveMaxPool1d(output_size=1)   # Global max pooling\npool_3 = nn.AdaptiveMaxPool1d(output_size=3)   # K-max-like (k=3)\n\n# Secuencias de diferente longitud\nshort = torch.relu(torch.randn(1, 4, 5))   # 4 filtros, 5 posiciones\nlong = torch.relu(torch.randn(1, 4, 20))   # 4 filtros, 20 posiciones\n\nprint(\"AdaptiveMaxPool1d(output_size=1):\")\nprint(f\"  Input (1,4,5)  → Output {pool_1(short).shape}\")\nprint(f\"  Input (1,4,20) → Output {pool_1(long).shape}\")\nprint(f\"\\nAdaptiveMaxPool1d(output_size=3):\")\nprint(f\"  Input (1,4,5)  → Output {pool_3(short).shape}\")\nprint(f\"  Input (1,4,20) → Output {pool_3(long).shape}\")\n\n\nAdaptiveMaxPool1d(output_size=1):\n  Input (1,4,5)  → Output torch.Size([1, 4, 1])\n  Input (1,4,20) → Output torch.Size([1, 4, 1])\n\nAdaptiveMaxPool1d(output_size=3):\n  Input (1,4,5)  → Output torch.Size([1, 4, 3])\n  Input (1,4,20) → Output torch.Size([1, 4, 3])\n\n\n\n\n\n\n\n\nEn la práctica\n\n\nnn.AdaptiveMaxPool1d(1) es equivalente a global max pooling y es la forma “limpia” de implementarlo en PyTorch. Es independiente de la longitud de la secuencia."
+  },
+  {
+    "objectID": "slides/semana08/s2_pooling.html#lo-que-aprendimos-hoy",
+    "href": "slides/semana08/s2_pooling.html#lo-que-aprendimos-hoy",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Lo Que Aprendimos Hoy",
+    "text": "Lo Que Aprendimos Hoy\n\n\nEstrategias de Pooling\n\n\n\nTipo\nCaptura\n\n\n\n\nMax\n¿Aparece el patrón? (binario)\n\n\nAverage\n¿Cuánto aparece en promedio?\n\n\nK-Max\n¿Cuáles son las top-\\(k\\) activaciones?\n\n\n\n\nMax pooling es el estándar para clasificación de texto\nAverage pooling sufre con padding → usar versión adaptativa\nK-max pooling ofrece más información, pero con más parámetros\n\n\nPráctica\n\nTensor.max(dim=2) — global max pooling manual\nnn.AdaptiveMaxPool1d(1) — versión PyTorch\nTensor.mean(dim=2) — average pooling (cuidado con padding)\nTensor.topk(k, dim=2) — k-max pooling\nCombinar poolings → concatenar (max + avg)"
+  },
+  {
+    "objectID": "slides/semana08/s2_pooling.html#para-la-próxima-sesión",
+    "href": "slides/semana08/s2_pooling.html#para-la-próxima-sesión",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Para la Próxima Sesión 📚",
+    "text": "Para la Próxima Sesión 📚\n\n\n\n\n\n\nSemana 8, S3: Comparación RNNs vs. CNNs para Clasificación\n\n\n\nBenchmark sistemático: GRU vs. LSTM vs. BiLSTM vs. CNN\n¿Cuándo usar cada arquitectura?\nEficiencia computacional (tiempo, parámetros, memoria)\nModelos híbridos: CNN + RNN\n\n\n\n\nLectura:\n\nYin et al. (2017): Comparative Study of CNN and RNN for NLP\nConneau et al. (2017): Very Deep Convolutional Networks for Text Classification\nKim (2014): Convolutional Neural Networks for Sentence Classification\n\nRecordatorio:\n\nQuiz 6 cubre Seq2Seq y Atención (Semana 7) 🧮"
+  },
+  {
+    "objectID": "slides/semana07/s3_atencion.html#agenda-de-hoy",
+    "href": "slides/semana07/s3_atencion.html#agenda-de-hoy",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "Agenda de Hoy",
+    "text": "Agenda de Hoy\n\n\n\n🔍 Repaso: el cuello de botella\n💡 Intuición de la Atención\n📐 Atención de Bahdanau (aditiva)\n⚡ Atención de Luong (multiplicativa)\n🧪 Experimento: Seq2Seq con atención\n🗺️ Mapas de atención y visualización\n\n\n\n\n\n\n\n\nObjetivo\n\n\nEntender el mecanismo de Atención que permite al decoder consultar selectivamente diferentes partes de la entrada, resolviendo el cuello de botella del vector de contexto fijo.\n\n\n\nPrerequisitos: Seq2Seq, NMT (Semana 7 S1-S2)"
+  },
+  {
+    "objectID": "slides/semana07/s3_atencion.html#el-problema-que-resolvemos-hoy",
+    "href": "slides/semana07/s3_atencion.html#el-problema-que-resolvemos-hoy",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "El Problema que Resolvemos Hoy",
+    "text": "El Problema que Resolvemos Hoy\n\n\nSeq2Seq sin atención\nEl encoder comprime toda la secuencia en un solo vector:\n\\[x_1, x_2, \\ldots, x_{T_x} \\rightarrow \\mathbf{c} \\in \\mathbb{R}^{D_h}\\]\nEl decoder solo ve \\(\\mathbf{c}\\) → pierde detalles de la entrada.\nProblemas observados:\n\nRendimiento se degrada con secuencias largas\nEl decoder no sabe dónde mirar en la entrada\nInformación temprana se pierde por el vanishing gradient\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nCho et al. (2014) confirmaron\n\n\nEl rendimiento de NMT cae dramáticamente en oraciones de más de ~20 tokens. El cuello de botella del vector fijo es la causa principal."
+  },
+  {
+    "objectID": "slides/semana07/s3_atencion.html#intuición-mirar-hacia-atrás",
+    "href": "slides/semana07/s3_atencion.html#intuición-mirar-hacia-atrás",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "Intuición: “Mirar Hacia Atrás”",
+    "text": "Intuición: “Mirar Hacia Atrás”\n\nEn lugar de comprimir toda la entrada en un solo vector, ¿qué tal si el decoder pudiera consultar las representaciones de todos los tokens de entrada en cada paso?\n\n\n\nAnalogía humana\nCuando un traductor traduce una oración:\n\nNo lee toda la oración, la memoriza, y luego traduce de memoria\nConsulta diferentes partes del texto original según la palabra que está traduciendo\n“el gato” → mira “the cat”\n“duerme” → mira “sleeps”\n\n\nLa solución\nEn cada paso de decodificación \\(t\\):\n\nAlmacenar todos los estados del encoder: \\(h_1, h_2, \\ldots, h_{T_x}\\)\nCalcular qué tan relevante es cada \\(h_j\\) para el paso actual\nPromediar ponderadamente estos estados → vector de contexto dinámico \\(\\mathbf{c}_t\\)\n\n\\[\\mathbf{c}_t = \\sum_{j=1}^{T_x} \\alpha_{t,j} \\cdot h_j\\]"
+  },
+  {
+    "objectID": "slides/semana07/s3_atencion.html#atención-visión-general",
+    "href": "slides/semana07/s3_atencion.html#atención-visión-general",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "Atención: Visión General",
+    "text": "Atención: Visión General\n\n\n\n\n\n\n\nDiferencia clave con Seq2Seq estándar\n\n\nEl vector de contexto \\(\\mathbf{c}_t\\) es diferente en cada paso de decodificación. Ya no es un vector fijo — es una combinación ponderada de los estados del encoder que cambia según lo que el decoder necesita."
+  },
+  {
+    "objectID": "slides/semana07/s3_atencion.html#bahdanau-et-al.-2015",
+    "href": "slides/semana07/s3_atencion.html#bahdanau-et-al.-2015",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "Bahdanau et al. (2015)",
+    "text": "Bahdanau et al. (2015)\nEl paper fundacional: “Neural Machine Translation by Jointly Learning to Align and Translate”\nPaso a paso\n1. Score de alineación — ¿qué tan relevante es \\(h_j\\) para el estado del decoder \\(s_{t-1}\\)?\n\\[e_{t,j} = v_a^\\top \\tanh(W_a \\cdot s_{t-1} + U_a \\cdot h_j)\\]\n2. Pesos de atención — normalizar con softmax:\n\\[\\alpha_{t,j} = \\frac{\\exp(e_{t,j})}{\\sum_{k=1}^{T_x} \\exp(e_{t,k})}\\]\n3. Vector de contexto dinámico — combinar estados del encoder:\n\\[\\mathbf{c}_t = \\sum_{j=1}^{T_x} \\alpha_{t,j} \\cdot h_j\\]\n4. Actualizar el decoder — usando contexto + input:\n\\[s_t = \\text{GRU}([\\text{emb}(y_{t-1}); \\mathbf{c}_t], \\; s_{t-1})\\]\n\n\n\n\n\n\n¿Por qué “aditiva”?\n\n\nPorque el score combina \\(s_{t-1}\\) y \\(h_j\\) con una suma seguida de \\(\\tanh\\) y un vector aprendido \\(v_a\\). Los parámetros \\(W_a\\), \\(U_a\\) y \\(v_a\\) se aprenden durante entrenamiento."
+  },
+  {
+    "objectID": "slides/semana07/s3_atencion.html#implementación-atención-de-bahdanau",
+    "href": "slides/semana07/s3_atencion.html#implementación-atención-de-bahdanau",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "Implementación: Atención de Bahdanau",
+    "text": "Implementación: Atención de Bahdanau\n\n\nCode\nimport torch\nimport torch.nn as nn\nimport torch.nn.functional as F\n\nclass BahdanauAttention(nn.Module):\n    def __init__(self, hidden_dim):\n        super().__init__()\n        self.W_a = nn.Linear(hidden_dim, hidden_dim, bias=False)\n        self.U_a = nn.Linear(hidden_dim, hidden_dim, bias=False)\n        self.v_a = nn.Linear(hidden_dim, 1, bias=False)\n    \n    def forward(self, decoder_hidden, encoder_outputs):\n        \"\"\"\n        decoder_hidden: (batch, hidden_dim) — s_{t-1}\n        encoder_outputs: (batch, src_len, hidden_dim) — h_1, ..., h_{T_x}\n        \"\"\"\n        # decoder_hidden → (batch, 1, hidden_dim) para broadcasting\n        dec_expanded = decoder_hidden.unsqueeze(1)\n        \n        # Score: v^T tanh(W·s + U·h) → (batch, src_len, 1)\n        energy = self.v_a(torch.tanh(\n            self.W_a(dec_expanded) + self.U_a(encoder_outputs)\n        ))\n        \n        # Pesos: softmax sobre src_len → (batch, src_len)\n        attention_weights = F.softmax(energy.squeeze(-1), dim=-1)\n        \n        # Contexto: promedio ponderado → (batch, hidden_dim)\n        context = torch.bmm(attention_weights.unsqueeze(1),\n                           encoder_outputs).squeeze(1)\n        \n        return context, attention_weights\n\n# Demo\ntorch.manual_seed(42)\nattn = BahdanauAttention(hidden_dim=64)\nfake_dec_h = torch.randn(4, 64)        # batch=4\nfake_enc_out = torch.randn(4, 8, 64)   # src_len=8\nctx, weights = attn(fake_dec_h, fake_enc_out)\nprint(f\"Contexto:  {ctx.shape}\")          # (4, 64)\nprint(f\"Pesos:     {weights.shape}\")      # (4, 8)\nprint(f\"Suma pesos: {weights[0].sum().item():.4f}\")  # = 1.0\nprint(f\"Pesos[0]:  {weights[0].data.numpy().round(3)}\")\n\n\nContexto:  torch.Size([4, 64])\nPesos:     torch.Size([4, 8])\nSuma pesos: 1.0000\nPesos[0]:  [0.189 0.101 0.086 0.086 0.131 0.124 0.123 0.16 ]"
+  },
+  {
+    "objectID": "slides/semana07/s3_atencion.html#luong-et-al.-2015",
+    "href": "slides/semana07/s3_atencion.html#luong-et-al.-2015",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "Luong et al. (2015)",
+    "text": "Luong et al. (2015)\n“Effective Approaches to Attention-based Neural Machine Translation” — versión más simple y eficiente.\n\n\nTres variantes de score\n\n\n\nNombre\nScore \\(e_{t,j}\\)\n\n\n\n\ndot\n\\(s_t^\\top h_j\\)\n\n\ngeneral\n\\(s_t^\\top W_a h_j\\)\n\n\nconcat\n\\(v_a^\\top \\tanh(W_a [s_t; h_j])\\)\n\n\n\nLa variante dot es la más usada:\n\nNo tiene parámetros aprendibles\nExtremadamente eficiente (solo producto punto)\nFunciona bien cuando \\(s_t\\) y \\(h_j\\) están en el mismo espacio\n\n\nDiferencias con Bahdanau\n\n\n\nAspecto\nBahdanau\nLuong\n\n\n\n\nScore\nAditivo (MLP)\nMultiplicativo (dot)\n\n\nEstado decoder\n\\(s_{t-1}\\)\n\\(s_t\\) (actual)\n\n\nContexto se usa en\nInput del GRU\nOutput layer\n\n\nComplejidad\n\\(O(D_h^2)\\)\n\\(O(D_h)\\) para dot\n\n\n\n\n\n\n\n\n\nEn la práctica\n\n\nLa variante dot product de Luong evolucionó en el Scaled Dot-Product Attention del Transformer (Semana 9)."
+  },
+  {
+    "objectID": "slides/semana07/s3_atencion.html#implementación-atención-de-luong-dot",
+    "href": "slides/semana07/s3_atencion.html#implementación-atención-de-luong-dot",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "Implementación: Atención de Luong (dot)",
+    "text": "Implementación: Atención de Luong (dot)\n\n\nCode\nclass LuongAttention(nn.Module):\n    def __init__(self, hidden_dim, method='dot'):\n        super().__init__()\n        self.method = method\n        if method == 'general':\n            self.W_a = nn.Linear(hidden_dim, hidden_dim, bias=False)\n    \n    def forward(self, decoder_hidden, encoder_outputs):\n        \"\"\"\n        decoder_hidden: (batch, hidden_dim) — s_t (estado actual)\n        encoder_outputs: (batch, src_len, hidden_dim)\n        \"\"\"\n        if self.method == 'dot':\n            # Score: s_t^T · h_j → (batch, src_len)\n            energy = torch.bmm(encoder_outputs,\n                              decoder_hidden.unsqueeze(-1)).squeeze(-1)\n        elif self.method == 'general':\n            energy = torch.bmm(self.W_a(encoder_outputs),\n                              decoder_hidden.unsqueeze(-1)).squeeze(-1)\n        \n        attention_weights = F.softmax(energy, dim=-1)\n        context = torch.bmm(attention_weights.unsqueeze(1),\n                           encoder_outputs).squeeze(1)\n        \n        return context, attention_weights\n\n# Comparar ambas\nluong_attn = LuongAttention(hidden_dim=64, method='dot')\nctx_l, weights_l = luong_attn(fake_dec_h, fake_enc_out)\nprint(f\"Bahdanau pesos: {weights[0].data.numpy().round(3)}\")\nprint(f\"Luong    pesos: {weights_l[0].data.numpy().round(3)}\")\nprint(f\"\\nBahdanau: {sum(p.numel() for p in attn.parameters()):,} parámetros\")\nprint(f\"Luong (dot): {sum(p.numel() for p in luong_attn.parameters()):,} parámetros\")\n\n\nBahdanau pesos: [0.189 0.101 0.086 0.086 0.131 0.124 0.123 0.16 ]\nLuong    pesos: [0.022 0.964 0.    0.    0.    0.014 0.    0.   ]\n\nBahdanau: 8,256 parámetros\nLuong (dot): 0 parámetros"
+  },
+  {
+    "objectID": "slides/semana07/s3_atencion.html#comparación-visual-bahdanau-vs.-luong",
+    "href": "slides/semana07/s3_atencion.html#comparación-visual-bahdanau-vs.-luong",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "Comparación Visual: Bahdanau vs. Luong",
+    "text": "Comparación Visual: Bahdanau vs. Luong\n\n\n\n\n\n\n\nObservación clave\n\n\nBahdanau calcula la atención antes de actualizar el decoder (usa \\(s_{t-1}\\)). Luong calcula la atención después (usa \\(s_t\\)). En la práctica, ambas funcionan bien."
+  },
+  {
+    "objectID": "slides/semana07/s3_atencion.html#modelo-completo-con-atención",
+    "href": "slides/semana07/s3_atencion.html#modelo-completo-con-atención",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "Modelo Completo con Atención",
+    "text": "Modelo Completo con Atención\n\n\nCode\nimport random\n\nclass AttentionEncoder(nn.Module):\n    def __init__(self, vocab_size, embed_dim, hidden_dim):\n        super().__init__()\n        self.embedding = nn.Embedding(vocab_size, embed_dim)\n        self.rnn = nn.GRU(embed_dim, hidden_dim, batch_first=True)\n    \n    def forward(self, src):\n        embedded = self.embedding(src)\n        outputs, hidden = self.rnn(embedded)\n        return outputs, hidden  # ← Ahora retornamos TODOS los estados\n\nclass AttentionDecoder(nn.Module):\n    def __init__(self, vocab_size, embed_dim, hidden_dim):\n        super().__init__()\n        self.embedding = nn.Embedding(vocab_size, embed_dim)\n        self.attention = BahdanauAttention(hidden_dim)\n        self.rnn = nn.GRU(embed_dim + hidden_dim, hidden_dim, batch_first=True)\n        self.fc_out = nn.Linear(hidden_dim * 2, vocab_size)\n    \n    def forward(self, input_token, hidden, encoder_outputs):\n        embedded = self.embedding(input_token)          # (batch, 1, embed_dim)\n        \n        # Atención: contexto dinámico\n        context, attn_weights = self.attention(\n            hidden.squeeze(0), encoder_outputs           # s_{t-1}, h_1..h_T\n        )\n        \n        # Concatenar embedding + contexto como input del GRU\n        rnn_input = torch.cat([embedded, context.unsqueeze(1)], dim=-1)\n        output, hidden = self.rnn(rnn_input, hidden)\n        \n        # Predicción: concatenar output + contexto\n        prediction = self.fc_out(torch.cat([output.squeeze(1), context], dim=-1))\n        \n        return prediction, hidden, attn_weights"
+  },
+  {
+    "objectID": "slides/semana07/s3_atencion.html#entrenamiento-inversión-de-secuencias",
+    "href": "slides/semana07/s3_atencion.html#entrenamiento-inversión-de-secuencias",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "Entrenamiento: Inversión de Secuencias",
+    "text": "Entrenamiento: Inversión de Secuencias\n\n\nCode\nimport torch.optim as optim\n\nPAD, SOS, EOS = 0, 1, 2\nNUM_DIGITS = 10\nVOCAB_SIZE = NUM_DIGITS + 3\n\ndef generate_pairs(n, min_len=4, max_len=10):\n    src_list, trg_list = [], []\n    for _ in range(n):\n        length = random.randint(min_len, max_len)\n        seq = [random.randint(3, VOCAB_SIZE - 1) for _ in range(length)]\n        src_list.append(seq + [PAD] * (max_len - length))\n        trg_list.append(list(reversed(seq)) + [EOS] + [PAD] * (max_len - length))\n    return torch.tensor(src_list), torch.tensor(trg_list)\n\ntorch.manual_seed(42)\nrandom.seed(42)\ntrain_src, train_trg = generate_pairs(3000)\ntest_src, test_trg = generate_pairs(300)\n\nEMBED_DIM = 32\nHIDDEN_DIM = 64\nBATCH_SIZE = 128\nN_EPOCHS = 40\n\nenc_attn = AttentionEncoder(VOCAB_SIZE, EMBED_DIM, HIDDEN_DIM)\ndec_attn = AttentionDecoder(VOCAB_SIZE, EMBED_DIM, HIDDEN_DIM)\n\nparams = list(enc_attn.parameters()) + list(dec_attn.parameters())\noptimizer = optim.Adam(params, lr=0.003)\ncriterion = nn.CrossEntropyLoss(ignore_index=PAD)\n\nlosses_attn = []\nfor epoch in range(N_EPOCHS):\n    enc_attn.train(); dec_attn.train()\n    epoch_loss, n_b = 0, 0\n    idx = torch.randperm(len(train_src))\n    for i in range(0, len(train_src), BATCH_SIZE):\n        bi = idx[i:i+BATCH_SIZE]\n        src, trg = train_src[bi], train_trg[bi]\n        \n        enc_out, hidden = enc_attn(src)\n        input_tok = torch.full((src.size(0), 1), SOS, dtype=torch.long)\n        \n        all_preds = []\n        for t in range(trg.size(1)):\n            pred, hidden, _ = dec_attn(input_tok, hidden, enc_out)\n            all_preds.append(pred)\n            if random.random() &lt; max(0.1, 1 - epoch/N_EPOCHS):\n                input_tok = trg[:, t:t+1]\n            else:\n                input_tok = pred.argmax(1, keepdim=True)\n        \n        outputs = torch.stack(all_preds, dim=1)\n        loss = criterion(outputs.reshape(-1, VOCAB_SIZE), trg.reshape(-1))\n        \n        optimizer.zero_grad()\n        loss.backward()\n        torch.nn.utils.clip_grad_norm_(params, 1.0)\n        optimizer.step()\n        epoch_loss += loss.item()\n        n_b += 1\n    \n    losses_attn.append(epoch_loss / n_b)\n    if (epoch+1) % 10 == 0:\n        print(f\"Época {epoch+1:3d}/{N_EPOCHS} | Loss: {losses_attn[-1]:.4f}\")\n\n\nÉpoca  10/40 | Loss: 0.0172\nÉpoca  20/40 | Loss: 0.0009\nÉpoca  30/40 | Loss: 0.0004\nÉpoca  40/40 | Loss: 0.0002"
+  },
+  {
+    "objectID": "slides/semana07/s3_atencion.html#evaluación-y-comparación",
+    "href": "slides/semana07/s3_atencion.html#evaluación-y-comparación",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "Evaluación y Comparación",
+    "text": "Evaluación y Comparación\n\n\nCode\n# Evaluación con atención\nenc_attn.eval(); dec_attn.eval()\nall_preds_attn = []\nall_weights = []\n\nwith torch.no_grad():\n    enc_out, hidden = enc_attn(test_src)\n    input_tok = torch.full((test_src.size(0), 1), SOS, dtype=torch.long)\n    \n    for t in range(test_trg.size(1)):\n        pred, hidden, attn_w = dec_attn(input_tok, hidden, enc_out)\n        all_preds_attn.append(pred.argmax(1))\n        all_weights.append(attn_w)\n        input_tok = pred.argmax(1, keepdim=True)\n\npredictions_attn = torch.stack(all_preds_attn, dim=1)\nattention_matrix = torch.stack(all_weights, dim=1)  # (batch, trg_len, src_len)\n\n# Token accuracy\ncorrect, total = 0, 0\nfor i in range(len(test_src)):\n    for j in range(test_trg.size(1)):\n        if test_trg[i, j] != PAD:\n            total += 1\n            if predictions_attn[i, j] == test_trg[i, j]:\n                correct += 1\n\nprint(f\"Accuracy (con atención): {correct/total:.1%}\\n\")\n\n# Mostrar ejemplos\nprint(\"=\" * 55)\nprint(f\"{'Entrada':&gt;25s} → {'Predicción':&lt;25s}\")\nprint(\"=\" * 55)\nfor i in range(8):\n    src_tok = [t.item() for t in test_src[i] if t.item() != PAD]\n    pred_tok = [t.item() for t in predictions_attn[i] if t.item() not in (PAD, EOS, SOS)][:len(src_tok)]\n    trg_tok = [t.item() for t in test_trg[i] if t.item() not in (PAD, EOS, SOS)]\n    match = \"✅\" if pred_tok == trg_tok else \"❌\"\n    print(f\"{str(src_tok):&gt;25s} → {str(pred_tok):&lt;20s} {match}\")\n\n\nAccuracy (con atención): 100.0%\n\n=======================================================\n                  Entrada → Predicción               \n=======================================================\n  [7, 12, 11, 3, 7, 7, 8] → [8, 7, 7, 3, 11, 12, 7] ✅\n           [12, 5, 11, 9] → [9, 11, 5, 12]       ✅\n             [8, 5, 4, 3] → [3, 4, 5, 8]         ✅\n         [9, 5, 10, 3, 9] → [9, 3, 10, 5, 9]     ✅\n [7, 11, 12, 3, 3, 11, 5] → [5, 11, 3, 3, 12, 11, 7] ✅\n     [11, 7, 8, 11, 4, 6] → [6, 4, 11, 8, 7, 11] ✅\n         [11, 11, 12, 11] → [11, 12, 11, 11]     ✅\n        [3, 8, 10, 7, 11] → [11, 7, 10, 8, 3]    ✅"
+  },
+  {
+    "objectID": "slides/semana07/s3_atencion.html#dónde-mira-el-decoder",
+    "href": "slides/semana07/s3_atencion.html#dónde-mira-el-decoder",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "¿Dónde “Mira” el Decoder?",
+    "text": "¿Dónde “Mira” el Decoder?\n\n\n\n\n\n\n\nInterpretación\n\n\nEn la tarea de inversión, esperamos ver una diagonal invertida: el primer token generado debe atender al último token de entrada, y viceversa. Los mapas de atención nos permiten interpretar qué aprendió el modelo."
+  },
+  {
+    "objectID": "slides/semana07/s3_atencion.html#mapas-de-atención-en-traducción-conceptual",
+    "href": "slides/semana07/s3_atencion.html#mapas-de-atención-en-traducción-conceptual",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "Mapas de Atención en Traducción (Conceptual)",
+    "text": "Mapas de Atención en Traducción (Conceptual)\n\n\n\n\n\n\n\nObservaciones interesantes\n\n\n\n“the” atiende a “el” → alineación directa\n“black” atiende a “negro” → el adjetivo se reordenó (español: post-nominal, inglés: pre-nominal)\nLos mapas de atención revelan alineamientos entre idiomas, incluyendo reordenamientos"
+  },
+  {
+    "objectID": "slides/semana07/s3_atencion.html#efecto-en-secuencias-largas",
+    "href": "slides/semana07/s3_atencion.html#efecto-en-secuencias-largas",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "Efecto en Secuencias Largas",
+    "text": "Efecto en Secuencias Largas\n\n\n\n\n\n\n\nResultado\n\n\nLa atención mitiga significativamente el problema del cuello de botella. El decoder puede “consultar” directamente los estados relevantes del encoder, sin depender de un solo vector comprimido."
+  },
+  {
+    "objectID": "slides/semana07/s3_atencion.html#el-camino-por-delante",
+    "href": "slides/semana07/s3_atencion.html#el-camino-por-delante",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "El Camino por Delante",
+    "text": "El Camino por Delante\n\n\nLo que logramos hoy\n\nResolvimos el cuello de botella del vector fijo\nLa atención proporciona contexto dinámico en cada paso\nLos mapas de atención son interpretables\nMejor rendimiento en secuencias largas\n\nPero todavía hay limitaciones…\n\nEl encoder sigue siendo secuencial (RNN)\nNo podemos paralelizar el procesamiento\n¿Necesitamos la RNN? 🤔\n\n\n\n\n\n\n\n\nLa pregunta revolucionaria (Vaswani et al., 2017)\n\n\n\n“Attention Is All You Need”\n\n¿Qué pasaría si elimináramos las RNNs por completo y usáramos solo atención?\n→ El Transformer (Semana 9)\n\n\n\nTimeline\n\n\n\nAño\nHito\n\n\n\n\n2014\nSeq2Seq (Sutskever, Cho)\n\n\n2015\nAtención (Bahdanau, Luong)\n\n\n2017\nTransformer\n\n\n2018\nBERT, GPT\n\n\n2020+\nGPT-3, LLMs"
+  },
+  {
+    "objectID": "slides/semana07/s3_atencion.html#lo-que-aprendimos-hoy",
+    "href": "slides/semana07/s3_atencion.html#lo-que-aprendimos-hoy",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "Lo Que Aprendimos Hoy",
+    "text": "Lo Que Aprendimos Hoy\n\n\nConceptos\n\nEl cuello de botella del vector fijo limita Seq2Seq\nLa atención permite al decoder consultar todos los estados del encoder\nBahdanau (aditiva): \\(v^\\top \\tanh(Ws + Uh)\\)\nLuong (multiplicativa): \\(s^\\top h\\) (producto punto)\nLos pesos \\(\\alpha_{t,j}\\) suman 1 (softmax) y son interpretables\n\n\nPráctica\n\nBahdanauAttention: MLP con \\(W_a\\), \\(U_a\\), \\(v_a\\)\nLuongAttention: dot product sin parámetros\nVector de contexto dinámico: \\(\\mathbf{c}_t = \\sum \\alpha_{t,j} h_j\\)\nMapas de atención revelan alineamientos\nLa atención dot-product evoluciona en el Transformer"
+  },
+  {
+    "objectID": "slides/semana07/s3_atencion.html#ecuaciones-clave",
+    "href": "slides/semana07/s3_atencion.html#ecuaciones-clave",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "Ecuaciones Clave",
+    "text": "Ecuaciones Clave\n\n\n\n\n\n\n\nConcepto\nEcuación\n\n\n\n\nScore (Bahdanau)\n\\(e_{t,j} = v_a^\\top \\tanh(W_a s_{t-1} + U_a h_j)\\)\n\n\nScore (Luong dot)\n\\(e_{t,j} = s_t^\\top h_j\\)\n\n\nPesos de atención\n\\(\\alpha_{t,j} = \\text{softmax}_j(e_{t,j})\\)\n\n\nContexto dinámico\n\\(\\mathbf{c}_t = \\sum_{j=1}^{T_x} \\alpha_{t,j} \\cdot h_j\\)\n\n\nDecoder (Bahdanau)\n\\(s_t = \\text{GRU}([\\text{emb}(y_{t-1}); \\mathbf{c}_t], s_{t-1})\\)"
+  },
+  {
+    "objectID": "slides/semana07/s3_atencion.html#para-la-próxima-semana",
+    "href": "slides/semana07/s3_atencion.html#para-la-próxima-semana",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "Para la Próxima Semana 📚",
+    "text": "Para la Próxima Semana 📚\n\n\n\n\n\n\nSemana 8: Redes Neuronales Convolucionales para NLP\n\n\n\nS1: Convoluciones 1D para texto\nS2: Max Pooling Global vs. Local\nS3: Comparación RNNs vs. CNNs para clasificación\n\n\n\n\nLectura:\n\nKim (2014): Convolutional Neural Networks for Sentence Classification\nJurafsky & Martin, Cap. 9.3: CNNs for NLP\nZhang et al. (2015): Character-level Convolutional Networks for Text Classification\n\nRecordatorio:\n\nQuiz 6 la próxima semana cubre Seq2Seq y Atención 🧮\nTarea 2: Generador de nombres a nivel de caracteres con LSTM (se publica esta semana)"
+  },
+  {
     "objectID": "slides/semana07/s1_seq2seq_encoder_decoder.html#agenda-de-hoy",
     "href": "slides/semana07/s1_seq2seq_encoder_decoder.html#agenda-de-hoy",
     "title": "Secuencia a Secuencia (Seq2Seq)",
@@ -1908,21 +2146,21 @@
     "href": "index.html",
     "title": "NLP y Análisis Semántico",
     "section": "",
-    "text": "Introducción a NLP\nExpresiones Regulares\nPreprocesamiento de Texto\n\n\n\n\n\nBolsa de Palabras (BoW) y One-hot Encoding\nTF-IDF: Encontrando lo Relevante\nInformación Mutua Puntual (PMI) y N-gramas\n\n\n\n\n\nModelos de Lenguaje N-gram y Regla de la Cadena\nEvaluación: Perplejidad y Técnicas de Suavizado\nModelos Ocultos de Markov (HMM) para Etiquetado POS\n\n\n\n\n\nWord2Vec: Skip-gram y CBOW\nGloVe y FastText: Embeddings de Subpalabras\nVisualización de Datos de Alta Dimensión: t-SNE y PCA\n\n\n\n\n\nRepaso de Perceptrones y Retropropagación\nPerceptrones Multicapa para Clasificación de Texto\nVariantes de Descenso de Gradiente y Regularización\n\n\n\n\n\nArquitectura RNN: Manejando Longitud Variable\nGradientes que Desaparecen y la Solución LSTM\nGRU y RNNs Bidireccionales\n\n\n\n\n\nArquitecturas Codificador-Decodificador (Seq2Seq)"
+    "text": "Introducción a NLP\nExpresiones Regulares\nPreprocesamiento de Texto\n\n\n\n\n\nBolsa de Palabras (BoW) y One-hot Encoding\nTF-IDF: Encontrando lo Relevante\nInformación Mutua Puntual (PMI) y N-gramas\n\n\n\n\n\nModelos de Lenguaje N-gram y Regla de la Cadena\nEvaluación: Perplejidad y Técnicas de Suavizado\nModelos Ocultos de Markov (HMM) para Etiquetado POS\n\n\n\n\n\nWord2Vec: Skip-gram y CBOW\nGloVe y FastText: Embeddings de Subpalabras\nVisualización de Datos de Alta Dimensión: t-SNE y PCA\n\n\n\n\n\nRepaso de Perceptrones y Retropropagación\nPerceptrones Multicapa para Clasificación de Texto\nVariantes de Descenso de Gradiente y Regularización\n\n\n\n\n\nArquitectura RNN: Manejando Longitud Variable\nGradientes que Desaparecen y la Solución LSTM\nGRU y RNNs Bidireccionales\n\n\n\n\n\nArquitecturas Codificador-Decodificador (Seq2Seq)\nTraducción Automática Neuronal (NMT)\nEl Mecanismo de Atención\n\n\n\n\n\nConvoluciones 1D para Texto\nMax Pooling Global vs. Local"
   },
   {
     "objectID": "index.html#diapositivas",
     "href": "index.html#diapositivas",
     "title": "NLP y Análisis Semántico",
     "section": "",
-    "text": "Introducción a NLP\nExpresiones Regulares\nPreprocesamiento de Texto\n\n\n\n\n\nBolsa de Palabras (BoW) y One-hot Encoding\nTF-IDF: Encontrando lo Relevante\nInformación Mutua Puntual (PMI) y N-gramas\n\n\n\n\n\nModelos de Lenguaje N-gram y Regla de la Cadena\nEvaluación: Perplejidad y Técnicas de Suavizado\nModelos Ocultos de Markov (HMM) para Etiquetado POS\n\n\n\n\n\nWord2Vec: Skip-gram y CBOW\nGloVe y FastText: Embeddings de Subpalabras\nVisualización de Datos de Alta Dimensión: t-SNE y PCA\n\n\n\n\n\nRepaso de Perceptrones y Retropropagación\nPerceptrones Multicapa para Clasificación de Texto\nVariantes de Descenso de Gradiente y Regularización\n\n\n\n\n\nArquitectura RNN: Manejando Longitud Variable\nGradientes que Desaparecen y la Solución LSTM\nGRU y RNNs Bidireccionales\n\n\n\n\n\nArquitecturas Codificador-Decodificador (Seq2Seq)"
+    "text": "Introducción a NLP\nExpresiones Regulares\nPreprocesamiento de Texto\n\n\n\n\n\nBolsa de Palabras (BoW) y One-hot Encoding\nTF-IDF: Encontrando lo Relevante\nInformación Mutua Puntual (PMI) y N-gramas\n\n\n\n\n\nModelos de Lenguaje N-gram y Regla de la Cadena\nEvaluación: Perplejidad y Técnicas de Suavizado\nModelos Ocultos de Markov (HMM) para Etiquetado POS\n\n\n\n\n\nWord2Vec: Skip-gram y CBOW\nGloVe y FastText: Embeddings de Subpalabras\nVisualización de Datos de Alta Dimensión: t-SNE y PCA\n\n\n\n\n\nRepaso de Perceptrones y Retropropagación\nPerceptrones Multicapa para Clasificación de Texto\nVariantes de Descenso de Gradiente y Regularización\n\n\n\n\n\nArquitectura RNN: Manejando Longitud Variable\nGradientes que Desaparecen y la Solución LSTM\nGRU y RNNs Bidireccionales\n\n\n\n\n\nArquitecturas Codificador-Decodificador (Seq2Seq)\nTraducción Automática Neuronal (NMT)\nEl Mecanismo de Atención\n\n\n\n\n\nConvoluciones 1D para Texto\nMax Pooling Global vs. Local"
   },
   {
     "objectID": "index.html#tareas",
     "href": "index.html#tareas",
     "title": "NLP y Análisis Semántico",
     "section": "Tareas",
-    "text": "Tareas\n\nTarea 1: Analizador de Sentimiento con TF-IDF + Regresión Logística — Entrega: Semana 4"
+    "text": "Tareas\n\nTarea 1: Analizador de Sentimiento con TF-IDF + Regresión Logística — Entrega: Semana 4\nTarea 2: Generador de Nombres a Nivel de Caracteres con LSTM — Entrega: Semana 8"
   },
   {
     "objectID": "index.html#información-general",
@@ -3764,5 +4002,285 @@
     "title": "Redes Neuronales Recurrentes (RNNs)",
     "section": "Para la Próxima Semana 📚",
     "text": "Para la Próxima Semana 📚\n\n\n\n\n\n\nSemana 7: Secuencia a Secuencia (Seq2Seq)\n\n\n\nS1: Arquitecturas Codificador-Decodificador\nS2: Traducción Automática Neuronal (NMT)\nS3: El problema del “cuello de botella” y el nacimiento de la Atención\n\n\n\n\nLectura:\n\nSutskever et al. (2014): Sequence to Sequence Learning with Neural Networks\nJurafsky & Martin, Cap. 10: Encoder-Decoder Models\nCho et al. (2014): Learning Phrase Representations using RNN Encoder-Decoder\n\nRecordatorio:\n\nQuiz 5 esta semana cubre RNNs, LSTM y GRU 🧮"
+  },
+  {
+    "objectID": "slides/semana07/s2_nmt_traduccion.html#agenda-de-hoy",
+    "href": "slides/semana07/s2_nmt_traduccion.html#agenda-de-hoy",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "Agenda de Hoy",
+    "text": "Agenda de Hoy\n\n\n\n🌍 Breve historia de la Traducción Automática\n🧠 NMT como aplicación de Seq2Seq\n📝 Preprocesamiento para NMT: tokenización y vocabularios\n🔬 Experimento: un traductor Español → Inglés\n📏 Evaluación: BLEU score\n⚡ Trucos prácticos de los sistemas NMT reales\n\n\n\n\n\n\n\n\nObjetivo\n\n\nAplicar la arquitectura Seq2Seq para construir un sistema de traducción automática neuronal, entender su pipeline completo y aprender a evaluar con BLEU.\n\n\n\nPrerequisitos: Codificador-Decodificador, Teacher Forcing (S1)"
+  },
+  {
+    "objectID": "slides/semana07/s2_nmt_traduccion.html#del-rule-based-al-neural-mt",
+    "href": "slides/semana07/s2_nmt_traduccion.html#del-rule-based-al-neural-mt",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "Del Rule-Based al Neural MT",
+    "text": "Del Rule-Based al Neural MT\n\n\n\n\n\n\n\nHito clave\n\n\nEn 2016, Google reemplazó su sistema estadístico por Google Neural Machine Translation (GNMT) — un sistema Seq2Seq con atención de 8 capas. La calidad mejoró más en un solo salto que en los 10 años previos."
+  },
+  {
+    "objectID": "slides/semana07/s2_nmt_traduccion.html#smt-vs.-nmt",
+    "href": "slides/semana07/s2_nmt_traduccion.html#smt-vs.-nmt",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "SMT vs. NMT",
+    "text": "SMT vs. NMT\n\n\nStatistical MT (SMT)\n\nPipeline complejo: alineación → modelo de traducción → modelo de lenguaje → decodificación\nComponentes entrenados por separado\nTraduce frase por frase (phrase-based)\nRequiere ingeniería de features manual\nDifícil capturar dependencias largas\n\n\nNeural MT (NMT)\n\nModelo end-to-end con un solo objetivo\nEntrenamiento conjunto de todos los parámetros\nContexto de la oración completa\nRepresentaciones aprendidas automáticamente\nMejor con dependencias a distancia\n\n\n\n\n\n\n\n\n¿Por qué ganó NMT?\n\n\nNMT produce traducciones más fluidas y coherentes porque modela la oración completa como un todo, no como fragmentos pegados."
+  },
+  {
+    "objectID": "slides/semana07/s2_nmt_traduccion.html#arquitectura-nmt-básica",
+    "href": "slides/semana07/s2_nmt_traduccion.html#arquitectura-nmt-básica",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "Arquitectura NMT Básica",
+    "text": "Arquitectura NMT Básica\n\n\n\nComponentes clave\n\nVocabulario fuente \\(V_{\\text{src}}\\) (español)\nVocabulario objetivo \\(V_{\\text{tgt}}\\) (inglés)\nEmbeddings separados por idioma\nEncoder sobre idioma fuente\nDecoder sobre idioma objetivo\n\n\n\n\n\n\n\n\nTruco de Sutskever (2014)\n\n\nInvertir la secuencia de entrada mejora significativamente la traducción. ¿Por qué? Las primeras palabras del decoder están más cerca del inicio de la secuencia fuente invertida."
+  },
+  {
+    "objectID": "slides/semana07/s2_nmt_traduccion.html#qué-necesitamos-para-entrenar-un-nmt",
+    "href": "slides/semana07/s2_nmt_traduccion.html#qué-necesitamos-para-entrenar-un-nmt",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "¿Qué necesitamos para entrenar un NMT?",
+    "text": "¿Qué necesitamos para entrenar un NMT?\n\n\n\n\n\n\n\n\nComponente\nDescripción\nEjemplo\n\n\n\n\nCorpus paralelo\nPares de oraciones alineadas\n“el gato duerme” ↔︎ “the cat sleeps”\n\n\nTokenizador fuente\nSegmentar texto en idioma fuente\n[\"el\", \"gato\", \"duerme\"]\n\n\nTokenizador objetivo\nSegmentar texto en idioma objetivo\n[\"the\", \"cat\", \"sleeps\"]\n\n\nVocabulario fuente\nMapeo token → índice (español)\n{\"el\": 5, \"gato\": 12, ...}\n\n\nVocabulario objetivo\nMapeo token → índice (inglés)\n{\"the\": 5, \"cat\": 8, ...}\n\n\nTokens especiales\n&lt;PAD&gt;, &lt;SOS&gt;, &lt;EOS&gt;, &lt;UNK&gt;\nSeñales de control\n\n\n\n\n\n\n\n\n\nDesafío: vocabulario abierto\n\n\nEn la vida real, aparecen palabras nunca vistas (&lt;UNK&gt;). Soluciones: tokenización por subpalabras (BPE, WordPiece, SentencePiece) → la veremos en detalle con Transformers."
+  },
+  {
+    "objectID": "slides/semana07/s2_nmt_traduccion.html#construyendo-el-pipeline-de-datos",
+    "href": "slides/semana07/s2_nmt_traduccion.html#construyendo-el-pipeline-de-datos",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "Construyendo el Pipeline de Datos",
+    "text": "Construyendo el Pipeline de Datos\n\n\nCode\nimport torch\nimport torch.nn as nn\nimport random\nimport re\n\n# --- Corpus paralelo español → inglés (simplificado) ---\nraw_pairs = [\n    (\"el gato duerme\", \"the cat sleeps\"),\n    (\"el perro corre\", \"the dog runs\"),\n    (\"el pájaro vuela\", \"the bird flies\"),\n    (\"el gato come\", \"the cat eats\"),\n    (\"el perro duerme\", \"the dog sleeps\"),\n    (\"un gato grande corre\", \"a big cat runs\"),\n    (\"un perro pequeño duerme\", \"a small dog sleeps\"),\n    (\"el pájaro pequeño canta\", \"the small bird sings\"),\n    (\"un gato pequeño come\", \"a small cat eats\"),\n    (\"el perro grande corre rápido\", \"the big dog runs fast\"),\n    (\"el gato negro duerme mucho\", \"the black cat sleeps a lot\"),\n    (\"un pájaro bonito vuela alto\", \"a beautiful bird flies high\"),\n    (\"el perro blanco come mucho\", \"the white dog eats a lot\"),\n    (\"un gato negro corre rápido\", \"a black cat runs fast\"),\n    (\"el pájaro grande vuela lejos\", \"the big bird flies far\"),\n    (\"un perro bonito duerme aquí\", \"a beautiful dog sleeps here\"),\n    (\"el gato blanco come pescado\", \"the white cat eats fish\"),\n    (\"un pájaro negro canta fuerte\", \"a black bird sings loud\"),\n    (\"el perro negro corre lejos\", \"the black dog runs far\"),\n    (\"un gato bonito duerme mucho\", \"a beautiful cat sleeps a lot\"),\n    (\"el gato duerme aquí\", \"the cat sleeps here\"),\n    (\"un perro come pescado\", \"a dog eats fish\"),\n    (\"el pájaro canta fuerte\", \"the bird sings loud\"),\n    (\"un gato corre rápido\", \"a cat runs fast\"),\n    (\"el perro grande duerme mucho\", \"the big dog sleeps a lot\"),\n    (\"un pájaro blanco vuela alto\", \"a white bird flies high\"),\n    (\"el gato grande come mucho\", \"the big cat eats a lot\"),\n    (\"un perro negro duerme aquí\", \"a black dog sleeps here\"),\n    (\"el pájaro bonito canta fuerte\", \"the beautiful bird sings loud\"),\n    (\"un gato blanco corre lejos\", \"a white cat runs far\"),\n]\n\nprint(f\"Total pares: {len(raw_pairs)}\")\nprint(f\"Ejemplo: '{raw_pairs[0][0]}' → '{raw_pairs[0][1]}'\")\n\n\nTotal pares: 30\nEjemplo: 'el gato duerme' → 'the cat sleeps'"
+  },
+  {
+    "objectID": "slides/semana07/s2_nmt_traduccion.html#vocabularios-y-codificación",
+    "href": "slides/semana07/s2_nmt_traduccion.html#vocabularios-y-codificación",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "Vocabularios y Codificación",
+    "text": "Vocabularios y Codificación\n\n\nCode\n# Tokens especiales\nPAD, SOS, EOS, UNK = 0, 1, 2, 3\nSPECIAL_TOKENS = {\"&lt;PAD&gt;\": PAD, \"&lt;SOS&gt;\": SOS, \"&lt;EOS&gt;\": EOS, \"&lt;UNK&gt;\": UNK}\n\nclass Vocabulary:\n    def __init__(self):\n        self.token2idx = dict(SPECIAL_TOKENS)\n        self.idx2token = {v: k for k, v in SPECIAL_TOKENS.items()}\n        self.n_tokens = len(SPECIAL_TOKENS)\n    \n    def add_sentence(self, sentence):\n        for token in sentence.lower().split():\n            if token not in self.token2idx:\n                self.token2idx[token] = self.n_tokens\n                self.idx2token[self.n_tokens] = token\n                self.n_tokens += 1\n    \n    def encode(self, sentence, add_eos=True):\n        indices = [self.token2idx.get(t, UNK) for t in sentence.lower().split()]\n        if add_eos:\n            indices.append(EOS)\n        return indices\n    \n    def decode(self, indices):\n        return \" \".join(self.idx2token.get(i, \"&lt;UNK&gt;\") for i in indices \n                       if i not in (PAD, SOS, EOS))\n\n# Construir vocabularios separados\nsrc_vocab = Vocabulary()\ntgt_vocab = Vocabulary()\n\nfor src, tgt in raw_pairs:\n    src_vocab.add_sentence(src)\n    tgt_vocab.add_sentence(tgt)\n\nprint(f\"Vocabulario español: {src_vocab.n_tokens} tokens\")\nprint(f\"Vocabulario inglés:  {tgt_vocab.n_tokens} tokens\")\nprint(f\"\\nEspañol: {list(src_vocab.token2idx.items())[:10]}...\")\nprint(f\"Inglés:  {list(tgt_vocab.token2idx.items())[:10]}...\")\n\n\nVocabulario español: 26 tokens\nVocabulario inglés:  26 tokens\n\nEspañol: [('&lt;PAD&gt;', 0), ('&lt;SOS&gt;', 1), ('&lt;EOS&gt;', 2), ('&lt;UNK&gt;', 3), ('el', 4), ('gato', 5), ('duerme', 6), ('perro', 7), ('corre', 8), ('pájaro', 9)]...\nInglés:  [('&lt;PAD&gt;', 0), ('&lt;SOS&gt;', 1), ('&lt;EOS&gt;', 2), ('&lt;UNK&gt;', 3), ('the', 4), ('cat', 5), ('sleeps', 6), ('dog', 7), ('runs', 8), ('bird', 9)]..."
+  },
+  {
+    "objectID": "slides/semana07/s2_nmt_traduccion.html#preparación-de-los-datos",
+    "href": "slides/semana07/s2_nmt_traduccion.html#preparación-de-los-datos",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "Preparación de los Datos",
+    "text": "Preparación de los Datos\n\n\nCode\ndef prepare_batch(pairs, src_vocab, tgt_vocab):\n    \"\"\"Codifica pares y crea tensores con padding\"\"\"\n    src_encoded = [src_vocab.encode(s) for s, _ in pairs]\n    tgt_encoded = [tgt_vocab.encode(t) for _, t in pairs]\n    \n    # Padding\n    max_src = max(len(s) for s in src_encoded)\n    max_tgt = max(len(t) for t in tgt_encoded)\n    \n    src_padded = [s + [PAD] * (max_src - len(s)) for s in src_encoded]\n    tgt_padded = [t + [PAD] * (max_tgt - len(t)) for t in tgt_encoded]\n    \n    return torch.tensor(src_padded), torch.tensor(tgt_padded)\n\n# Dividir datos\nrandom.seed(42)\nshuffled = list(raw_pairs)\nrandom.shuffle(shuffled)\ntrain_pairs = shuffled[:24]\ntest_pairs = shuffled[24:]\n\ntrain_src, train_tgt = prepare_batch(train_pairs, src_vocab, tgt_vocab)\ntest_src, test_tgt = prepare_batch(test_pairs, src_vocab, tgt_vocab)\n\nprint(f\"Train: {train_src.shape[0]} pares, src_len={train_src.shape[1]}, tgt_len={train_tgt.shape[1]}\")\nprint(f\"Test:  {test_src.shape[0]} pares\")\nprint(f\"\\nEjemplo codificado:\")\nprint(f\"  src: {train_src[0].tolist()} → '{src_vocab.decode(train_src[0].tolist())}'\")\nprint(f\"  tgt: {train_tgt[0].tolist()} → '{tgt_vocab.decode(train_tgt[0].tolist())}'\")\n\n\nTrain: 24 pares, src_len=6, tgt_len=7\nTest:  6 pares\n\nEjemplo codificado:\n  src: [12, 5, 19, 6, 18, 2] → 'un gato bonito duerme mucho'\n  tgt: [12, 19, 5, 6, 12, 18, 2] → 'a beautiful cat sleeps a lot'"
+  },
+  {
+    "objectID": "slides/semana07/s2_nmt_traduccion.html#modelo-nmt-seq2seq",
+    "href": "slides/semana07/s2_nmt_traduccion.html#modelo-nmt-seq2seq",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "Modelo NMT Seq2Seq",
+    "text": "Modelo NMT Seq2Seq\n\n\nCode\nimport torch.optim as optim\n\nclass Encoder(nn.Module):\n    def __init__(self, vocab_size, embed_dim, hidden_dim, n_layers=1):\n        super().__init__()\n        self.embedding = nn.Embedding(vocab_size, embed_dim, padding_idx=PAD)\n        self.rnn = nn.GRU(embed_dim, hidden_dim, num_layers=n_layers, batch_first=True)\n    \n    def forward(self, src):\n        embedded = self.embedding(src)\n        outputs, hidden = self.rnn(embedded)\n        return hidden\n\nclass Decoder(nn.Module):\n    def __init__(self, vocab_size, embed_dim, hidden_dim, n_layers=1):\n        super().__init__()\n        self.embedding = nn.Embedding(vocab_size, embed_dim, padding_idx=PAD)\n        self.rnn = nn.GRU(embed_dim, hidden_dim, num_layers=n_layers, batch_first=True)\n        self.fc_out = nn.Linear(hidden_dim, vocab_size)\n    \n    def forward(self, input_token, hidden):\n        embedded = self.embedding(input_token)\n        output, hidden = self.rnn(embedded, hidden)\n        prediction = self.fc_out(output.squeeze(1))\n        return prediction, hidden\n\nclass NMTModel(nn.Module):\n    def __init__(self, encoder, decoder, sos_idx=SOS):\n        super().__init__()\n        self.encoder = encoder\n        self.decoder = decoder\n        self.sos_idx = sos_idx\n    \n    def forward(self, src, trg_len, trg=None, teacher_forcing_ratio=0.5):\n        batch_size = src.size(0)\n        vocab_size = self.decoder.fc_out.out_features\n        \n        hidden = self.encoder(src)\n        outputs = torch.zeros(batch_size, trg_len, vocab_size)\n        input_token = torch.full((batch_size, 1), self.sos_idx, dtype=torch.long)\n        \n        for t in range(trg_len):\n            prediction, hidden = self.decoder(input_token, hidden)\n            outputs[:, t] = prediction\n            if trg is not None and random.random() &lt; teacher_forcing_ratio:\n                input_token = trg[:, t:t+1]\n            else:\n                input_token = prediction.argmax(1, keepdim=True)\n        \n        return outputs\n\n# Hiperparámetros\nEMBED_DIM = 64\nHIDDEN_DIM = 128\n\nencoder = Encoder(src_vocab.n_tokens, EMBED_DIM, HIDDEN_DIM)\ndecoder = Decoder(tgt_vocab.n_tokens, EMBED_DIM, HIDDEN_DIM)\nmodel = NMTModel(encoder, decoder)\n\ntotal_params = sum(p.numel() for p in model.parameters())\nprint(f\"Parámetros totales: {total_params:,}\")\n\n\nParámetros totales: 155,674"
+  },
+  {
+    "objectID": "slides/semana07/s2_nmt_traduccion.html#entrenamiento-del-traductor",
+    "href": "slides/semana07/s2_nmt_traduccion.html#entrenamiento-del-traductor",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "Entrenamiento del Traductor",
+    "text": "Entrenamiento del Traductor\n\n\nCode\noptimizer = optim.Adam(model.parameters(), lr=0.005)\ncriterion = nn.CrossEntropyLoss(ignore_index=PAD)\n\n# Aumentar datos repitiendo el corpus (simular más datos)\nN_EPOCHS = 200\nlosses = []\n\ntorch.manual_seed(42)\nrandom.seed(42)\n\nfor epoch in range(N_EPOCHS):\n    model.train()\n    \n    # Teacher forcing decrece con el tiempo (scheduled sampling)\n    tf_ratio = max(0.1, 1.0 - epoch / N_EPOCHS)\n    \n    output = model(train_src, train_tgt.size(1), train_tgt, teacher_forcing_ratio=tf_ratio)\n    loss = criterion(output.reshape(-1, tgt_vocab.n_tokens), train_tgt.reshape(-1))\n    \n    optimizer.zero_grad()\n    loss.backward()\n    torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)\n    optimizer.step()\n    \n    losses.append(loss.item())\n    if (epoch + 1) % 50 == 0:\n        print(f\"Época {epoch+1:3d}/{N_EPOCHS} | Loss: {loss.item():.4f} | TF ratio: {tf_ratio:.2f}\")\n\n\nÉpoca  50/200 | Loss: 0.0105 | TF ratio: 0.76\nÉpoca 100/200 | Loss: 0.0022 | TF ratio: 0.51\nÉpoca 150/200 | Loss: 0.0013 | TF ratio: 0.26\nÉpoca 200/200 | Loss: 0.0009 | TF ratio: 0.10"
+  },
+  {
+    "objectID": "slides/semana07/s2_nmt_traduccion.html#curva-de-aprendizaje",
+    "href": "slides/semana07/s2_nmt_traduccion.html#curva-de-aprendizaje",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "Curva de Aprendizaje",
+    "text": "Curva de Aprendizaje"
+  },
+  {
+    "objectID": "slides/semana07/s2_nmt_traduccion.html#probando-el-traductor",
+    "href": "slides/semana07/s2_nmt_traduccion.html#probando-el-traductor",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "Probando el Traductor",
+    "text": "Probando el Traductor\n\n\nCode\ndef translate(model, sentence, src_vocab, tgt_vocab, max_len=15):\n    \"\"\"Traduce una oración usando greedy decoding\"\"\"\n    model.eval()\n    with torch.no_grad():\n        src = torch.tensor([src_vocab.encode(sentence)])\n        hidden = model.encoder(src)\n        \n        input_token = torch.tensor([[SOS]])\n        translated = []\n        \n        for _ in range(max_len):\n            pred, hidden = model.decoder(input_token, hidden)\n            token_idx = pred.argmax(1).item()\n            if token_idx == EOS:\n                break\n            translated.append(tgt_vocab.idx2token.get(token_idx, \"&lt;UNK&gt;\"))\n            input_token = torch.tensor([[token_idx]])\n    \n    return \" \".join(translated)\n\n# Traducir los datos de prueba\nprint(\"=\" * 65)\nprint(f\"{'Español':&gt;30s}  →  {'Traducción':&lt;30s}\")\nprint(\"=\" * 65)\n\nfor src_sent, tgt_sent in test_pairs:\n    translation = translate(model, src_sent, src_vocab, tgt_vocab)\n    match = \"✅\" if translation == tgt_sent else \"❌\"\n    print(f\"{src_sent:&gt;30s}  →  {translation:&lt;25s} {match}\")\n\nprint(\"\\n--- Oraciones del conjunto de entrenamiento ---\")\nfor src_sent, tgt_sent in train_pairs[:6]:\n    translation = translate(model, src_sent, src_vocab, tgt_vocab)\n    match = \"✅\" if translation == tgt_sent else \"❌\"\n    print(f\"{src_sent:&gt;30s}  →  {translation:&lt;25s} {match}\")\n\n\n=================================================================\n                       Español  →  Traducción                    \n=================================================================\n       el pájaro pequeño canta  →  the beautiful bird sings loud ❌\n          un gato pequeño come  →  a white cat runs far      ❌\n          un gato corre rápido  →  a black cat runs fast     ❌\n                el gato duerme  →  the black cat sleeps a lot ❌\n                  el gato come  →  the white cat eats fish   ❌\n           el gato duerme aquí  →  the beautiful dog sleeps a lot ❌\n\n--- Oraciones del conjunto de entrenamiento ---\n   un gato bonito duerme mucho  →  a beautiful cat sleeps a lot ✅\n  el pájaro grande vuela lejos  →  the big bird flies far    ✅\n    el gato negro duerme mucho  →  the black cat sleeps a lot ✅\n     el gato grande come mucho  →  the big cat eats a lot    ✅\n        el pájaro canta fuerte  →  the beautiful bird sings loud ❌\n       un perro pequeño duerme  →  a black dog sleeps here   ❌"
+  },
+  {
+    "objectID": "slides/semana07/s2_nmt_traduccion.html#cómo-evaluamos-traducciones",
+    "href": "slides/semana07/s2_nmt_traduccion.html#cómo-evaluamos-traducciones",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "¿Cómo evaluamos traducciones?",
+    "text": "¿Cómo evaluamos traducciones?\n\n\nEl problema de la evaluación\n\nNo hay una única traducción correcta\nEvaluación humana es costosa y lenta\nNecesitamos métricas automáticas\n\nBLEU (Bilingual Evaluation Understudy)\nPapineni et al. (2002) — la métrica estándar durante 20+ años:\n\nMide cuántos n-gramas de la traducción candidata aparecen en la referencia.\n\n\n\n\n\n\n\n\nIdea intuitiva\n\n\nSi mi traducción comparte muchas frases (1-gramas, 2-gramas, 3-gramas, 4-gramas) con la referencia humana, probablemente es buena.\n\n\n\nEjemplo:\n\nReferencia: “the cat sleeps on the mat”\nCandidato A: “the cat sleeps on the mat” → BLEU alto\nCandidato B: “the the the the the the” → BLEU bajo (con penalización)"
+  },
+  {
+    "objectID": "slides/semana07/s2_nmt_traduccion.html#cálculo-de-bleu-paso-a-paso",
+    "href": "slides/semana07/s2_nmt_traduccion.html#cálculo-de-bleu-paso-a-paso",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "Cálculo de BLEU Paso a Paso",
+    "text": "Cálculo de BLEU Paso a Paso\n\\[\\text{BLEU} = \\text{BP} \\cdot \\exp\\left(\\sum_{n=1}^{N} w_n \\log p_n\\right)\\]\n\n\n1. Precisión de n-gramas (\\(p_n\\))\n\\[p_n = \\frac{\\text{n-gramas comunes (con clipping)}}{\\text{n-gramas en candidato}}\\]\nClipping: cada n-grama de la referencia se puede contar máximo tantas veces como aparece en la referencia.\n2. Penalización por brevedad (BP)\n\\[\\text{BP} = \\begin{cases} 1 & \\text{si } c &gt; r \\\\ e^{1-r/c} & \\text{si } c \\leq r \\end{cases}\\]\ndonde \\(c\\) = longitud del candidato, \\(r\\) = longitud de la referencia.\n\n3. Pesos (\\(w_n\\))\n\nTípicamente uniformes: \\(w_n = 1/N\\)\n\\(N = 4\\) (BLEU-4 es el estándar)\n\nRango\n\nBLEU ∈ [0, 1] (o [0, 100] como porcentaje)\nBLEU &gt; 0.30 = traducción razonable\nBLEU &gt; 0.50 = traducción buena\nBLEU = 1.0 = idéntica a la referencia"
+  },
+  {
+    "objectID": "slides/semana07/s2_nmt_traduccion.html#implementación-de-bleu",
+    "href": "slides/semana07/s2_nmt_traduccion.html#implementación-de-bleu",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "Implementación de BLEU",
+    "text": "Implementación de BLEU\n\n\nCode\nfrom collections import Counter\nimport math\n\ndef compute_ngrams(tokens, n):\n    \"\"\"Extrae n-gramas de una lista de tokens\"\"\"\n    return [tuple(tokens[i:i+n]) for i in range(len(tokens)-n+1)]\n\ndef bleu_score(candidate, reference, max_n=4):\n    \"\"\"Calcula BLEU score entre candidato y referencia (strings)\"\"\"\n    cand_tokens = candidate.lower().split()\n    ref_tokens = reference.lower().split()\n    \n    c = len(cand_tokens)\n    r = len(ref_tokens)\n    \n    # Penalización por brevedad\n    if c == 0:\n        return 0.0\n    bp = math.exp(1 - r/c) if c &lt;= r else 1.0\n    \n    # Precisión de n-gramas con clipping\n    log_precisions = []\n    for n in range(1, max_n + 1):\n        cand_ngrams = compute_ngrams(cand_tokens, n)\n        ref_ngrams = compute_ngrams(ref_tokens, n)\n        \n        if not cand_ngrams:\n            log_precisions.append(float('-inf'))\n            continue\n        \n        ref_counts = Counter(ref_ngrams)\n        clipped = sum(min(count, ref_counts[ng]) \n                      for ng, count in Counter(cand_ngrams).items())\n        precision = clipped / len(cand_ngrams)\n        \n        log_precisions.append(math.log(precision) if precision &gt; 0 else float('-inf'))\n    \n    # Promedio geométrico ponderado\n    avg_log = sum(lp / max_n for lp in log_precisions)\n    \n    return bp * math.exp(avg_log) if avg_log &gt; float('-inf') else 0.0"
+  },
+  {
+    "objectID": "slides/semana07/s2_nmt_traduccion.html#bleu-en-acción",
+    "href": "slides/semana07/s2_nmt_traduccion.html#bleu-en-acción",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "BLEU en Acción",
+    "text": "BLEU en Acción\n\n\nCode\n# Ejemplos ilustrativos\nexamples = [\n    (\"the cat sleeps\", \"the cat sleeps\", \"Perfecta\"),\n    (\"the cat sleeps\", \"a cat is sleeping\", \"Sinónimos\"),\n    (\"cat sleeps the\", \"the cat sleeps\", \"Orden incorrecto\"),\n    (\"the\", \"the cat sleeps\", \"Muy corta\"),\n    (\"the cat sleeps on the mat today\", \"the cat sleeps\", \"Muy larga\"),\n]\n\nprint(\"=\" * 75)\nprint(f\"{'Candidato':&gt;30s} | {'Referencia':&lt;20s} | {'BLEU':&gt;6s} | Nota\")\nprint(\"=\" * 75)\nfor cand, ref, note in examples:\n    score = bleu_score(cand, ref, max_n=2)  # BLEU-2 para oraciones cortas\n    bar = \"█\" * int(score * 20)\n    print(f\"{cand:&gt;30s} | {ref:&lt;20s} | {score:.3f} | {note} {bar}\")\n\n\n===========================================================================\n                     Candidato | Referencia           |   BLEU | Nota\n===========================================================================\n                the cat sleeps | the cat sleeps       | 1.000 | Perfecta ████████████████████\n                the cat sleeps | a cat is sleeping    | 0.000 | Sinónimos \n                cat sleeps the | the cat sleeps       | 0.707 | Orden incorrecto ██████████████\n                           the | the cat sleeps       | 0.000 | Muy corta \nthe cat sleeps on the mat today | the cat sleeps       | 0.378 | Muy larga ███████"
+  },
+  {
+    "objectID": "slides/semana07/s2_nmt_traduccion.html#evaluando-nuestro-traductor-con-bleu",
+    "href": "slides/semana07/s2_nmt_traduccion.html#evaluando-nuestro-traductor-con-bleu",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "Evaluando Nuestro Traductor con BLEU",
+    "text": "Evaluando Nuestro Traductor con BLEU\n\n\nCode\n# BLEU sobre datos de prueba\nprint(\"Evaluación BLEU del traductor ES → EN\")\nprint(\"=\" * 65)\n\nbleu_scores = []\nfor src_sent, ref_sent in test_pairs:\n    hyp = translate(model, src_sent, src_vocab, tgt_vocab)\n    score = bleu_score(hyp, ref_sent, max_n=2)  # BLEU-2 (oraciones cortas)\n    bleu_scores.append(score)\n    print(f\"  src: {src_sent}\")\n    print(f\"  ref: {ref_sent}\")\n    print(f\"  hyp: {hyp}\")\n    print(f\"  BLEU-2: {score:.3f}\")\n    print()\n\navg_bleu = sum(bleu_scores) / len(bleu_scores) if bleu_scores else 0\nprint(f\"BLEU-2 promedio (test): {avg_bleu:.3f}\")\n\n\nEvaluación BLEU del traductor ES → EN\n=================================================================\n  src: el pájaro pequeño canta\n  ref: the small bird sings\n  hyp: the beautiful bird sings loud\n  BLEU-2: 0.387\n\n  src: un gato pequeño come\n  ref: a small cat eats\n  hyp: a white cat runs far\n  BLEU-2: 0.000\n\n  src: un gato corre rápido\n  ref: a cat runs fast\n  hyp: a black cat runs fast\n  BLEU-2: 0.632\n\n  src: el gato duerme\n  ref: the cat sleeps\n  hyp: the black cat sleeps a lot\n  BLEU-2: 0.316\n\n  src: el gato come\n  ref: the cat eats\n  hyp: the white cat eats fish\n  BLEU-2: 0.387\n\n  src: el gato duerme aquí\n  ref: the cat sleeps here\n  hyp: the beautiful dog sleeps a lot\n  BLEU-2: 0.000\n\nBLEU-2 promedio (test): 0.287"
+  },
+  {
+    "objectID": "slides/semana07/s2_nmt_traduccion.html#técnicas-que-mejoran-la-traducción",
+    "href": "slides/semana07/s2_nmt_traduccion.html#técnicas-que-mejoran-la-traducción",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "Técnicas que Mejoran la Traducción",
+    "text": "Técnicas que Mejoran la Traducción\n\n\nArquitectura\n\n\n\nTécnica\nEfecto\n\n\n\n\nEncoder bidireccional\nCaptura contexto en ambas direcciones\n\n\nStacked layers (2-8)\nMayor capacidad de representación\n\n\nResidual connections\nPermite entrenar redes más profundas\n\n\nDropout (0.1-0.3)\nRegularización\n\n\n\nDecodificación\n\n\n\nTécnica\nEfecto\n\n\n\n\nBeam search (\\(k\\)=4-10)\nMejores traducciones que greedy\n\n\nLength normalization\nEvita sesgo hacia traducciones cortas\n\n\nCoverage penalty\nEvita repeticiones y omisiones\n\n\n\n\nDatos y Entrenamiento\n\n\n\nTécnica\nEfecto\n\n\n\n\nSubword tokenization (BPE)\nVocabulario abierto, maneja OOV\n\n\nBack-translation\nDatos sintéticos para aumentar corpus\n\n\nLabel smoothing\nMejor generalización\n\n\nScheduled sampling\nReduce exposure bias\n\n\nReversing source\nMejora alineación (Sutskever 2014)\n\n\n\nEscala real (GNMT, 2016)\n\n8 capas LSTM encoder + 8 decoder\n36M pares de oraciones\nEntrenamiento: ~6 días en 96 GPUs\nBLEU en WMT14 EN→FR: 41.16"
+  },
+  {
+    "objectID": "slides/semana07/s2_nmt_traduccion.html#limitaciones-del-seq2seq-vanilla",
+    "href": "slides/semana07/s2_nmt_traduccion.html#limitaciones-del-seq2seq-vanilla",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "Limitaciones del Seq2Seq Vanilla",
+    "text": "Limitaciones del Seq2Seq Vanilla\n\n\n\nProblemas identificados\n\nCuello de botella de información: toda la oración → un vector fijo\nDegradación con longitud: calidad cae con oraciones &gt; 20 tokens\nNo hay alineación explícita: decoder no sabe qué parte de la entrada mirar\n\n\n\n\n\n\n\n\nLa pregunta clave\n\n\n¿Qué pasaría si el decoder pudiera consultar diferentes partes de la entrada en cada paso, en lugar de depender de un solo vector?\n→ Esto es exactamente lo que hace la Atención (S3)"
+  },
+  {
+    "objectID": "slides/semana07/s2_nmt_traduccion.html#lo-que-aprendimos-hoy",
+    "href": "slides/semana07/s2_nmt_traduccion.html#lo-que-aprendimos-hoy",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "Lo Que Aprendimos Hoy",
+    "text": "Lo Que Aprendimos Hoy\n\n\nConceptos\n\nLa traducción automática neuronal (NMT) aplica Seq2Seq a pares de idiomas\nRequiere corpus paralelo y vocabularios separados\nBLEU score mide similitud de n-gramas con referencia humana\nTécnicas como beam search, subword tokenization y scheduled sampling mejoran resultados\nEl cuello de botella del vector fijo limita la calidad\n\n\nPráctica\n\nPipeline: tokenización → vocabularios → padding → Seq2Seq\nEntrenamos un traductor ES→EN funcional\nEvaluamos con BLEU-2 (adaptado a oraciones cortas)\nbleu_score(): precisión de n-gramas + penalización por brevedad\nIdentificamos las limitaciones → motivación para Atención"
+  },
+  {
+    "objectID": "slides/semana07/s2_nmt_traduccion.html#fórmulas-clave",
+    "href": "slides/semana07/s2_nmt_traduccion.html#fórmulas-clave",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "Fórmulas Clave",
+    "text": "Fórmulas Clave\n\n\n\n\n\n\n\nConcepto\nFórmula\n\n\n\n\nPrecisión n-grama\n\\(p_n = \\frac{\\sum \\min(\\text{count}_{cand}, \\text{count}_{ref})}{\\sum \\text{count}_{cand}}\\)\n\n\nBrevity Penalty\n\\(\\text{BP} = \\min(1, e^{1-r/c})\\)\n\n\nBLEU\n\\(\\text{BLEU} = \\text{BP} \\cdot \\exp\\left(\\sum_{n=1}^{N} \\frac{1}{N} \\log p_n\\right)\\)\n\n\nNMT Loss\n\\(\\mathcal{L} = -\\sum_{t=1}^{T_y} \\log P(y_t^* \\mid y_{&lt;t}, \\mathbf{c})\\)\n\n\nScheduled Sampling\n\\(\\text{TF ratio} = \\max(\\epsilon, 1 - \\text{epoch}/E)\\)"
+  },
+  {
+    "objectID": "slides/semana07/s2_nmt_traduccion.html#para-la-próxima-sesión",
+    "href": "slides/semana07/s2_nmt_traduccion.html#para-la-próxima-sesión",
+    "title": "Secuencia a Secuencia (Seq2Seq)",
+    "section": "Para la Próxima Sesión 📚",
+    "text": "Para la Próxima Sesión 📚\n\n\n\n\n\n\nSemana 7, S3: El Mecanismo de Atención\n\n\n\nEl cuello de botella del vector de contexto fijo\nAtención de Bahdanau (aditiva) vs. Luong (multiplicativa)\nPesos de atención: ¿qué partes de la entrada son relevantes?\nVisualización de mapas de atención\nDe la atención al Transformer (preview Semana 8)\n\n\n\n\nLectura:\n\nBahdanau et al. (2015): Neural Machine Translation by Jointly Learning to Align and Translate\nLuong et al. (2015): Effective Approaches to Attention-based Neural Machine Translation\nJurafsky & Martin, Cap. 10.4: Attention"
+  },
+  {
+    "objectID": "slides/semana08/s1_conv1d_texto.html#agenda-de-hoy",
+    "href": "slides/semana08/s1_conv1d_texto.html#agenda-de-hoy",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Agenda de Hoy",
+    "text": "Agenda de Hoy\n\n\n\n🔄 De secuencias a patrones locales\n📐 Convoluciones 1D: la operación fundamental\n🔤 CNNs sobre texto: embeddings como “imágenes”\n🏗️ Filtros y detectores de n-gramas\n🧪 Experimento: CNN para clasificación de texto\n\n\n\n\n\n\n\n\nObjetivo\n\n\nEntender cómo las convoluciones 1D pueden capturar patrones locales (n-gramas) en texto, como una alternativa eficiente y paralelizable a las RNNs.\n\n\n\nPrerequisitos: Embeddings (Semana 4), RNNs (Semana 6)"
+  },
+  {
+    "objectID": "slides/semana08/s1_conv1d_texto.html#limitaciones-de-las-rnns",
+    "href": "slides/semana08/s1_conv1d_texto.html#limitaciones-de-las-rnns",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Limitaciones de las RNNs",
+    "text": "Limitaciones de las RNNs\n\n\nRNNs: poderosas pero lentas\n\nProcesan tokens secuencialmente (\\(t=1, 2, \\ldots, T\\))\nNo se puede paralelizar dentro de una secuencia\nLas dependencias largas requieren LSTM/GRU\nPara clasificación, a veces solo importan patrones locales\n\n\nCNNs: una alternativa\n\nProcesan toda la secuencia en paralelo\nCapturan patrones locales (como n-gramas)\nMuy eficientes en GPU\nDesde 2014: resultados competitivos en clasificación de texto\n\n\n\n\n\n\n\nPaper Fundacional\n\n\nKim (2014): Convolutional Neural Networks for Sentence Classification — un modelo simple con una sola capa convolucional logra resultados state-of-the-art."
+  },
+  {
+    "objectID": "slides/semana08/s1_conv1d_texto.html#de-imágenes-a-texto",
+    "href": "slides/semana08/s1_conv1d_texto.html#de-imágenes-a-texto",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "De Imágenes a Texto",
+    "text": "De Imágenes a Texto\n\n\n\n\n\n\n\nDiferencia clave\n\n\nEn imágenes, el filtro se mueve en 2D (alto × ancho). En texto, el filtro se mueve solo en 1D (a lo largo de los tokens), cubriendo todas las dimensiones del embedding."
+  },
+  {
+    "objectID": "slides/semana08/s1_conv1d_texto.html#definición-formal",
+    "href": "slides/semana08/s1_conv1d_texto.html#definición-formal",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Definición Formal",
+    "text": "Definición Formal\nDada una secuencia de embeddings \\(\\mathbf{x}_1, \\mathbf{x}_2, \\ldots, \\mathbf{x}_T \\in \\mathbb{R}^d\\) y un filtro \\(\\mathbf{W} \\in \\mathbb{R}^{k \\times d}\\) de ancho \\(k\\):\n\\[h_i = f\\left(\\mathbf{W} \\cdot \\mathbf{x}_{i:i+k-1} + b\\right)\\]\ndonde:\n\n\\(\\mathbf{x}_{i:i+k-1}\\) es la concatenación (o stack) de \\(k\\) embeddings consecutivos\n\\(f\\) es una función de activación (típicamente ReLU)\n\\(b\\) es el sesgo (bias)\nEl resultado \\(h_i\\) es un escalar\n\n\n\nParámetros\n\nFiltro de tamaño \\(k\\): captura n-gramas de tamaño \\(k\\)\nUn filtro tiene \\(k \\times d + 1\\) parámetros\nSe aplica a todas las posiciones: weight sharing\n\n\nSalida\n\nEntrada: \\(T\\) tokens → Salida: \\(T - k + 1\\) valores\nCada valor indica “¿cuánto se activa este patrón aquí?”\nComo un detector de n-gramas aprendido"
+  },
+  {
+    "objectID": "slides/semana08/s1_conv1d_texto.html#ejemplo-paso-a-paso",
+    "href": "slides/semana08/s1_conv1d_texto.html#ejemplo-paso-a-paso",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Ejemplo Paso a Paso",
+    "text": "Ejemplo Paso a Paso\n\n\nCode\nimport torch\nimport torch.nn as nn\n\n# Secuencia de 5 tokens, cada uno con embedding de dimensión 4\ntorch.manual_seed(42)\nT, d = 5, 4\nx = torch.randn(1, d, T)  # Conv1d espera (batch, channels, length)\n\n# Filtro de ancho k=3\nconv = nn.Conv1d(in_channels=d, out_channels=1, kernel_size=3, bias=True)\n\n# Aplicar convolución\nh = conv(x)  # (1, 1, T-k+1) = (1, 1, 3)\n\nprint(f\"Entrada:           shape {x.shape}  → {T} tokens × {d} dims\")\nprint(f\"Filtro:            shape {conv.weight.shape}  → k={3}, d={d}\")\nprint(f\"Parámetros filtro: {conv.weight.numel() + conv.bias.numel()} ({3}×{d} + 1)\")\nprint(f\"Salida:            shape {h.shape}  → {T}-{3}+1 = {T-3+1} posiciones\")\nprint(f\"\\nActivaciones:      {h.detach().squeeze().tolist()}\")\n\n\nEntrada:           shape torch.Size([1, 4, 5])  → 5 tokens × 4 dims\nFiltro:            shape torch.Size([1, 4, 3])  → k=3, d=4\nParámetros filtro: 13 (3×4 + 1)\nSalida:            shape torch.Size([1, 1, 3])  → 5-3+1 = 3 posiciones\n\nActivaciones:      [0.22406956553459167, 0.3779914975166321, -0.3071877360343933]\n\n\n\n\n\n\n\n\nObservación\n\n\nConv1d en PyTorch espera dimensiones (batch, channels, length). Para texto, channels = d (dimensión del embedding) y length = T (número de tokens)."
+  },
+  {
+    "objectID": "slides/semana08/s1_conv1d_texto.html#múltiples-filtros-múltiples-detectores",
+    "href": "slides/semana08/s1_conv1d_texto.html#múltiples-filtros-múltiples-detectores",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Múltiples Filtros = Múltiples Detectores",
+    "text": "Múltiples Filtros = Múltiples Detectores\nEn la práctica, usamos muchos filtros para detectar diferentes patrones:\n\n\nCode\n# 64 filtros de ancho k=3\nn_filters = 64\nconv_multi = nn.Conv1d(in_channels=d, out_channels=n_filters, kernel_size=3)\n\nh_multi = conv_multi(x)\nprint(f\"Entrada:  {x.shape}\")            # (1, 4, 5)\nprint(f\"Salida:   {h_multi.shape}\")      # (1, 64, 3)\nprint(f\"\\nCada filtro produce {T-3+1} activaciones\")\nprint(f\"Total: {n_filters} filtros × {T-3+1} posiciones = {n_filters*(T-3+1)} valores\")\n\n\nEntrada:  torch.Size([1, 4, 5])\nSalida:   torch.Size([1, 64, 3])\n\nCada filtro produce 3 activaciones\nTotal: 64 filtros × 3 posiciones = 192 valores\n\n\n\n\n\n\n\n\n\nIntuición\n\n\n\nFiltro A podría aprender a detectar “not good” (negación + adjetivo)\nFiltro B podría detectar “very nice” (intensificador + positivo)\nFiltro C podría detectar “the movie” (artículo + sustantivo)\nCada filtro es un detector de n-gramas aprendido"
+  },
+  {
+    "objectID": "slides/semana08/s1_conv1d_texto.html#el-pipeline-completo",
+    "href": "slides/semana08/s1_conv1d_texto.html#el-pipeline-completo",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "El Pipeline Completo",
+    "text": "El Pipeline Completo\n\n\n\n1. Embedding Layer\n\nCada token → vector de \\(d\\) dimensiones\nOración de \\(T\\) tokens → matriz \\(T \\times d\\)\nPuede usar embeddings pre-entrenados (Word2Vec, GloVe)\n\n2. Capa Convolucional\n\nMúltiples filtros de diferentes anchos (\\(k = 2, 3, 4, 5\\))\nCada filtro detecta patrones de diferente tamaño\n\n\n3. Max Pooling (global)\n\nDe cada mapa de activaciones → tomar el máximo\nResultado: un escalar por filtro\nCaptura “¿aparece este patrón en algún lugar?”\n\n4. Clasificador\n\nConcatenar todos los valores max-pooled\nCapa Linear → softmax → probabilidades"
+  },
+  {
+    "objectID": "slides/semana08/s1_conv1d_texto.html#diferentes-anchos-de-filtro",
+    "href": "slides/semana08/s1_conv1d_texto.html#diferentes-anchos-de-filtro",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Diferentes Anchos de Filtro",
+    "text": "Diferentes Anchos de Filtro\n\n\n\n\n\n\n\nMulti-Size Filters\n\n\nUsando filtros de diferentes anchos simultáneamente (\\(k=2,3,4,5\\)), el modelo puede capturar bigramas, trigramas, y patrones más largos al mismo tiempo."
+  },
+  {
+    "objectID": "slides/semana08/s1_conv1d_texto.html#implementación-en-pytorch",
+    "href": "slides/semana08/s1_conv1d_texto.html#implementación-en-pytorch",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Implementación en PyTorch",
+    "text": "Implementación en PyTorch\n\n\nCode\nclass TextCNN(nn.Module):\n    def __init__(self, vocab_size, embed_dim, n_filters, filter_sizes, n_classes,\n                 dropout=0.5, pad_idx=0):\n        super().__init__()\n        self.embedding = nn.Embedding(vocab_size, embed_dim, padding_idx=pad_idx)\n        \n        # Una capa Conv1d por cada tamaño de filtro\n        self.convs = nn.ModuleList([\n            nn.Conv1d(embed_dim, n_filters, kernel_size=k)\n            for k in filter_sizes\n        ])\n        \n        self.dropout = nn.Dropout(dropout)\n        self.fc = nn.Linear(n_filters * len(filter_sizes), n_classes)\n    \n    def forward(self, x):\n        \"\"\"x: (batch, seq_len) — índices de tokens\"\"\"\n        emb = self.embedding(x)                     # (batch, seq_len, embed_dim)\n        emb = emb.permute(0, 2, 1)                  # (batch, embed_dim, seq_len)\n        \n        # Aplicar cada filtro + ReLU + max pooling global\n        conv_outs = []\n        for conv in self.convs:\n            h = torch.relu(conv(emb))               # (batch, n_filters, seq_len - k + 1)\n            h = h.max(dim=2).values                  # (batch, n_filters) ← max pooling\n            conv_outs.append(h)\n        \n        # Concatenar todos los filtros\n        cat = torch.cat(conv_outs, dim=1)            # (batch, n_filters * len(filter_sizes))\n        cat = self.dropout(cat)\n        return self.fc(cat)                          # (batch, n_classes)\n\n# Ejemplo\nmodel_cnn = TextCNN(vocab_size=5000, embed_dim=100, n_filters=64,\n                     filter_sizes=[2, 3, 4, 5], n_classes=2)\nx_demo = torch.randint(0, 5000, (8, 30))  # batch=8, longitud=30\nout = model_cnn(x_demo)\nprint(f\"Entrada: {x_demo.shape}\")     # (8, 30)\nprint(f\"Salida:  {out.shape}\")        # (8, 2)\nprint(f\"\\nParámetros por componente:\")\ntotal = 0\nfor name, param in model_cnn.named_parameters():\n    total += param.numel()\n    print(f\"  {name:30s} {str(list(param.shape)):20s} → {param.numel():&gt;8,}\")\nprint(f\"  {'TOTAL':30s} {'':20s} → {total:&gt;8,}\")\n\n\nEntrada: torch.Size([8, 30])\nSalida:  torch.Size([8, 2])\n\nParámetros por componente:\n  embedding.weight               [5000, 100]          →  500,000\n  convs.0.weight                 [64, 100, 2]         →   12,800\n  convs.0.bias                   [64]                 →       64\n  convs.1.weight                 [64, 100, 3]         →   19,200\n  convs.1.bias                   [64]                 →       64\n  convs.2.weight                 [64, 100, 4]         →   25,600\n  convs.2.bias                   [64]                 →       64\n  convs.3.weight                 [64, 100, 5]         →   32,000\n  convs.3.bias                   [64]                 →       64\n  fc.weight                      [2, 256]             →      512\n  fc.bias                        [2]                  →        2\n  TOTAL                                               →  590,370"
+  },
+  {
+    "objectID": "slides/semana08/s1_conv1d_texto.html#dataset-reseñas-de-películas",
+    "href": "slides/semana08/s1_conv1d_texto.html#dataset-reseñas-de-películas",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Dataset: Reseñas de Películas",
+    "text": "Dataset: Reseñas de Películas\n\n\nCode\nimport random\nimport torch.optim as optim\n\ntorch.manual_seed(42)\nrandom.seed(42)\nnp.random.seed(42)\n\n# --- Vocabulario y datos sintéticos ---\npositive_templates = [\n    \"the movie was great and entertaining\",\n    \"a wonderful film with amazing acting\",\n    \"really enjoyed this excellent movie\",\n    \"fantastic story beautifully told\",\n    \"brilliant performances all around\",\n    \"loved every moment of this film\",\n    \"an outstanding and memorable experience\",\n    \"the best movie I have seen\",\n    \"absolutely incredible and moving story\",\n    \"superb direction and great screenplay\",\n]\n\nnegative_templates = [\n    \"the movie was terrible and boring\",\n    \"a horrible film with bad acting\",\n    \"really hated this awful movie\",\n    \"worst story ever made honestly\",\n    \"dreadful performances all around sadly\",\n    \"wasted every moment watching this film\",\n    \"an embarrassing and forgettable disaster\",\n    \"the worst movie in recent years\",\n    \"absolutely terrible and painful experience\",\n    \"poor direction and weak screenplay overall\",\n]\n\n# Construir vocabulario\nall_text = \" \".join(positive_templates + negative_templates)\nwords = sorted(set(all_text.split()))\nword2idx = {\"&lt;PAD&gt;\": 0, \"&lt;UNK&gt;\": 1}\nfor w in words:\n    word2idx[w] = len(word2idx)\nVOCAB_SIZE = len(word2idx)\n\ndef encode_sentence(sent, max_len=12):\n    tokens = [word2idx.get(w, 1) for w in sent.split()]\n    tokens = tokens[:max_len]\n    tokens += [0] * (max_len - len(tokens))\n    return tokens\n\n# Generar datos con variaciones\ndef augment(templates, n_per_template=80):\n    data = []\n    for t in templates:\n        words_t = t.split()\n        for _ in range(n_per_template):\n            # Pequeñas variaciones: eliminar 0-1 palabras, permutar adyacentes\n            w = words_t.copy()\n            if len(w) &gt; 3 and random.random() &lt; 0.3:\n                w.pop(random.randint(1, len(w)-2))\n            if len(w) &gt; 2 and random.random() &lt; 0.3:\n                i = random.randint(0, len(w)-2)\n                w[i], w[i+1] = w[i+1], w[i]\n            data.append(\" \".join(w))\n    return data\n\npos_data = augment(positive_templates)\nneg_data = augment(negative_templates)\n\nX_all = torch.tensor([encode_sentence(s) for s in pos_data + neg_data])\ny_all = torch.cat([torch.ones(len(pos_data)), torch.zeros(len(neg_data))]).long()\n\n# Shuffle y split\nperm = torch.randperm(len(X_all))\nX_all, y_all = X_all[perm], y_all[perm]\nsplit = int(0.8 * len(X_all))\nX_train, y_train = X_all[:split], y_all[:split]\nX_test, y_test = X_all[split:], y_all[split:]\n\nprint(f\"Vocabulario: {VOCAB_SIZE} palabras\")\nprint(f\"Entrenamiento: {len(X_train)} | Test: {len(X_test)}\")\nprint(f\"Ejemplo positivo: '{pos_data[0]}'\")\nprint(f\"Ejemplo negativo: '{neg_data[0]}'\")\n\n\nVocabulario: 68 palabras\nEntrenamiento: 1280 | Test: 320\nEjemplo positivo: 'the movie great was and entertaining'\nEjemplo negativo: 'the movie was terrible and boring'"
+  },
+  {
+    "objectID": "slides/semana08/s1_conv1d_texto.html#entrenamiento-cnn-vs.-rnn",
+    "href": "slides/semana08/s1_conv1d_texto.html#entrenamiento-cnn-vs.-rnn",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Entrenamiento CNN vs. RNN",
+    "text": "Entrenamiento CNN vs. RNN\n\n\nCode\n# --- Modelo RNN para comparación ---\nclass TextRNN(nn.Module):\n    def __init__(self, vocab_size, embed_dim, hidden_dim, n_classes, pad_idx=0):\n        super().__init__()\n        self.embedding = nn.Embedding(vocab_size, embed_dim, padding_idx=pad_idx)\n        self.rnn = nn.GRU(embed_dim, hidden_dim, batch_first=True)\n        self.fc = nn.Linear(hidden_dim, n_classes)\n    \n    def forward(self, x):\n        emb = self.embedding(x)\n        _, h = self.rnn(emb)\n        return self.fc(h.squeeze(0))\n\n# Entrenar ambos modelos\ndef train_model(model, X_tr, y_tr, n_epochs=30, lr=0.003):\n    optimizer = optim.Adam(model.parameters(), lr=lr)\n    criterion = nn.CrossEntropyLoss()\n    losses = []\n    BATCH = 64\n    for epoch in range(n_epochs):\n        model.train()\n        idx = torch.randperm(len(X_tr))\n        epoch_loss = 0\n        n_b = 0\n        for i in range(0, len(X_tr), BATCH):\n            batch_idx = idx[i:i+BATCH]\n            out = model(X_tr[batch_idx])\n            loss = criterion(out, y_tr[batch_idx])\n            optimizer.zero_grad()\n            loss.backward()\n            optimizer.step()\n            epoch_loss += loss.item()\n            n_b += 1\n        losses.append(epoch_loss / n_b)\n    return losses\n\nEMBED = 50\nHIDDEN = 64\n\n# CNN\ncnn = TextCNN(VOCAB_SIZE, EMBED, n_filters=32, filter_sizes=[2, 3, 4], n_classes=2)\ncnn_losses = train_model(cnn, X_train, y_train)\n\n# RNN\nrnn = TextRNN(VOCAB_SIZE, EMBED, HIDDEN, n_classes=2)\nrnn_losses = train_model(rnn, X_train, y_train)\n\nprint(f\"CNN params: {sum(p.numel() for p in cnn.parameters()):,}\")\nprint(f\"RNN params: {sum(p.numel() for p in rnn.parameters()):,}\")\n\n\nCNN params: 18,090\nRNN params: 25,802"
+  },
+  {
+    "objectID": "slides/semana08/s1_conv1d_texto.html#curvas-de-aprendizaje",
+    "href": "slides/semana08/s1_conv1d_texto.html#curvas-de-aprendizaje",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Curvas de Aprendizaje",
+    "text": "Curvas de Aprendizaje"
+  },
+  {
+    "objectID": "slides/semana08/s1_conv1d_texto.html#evaluación",
+    "href": "slides/semana08/s1_conv1d_texto.html#evaluación",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Evaluación",
+    "text": "Evaluación\n\n\nCode\ndef evaluate(model, X, y):\n    model.eval()\n    with torch.no_grad():\n        preds = model(X).argmax(dim=1)\n        acc = (preds == y).float().mean().item()\n    return acc\n\ncnn_acc = evaluate(cnn, X_test, y_test)\nrnn_acc = evaluate(rnn, X_test, y_test)\n\nprint(f\"{'Modelo':&lt;12} {'Accuracy':&gt;10} {'Parámetros':&gt;12}\")\nprint(\"=\" * 36)\nprint(f\"{'CNN':&lt;12} {cnn_acc:&gt;9.1%} {sum(p.numel() for p in cnn.parameters()):&gt;12,}\")\nprint(f\"{'GRU':&lt;12} {rnn_acc:&gt;9.1%} {sum(p.numel() for p in rnn.parameters()):&gt;12,}\")\n\n\nModelo         Accuracy   Parámetros\n====================================\nCNN             100.0%       18,090\nGRU             100.0%       25,802"
+  },
+  {
+    "objectID": "slides/semana08/s1_conv1d_texto.html#paralelización-y-eficiencia",
+    "href": "slides/semana08/s1_conv1d_texto.html#paralelización-y-eficiencia",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Paralelización y Eficiencia",
+    "text": "Paralelización y Eficiencia\n\n\nRNN: secuencial\nt=1: h₁ = f(x₁, h₀)\nt=2: h₂ = f(x₂, h₁)  ← espera h₁\nt=3: h₃ = f(x₃, h₂)  ← espera h₂\n...\n\nCada paso depende del anterior\nNo paralelizable dentro de una secuencia\nTiempo: \\(O(T)\\) pasos secuenciales\n\n\nCNN: paralelo\npos 1: h₁ = f(x₁, x₂, x₃)  ┐\npos 2: h₂ = f(x₂, x₃, x₄)  ├ simultáneo\npos 3: h₃ = f(x₃, x₄, x₅)  ┘\n\nTodas las posiciones se computan en paralelo\nIdeal para GPUs\nTiempo: \\(O(1)\\) pasos secuenciales (una capa)\n\n\n\n\n\n\n\n\nEn la práctica\n\n\nPara clasificación de texto (sentimiento, temas), las CNNs suelen ser más rápidas de entrenar que RNNs con resultados comparables o mejores. Para tareas que requieren dependencias largas (traducción, generación), las RNNs con atención siguen siendo superiores."
+  },
+  {
+    "objectID": "slides/semana08/s1_conv1d_texto.html#campo-receptivo",
+    "href": "slides/semana08/s1_conv1d_texto.html#campo-receptivo",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Campo Receptivo",
+    "text": "Campo Receptivo\n\n\nUna capa convolucional\n\nFiltro de ancho \\(k\\) → ve \\(k\\) tokens consecutivos\nCampo receptivo = \\(k\\) (limitado)\nNo captura dependencias más allá de \\(k\\) tokens\n\nMúltiples capas (stacking)\n\n2 capas con \\(k=3\\): campo receptivo = \\(5\\)\n\\(L\\) capas con \\(k\\): campo receptivo = \\(L(k-1) + 1\\)\nCrecimiento lineal del campo receptivo\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nComparación con RNNs\n\n\nUna RNN tiene campo receptivo infinito (en teoría) desde el primer paso, pero en la práctica sufre de vanishing gradients. Las CNNs tienen un campo receptivo finito pero controlable apilando capas."
+  },
+  {
+    "objectID": "slides/semana08/s1_conv1d_texto.html#lo-que-aprendimos-hoy",
+    "href": "slides/semana08/s1_conv1d_texto.html#lo-que-aprendimos-hoy",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Lo Que Aprendimos Hoy",
+    "text": "Lo Que Aprendimos Hoy\n\n\nConceptos\n\nLas convoluciones 1D detectan patrones locales en texto\nUn filtro de ancho \\(k\\) es un detector de \\(k\\)-gramas aprendido\nMúltiples filtros de diferentes anchos capturan patrones variados\nMax pooling global extrae la activación más fuerte\nLas CNNs son paralelizables (ventaja sobre RNNs)\n\n\nPráctica\n\nnn.Conv1d(embed_dim, n_filters, kernel_size=k) — filtro 1D\nnn.ModuleList para manejar múltiples tamaños de filtro\n.max(dim=2) para global max pooling\nLa arquitectura Kim (2014) es simple y efectiva\nCampo receptivo crece con profundidad: \\(L(k-1)+1\\)"
+  },
+  {
+    "objectID": "slides/semana08/s1_conv1d_texto.html#ecuaciones-clave",
+    "href": "slides/semana08/s1_conv1d_texto.html#ecuaciones-clave",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Ecuaciones Clave",
+    "text": "Ecuaciones Clave\n\n\n\n\n\n\n\nConcepto\nEcuación\n\n\n\n\nConv1D\n\\(h_i = \\text{ReLU}(\\mathbf{W} \\cdot \\mathbf{x}_{i:i+k-1} + b)\\)\n\n\nTamaño salida\n\\(T_{\\text{out}} = T - k + 1\\) (sin padding)\n\n\nMax pooling\n\\(\\hat{h} = \\max_i h_i\\)\n\n\nParámetros (1 filtro)\n\\(k \\times d + 1\\)\n\n\nCampo receptivo\n\\(L(k-1) + 1\\) (\\(L\\) capas)"
+  },
+  {
+    "objectID": "slides/semana08/s1_conv1d_texto.html#para-la-próxima-sesión",
+    "href": "slides/semana08/s1_conv1d_texto.html#para-la-próxima-sesión",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Para la Próxima Sesión 📚",
+    "text": "Para la Próxima Sesión 📚\n\n\n\n\n\n\nSemana 8, S2: Max Pooling Global vs. Local\n\n\n\nGlobal max pooling: captura “¿aparece el patrón en algún lugar?”\nAverage pooling: captura “¿cuánto aparece en promedio?”\nK-max pooling: retiene los \\(k\\) valores más altos\nImpacto de la estrategia de pooling en el rendimiento\n\n\n\n\nLectura:\n\nKim (2014): Convolutional Neural Networks for Sentence Classification (secciones 3-4)\nKalchbrenner et al. (2014): A Convolutional Neural Network for Modelling Sentences\nJohnson & Zhang (2015): Effective Use of Word Order for Text Categorization"
   }
 ]
