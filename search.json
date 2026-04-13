@@ -1,5 +1,124 @@
 [
   {
+    "objectID": "slides/semana09/s1_atencion_producto_escalar.html#agenda-de-hoy",
+    "href": "slides/semana09/s1_atencion_producto_escalar.html#agenda-de-hoy",
+    "title": "Auto-Atención & Transformers",
+    "section": "Agenda de Hoy",
+    "text": "Agenda de Hoy\n\n\n\n🔁 De atención Bahdanau → auto-atención\n🗝️ La abstracción Query / Key / Value\n📐 Producto escalar escalado: la operación central\n🎭 Softmax como selector suave de información\n🧪 Implementación desde cero con NumPy y PyTorch\n🗺️ Visualización de mapas de atención\n\n\n\n\n\n\n\n\nObjetivo\n\n\nEntender el mecanismo de atención de producto escalar — la operación fundamental que permite a cada token “consultar” a todos los demás sin procesamiento secuencial ni ventanas locales.\n\n\n\nPrerequisitos: Atención Bahdanau/Luong (Semana 7 S3), CNNs (Semana 8)"
+  },
+  {
+    "objectID": "slides/semana09/s1_atencion_producto_escalar.html#tres-generaciones-de-contexto",
+    "href": "slides/semana09/s1_atencion_producto_escalar.html#tres-generaciones-de-contexto",
+    "title": "Auto-Atención & Transformers",
+    "section": "Tres Generaciones de Contexto",
+    "text": "Tres Generaciones de Contexto"
+  },
+  {
+    "objectID": "slides/semana09/s1_atencion_producto_escalar.html#la-limitación-residual-de-la-atención-bahdanau",
+    "href": "slides/semana09/s1_atencion_producto_escalar.html#la-limitación-residual-de-la-atención-bahdanau",
+    "title": "Auto-Atención & Transformers",
+    "section": "La Limitación Residual de la Atención Bahdanau",
+    "text": "La Limitación Residual de la Atención Bahdanau\n\n\nAtención en Seq2Seq (Semana 7 S3)\n\\[\\alpha_{t,i} = \\frac{\\exp(e_{t,i})}{\\sum_j \\exp(e_{t,j})}, \\quad\ne_{t,i} = \\mathbf{v}^\\top \\tanh(\\mathbf{W}_h \\mathbf{h}_i + \\mathbf{W}_s \\mathbf{s}_t)\\]\n\\[\\mathbf{c}_t = \\sum_i \\alpha_{t,i} \\mathbf{h}_i\\]\n¿Qué funciona bien? - El decoder mira toda la secuencia encoder ✅ - Resuelve el cuello de botella ✅\n¿Qué sigue siendo un problema? - El encoder sigue siendo una RNN → secuencial ⚠️ - Un token encoder no puede “ver” a otros tokens encoder simultáneamente - El contexto de “gato” no sabe nada de “come” hasta que la RNN llega allí\n\n\n\n\n\n\n\nLa pregunta clave\n\n\n¿Y si eliminamos la RNN completamente?\n¿Podemos construir representaciones contextuales directamente, sin procesar token por token?\n\\[\\mathbf{h}_i = f(\\mathbf{e}_1, \\mathbf{e}_2, \\ldots, \\mathbf{e}_T)\\]\ndonde \\(\\mathbf{h}_i\\) depende de todos los tokens a la vez.\n\n\n\nRespuesta: Auto-atención (self-attention)\n\nEl mecanismo de atención se aplica sobre la misma secuencia\nComo fuente y destino: la oración se atiende a sí misma\nSin recurrencia: completamente paralelo"
+  },
+  {
+    "objectID": "slides/semana09/s1_atencion_producto_escalar.html#queries-keys-y-values",
+    "href": "slides/semana09/s1_atencion_producto_escalar.html#queries-keys-y-values",
+    "title": "Auto-Atención & Transformers",
+    "section": "Queries, Keys y Values",
+    "text": "Queries, Keys y Values\n\n\nAnalogía: motor de búsqueda\nImagina un diccionario con claves y valores:\n\n\n\nClave (Key)\nValor (Value)\n\n\n\n\n“recetas de pasta”\n[enlace a receta]\n\n\n“tempo de pasta”\n[enlace a música]\n\n\n“precio de pasta”\n[enlace a mercado]\n\n\n\nSi tu query es “cómo preparar pasta”: - Se compara con cada key - Claves similares → pesos altos - Resultado = combinación ponderada de los values\n\nEn auto-atención\nCada token genera tres vectores:\n\\[\\mathbf{q}_i = \\mathbf{W}_Q \\mathbf{e}_i \\quad \\text{(¿qué busco?)}\\] \\[\\mathbf{k}_i = \\mathbf{W}_K \\mathbf{e}_i \\quad \\text{(¿qué ofrezco?)}\\] \\[\\mathbf{v}_i = \\mathbf{W}_V \\mathbf{e}_i \\quad \\text{(¿qué comparto?)}\\]\n\n\n\n\n\n\nTip\n\n\nQ, K, V son proyecciones lineales del mismo embedding. Las matrices \\(\\mathbf{W}_Q, \\mathbf{W}_K, \\mathbf{W}_V\\) se aprenden durante el entrenamiento.\n\n\n\nEl token \\(i\\) usa su \\(\\mathbf{q}_i\\) para “preguntar” a todos los demás tokens. Cada token \\(j\\) responde con su \\(\\mathbf{k}_j\\). La información se transfiere a través de \\(\\mathbf{v}_j\\)."
+  },
+  {
+    "objectID": "slides/semana09/s1_atencion_producto_escalar.html#la-mecánica-completa",
+    "href": "slides/semana09/s1_atencion_producto_escalar.html#la-mecánica-completa",
+    "title": "Auto-Atención & Transformers",
+    "section": "La Mecánica Completa",
+    "text": "La Mecánica Completa\n\n\nPaso 1: Scores de similaridad\nPara el token \\(i\\) preguntando sobre el token \\(j\\):\n\\[s_{ij} = \\frac{\\mathbf{q}_i \\cdot \\mathbf{k}_j}{\\sqrt{d_k}}\\]\n\nProducto punto: ¿qué tan “compatible” es mi query con esa key?\n\\(\\sqrt{d_k}\\): escala para evitar gradientes muy pequeños (ver siguiente slide)\nResultado: matriz de scores \\(S \\in \\mathbb{R}^{T \\times T}\\)\n\nPaso 2: Pesos de atención\n\\[\\alpha_{ij} = \\text{softmax}_j(s_{ij}) = \\frac{e^{s_{ij}}}{\\sum_k e^{s_{ik}}}\\]\nCada fila de \\(\\alpha\\) suma a 1 → distribución de probabilidad sobre posiciones.\n\nPaso 3: Salida contextualizada\n\\[\\mathbf{z}_i = \\sum_j \\alpha_{ij} \\mathbf{v}_j\\]\nEl nuevo vector del token \\(i\\) es la media ponderada de los values, donde los pesos son los \\(\\alpha_{ij}\\).\nForma matricial completa\n\\[\\text{Attention}(\\mathbf{Q}, \\mathbf{K}, \\mathbf{V}) = \\text{softmax}\\!\\left(\\frac{\\mathbf{Q}\\mathbf{K}^\\top}{\\sqrt{d_k}}\\right)\\mathbf{V}\\]\nDonde \\(\\mathbf{Q}, \\mathbf{K}, \\mathbf{V} \\in \\mathbb{R}^{T \\times d_k}\\) son las matrices de todos los queries, keys y values.\n\n\n\n\n\n\nNote\n\n\nLa operación es completamente matricial → se puede ejecutar en paralelo para todos los tokens simultáneamente."
+  },
+  {
+    "objectID": "slides/semana09/s1_atencion_producto_escalar.html#el-problema-con-el-producto-punto-crudo",
+    "href": "slides/semana09/s1_atencion_producto_escalar.html#el-problema-con-el-producto-punto-crudo",
+    "title": "Auto-Atención & Transformers",
+    "section": "El Problema con el Producto Punto Crudo",
+    "text": "El Problema con el Producto Punto Crudo\n\n\nIntuición estadística\nSi \\(q_i, k_j \\sim \\mathcal{N}(0, 1)\\) con dimensión \\(d_k\\):\n\\[q \\cdot k = \\sum_{l=1}^{d_k} q_l k_l\\]\nMedia: \\(\\mathbb{E}[q \\cdot k] = 0\\)\nVarianza: \\(\\text{Var}[q \\cdot k] = d_k\\)\n→ La desviación estándar del producto punto crece como \\(\\sqrt{d_k}\\)\nEfecto sobre softmax\nCon \\(d_k\\) grande (e.g. 64), los scores pueden ser muy grandes. El softmax se “satura”:\n\\[\\text{softmax}([100, 101, 99]) \\approx [0.27, 0.73, 0.00]\\]\n→ Gradientes muy pequeños → entrenamiento lento o estancado.\n\n\n\n\n\n\n\n\n\n\nCon escalado, la varianza es siempre 1 independientemente de \\(d_k\\) ✅"
+  },
+  {
+    "objectID": "slides/semana09/s1_atencion_producto_escalar.html#auto-atención-con-numpy",
+    "href": "slides/semana09/s1_atencion_producto_escalar.html#auto-atención-con-numpy",
+    "title": "Auto-Atención & Transformers",
+    "section": "Auto-Atención con NumPy",
+    "text": "Auto-Atención con NumPy\n\n\nCode\nimport numpy as np\n\ndef scaled_dot_product_attention_np(Q, K, V):\n    \"\"\"\n    Q, K, V: (T, d_k)\n    Retorna: (T, d_k), (T, T)  — salida y pesos de atención\n    \"\"\"\n    d_k = Q.shape[-1]\n\n    # Paso 1: scores de similaridad\n    scores = Q @ K.T / np.sqrt(d_k)          # (T, T)\n\n    # Paso 2: softmax por fila\n    scores_max = scores.max(axis=-1, keepdims=True)   # estabilidad numérica\n    exp_scores = np.exp(scores - scores_max)\n    attn_weights = exp_scores / exp_scores.sum(axis=-1, keepdims=True)  # (T, T)\n\n    # Paso 3: salida ponderada\n    output = attn_weights @ V                 # (T, d_k)\n    return output, attn_weights\n\n\n# Ejemplo sencillo: 5 tokens, d_k=4\nnp.random.seed(0)\nT, d_k = 5, 4\nQ = np.random.randn(T, d_k)\nK = np.random.randn(T, d_k)\nV = np.random.randn(T, d_k)\n\noutput, weights = scaled_dot_product_attention_np(Q, K, V)\n\nprint(\"Forma de salida:\", output.shape)\nprint(\"Forma de pesos:\", weights.shape)\nprint(\"\\nMatriz de atención (redondeada a 2 dec.):\")\nprint(np.round(weights, 2))\nprint(\"\\nCada fila suma a:\", np.round(weights.sum(axis=-1), 4))\n\n\nForma de salida: (5, 4)\nForma de pesos: (5, 5)\n\nMatriz de atención (redondeada a 2 dec.):\n[[0.01 0.29 0.54 0.02 0.14]\n [0.   0.79 0.1  0.04 0.07]\n [0.17 0.12 0.35 0.16 0.2 ]\n [0.06 0.31 0.32 0.09 0.22]\n [0.02 0.56 0.19 0.05 0.19]]\n\nCada fila suma a: [1. 1. 1. 1. 1.]"
+  },
+  {
+    "objectID": "slides/semana09/s1_atencion_producto_escalar.html#auto-atención-con-pytorch",
+    "href": "slides/semana09/s1_atencion_producto_escalar.html#auto-atención-con-pytorch",
+    "title": "Auto-Atención & Transformers",
+    "section": "Auto-Atención con PyTorch",
+    "text": "Auto-Atención con PyTorch\n\n\nCode\nimport torch\nimport torch.nn as nn\nimport torch.nn.functional as F\n\nclass ScaledDotProductAttention(nn.Module):\n    \"\"\"\n    Mecanismo de atención de producto escalar escalado.\n    Implementa: Attention(Q, K, V) = softmax(QK^T / sqrt(d_k)) V\n    \"\"\"\n    def __init__(self, dropout=0.0):\n        super().__init__()\n        self.dropout = nn.Dropout(dropout)\n\n    def forward(self, Q, K, V, mask=None):\n        \"\"\"\n        Q: (batch, T_q, d_k)\n        K: (batch, T_k, d_k)\n        V: (batch, T_k, d_v)\n        mask: (batch, T_q, T_k) — opcional, para causal masking\n        \"\"\"\n        d_k = Q.size(-1)\n\n        # Scores: (batch, T_q, T_k)\n        scores = torch.bmm(Q, K.transpose(1, 2)) / (d_k ** 0.5)\n\n        # Máscara causal (para decodificador): -inf en posiciones futuras\n        if mask is not None:\n            scores = scores.masked_fill(mask == 0, float('-inf'))\n\n        # Pesos de atención\n        attn_weights = F.softmax(scores, dim=-1)\n        attn_weights = self.dropout(attn_weights)\n\n        # Salida contextualizada\n        output = torch.bmm(attn_weights, V)\n        return output, attn_weights\n\n\n# Prueba\ntorch.manual_seed(42)\nB, T, d_k = 2, 6, 32\n\nQ = torch.randn(B, T, d_k)\nK = torch.randn(B, T, d_k)\nV = torch.randn(B, T, d_k)\n\nattn = ScaledDotProductAttention(dropout=0.0)\nout, weights = attn(Q, K, V)\n\nprint(f\"Entrada Q: {Q.shape}\")\nprint(f\"Salida:    {out.shape}\")\nprint(f\"Pesos:     {weights.shape}\")\nprint(f\"\\nPesos para batch=0 (redondeados):\\n{weights[0].detach().numpy().round(3)}\")\n\n\nEntrada Q: torch.Size([2, 6, 32])\nSalida:    torch.Size([2, 6, 32])\nPesos:     torch.Size([2, 6, 6])\n\nPesos para batch=0 (redondeados):\n[[0.121 0.078 0.033 0.693 0.053 0.021]\n [0.109 0.102 0.21  0.18  0.32  0.08 ]\n [0.57  0.149 0.054 0.091 0.06  0.076]\n [0.117 0.132 0.257 0.057 0.318 0.119]\n [0.197 0.105 0.028 0.255 0.091 0.324]\n [0.07  0.084 0.14  0.253 0.373 0.08 ]]"
+  },
+  {
+    "objectID": "slides/semana09/s1_atencion_producto_escalar.html#el-módulo-completo-self-attention-layer",
+    "href": "slides/semana09/s1_atencion_producto_escalar.html#el-módulo-completo-self-attention-layer",
+    "title": "Auto-Atención & Transformers",
+    "section": "El Módulo Completo: Self-Attention Layer",
+    "text": "El Módulo Completo: Self-Attention Layer\n\n\nCode\nclass SelfAttentionLayer(nn.Module):\n    \"\"\"\n    Auto-atención: proyecta embeddings a Q, K, V y aplica\n    atención de producto escalar.\n    \"\"\"\n    def __init__(self, d_model, d_k=None):\n        super().__init__()\n        d_k = d_k or d_model\n\n        # Proyecciones lineales aprendibles\n        self.W_Q = nn.Linear(d_model, d_k, bias=False)\n        self.W_K = nn.Linear(d_model, d_k, bias=False)\n        self.W_V = nn.Linear(d_model, d_k, bias=False)\n        self.W_O = nn.Linear(d_k, d_model, bias=False)  # proyección de salida\n\n        self.attention = ScaledDotProductAttention()\n\n    def forward(self, x, mask=None):\n        \"\"\"x: (batch, T, d_model)\"\"\"\n        Q = self.W_Q(x)   # (batch, T, d_k)\n        K = self.W_K(x)   # (batch, T, d_k)\n        V = self.W_V(x)   # (batch, T, d_k)\n\n        out, weights = self.attention(Q, K, V, mask)\n        return self.W_O(out), weights   # (batch, T, d_model)\n\n\n# Aplicado sobre embeddings de texto\nd_model = 64\nself_attn = SelfAttentionLayer(d_model=d_model, d_k=32)\n\n# Simular batch de textos tokenizados\nbatch_size, seq_len = 4, 10\nx = torch.randn(batch_size, seq_len, d_model)    # (B, T, d_model)\n\nout, attn_weights = self_attn(x)\nprint(f\"Entrada:   {x.shape}\")\nprint(f\"Salida:    {out.shape}   ← mismas dimensiones\")\nprint(f\"Pesos:     {attn_weights.shape}  ← T×T por ejemplo del batch\")\n\nnpar = sum(p.numel() for p in self_attn.parameters())\nprint(f\"Parámetros: {npar:,}  (solo W_Q, W_K, W_V, W_O)\")\n\n\nEntrada:   torch.Size([4, 10, 64])\nSalida:    torch.Size([4, 10, 64])   ← mismas dimensiones\nPesos:     torch.Size([4, 10, 10])  ← T×T por ejemplo del batch\nParámetros: 8,192  (solo W_Q, W_K, W_V, W_O)"
+  },
+  {
+    "objectID": "slides/semana09/s1_atencion_producto_escalar.html#qué-atiende-cada-token",
+    "href": "slides/semana09/s1_atencion_producto_escalar.html#qué-atiende-cada-token",
+    "title": "Auto-Atención & Transformers",
+    "section": "¿Qué Atiende Cada Token?",
+    "text": "¿Qué Atiende Cada Token?"
+  },
+  {
+    "objectID": "slides/semana09/s1_atencion_producto_escalar.html#interpretando-el-mapa-de-atención",
+    "href": "slides/semana09/s1_atencion_producto_escalar.html#interpretando-el-mapa-de-atención",
+    "title": "Auto-Atención & Transformers",
+    "section": "Interpretando el Mapa de Atención",
+    "text": "Interpretando el Mapa de Atención\n\n\nLectura del mapa\n\nFila \\(i\\): distribución de atención del token \\(i\\) sobre todos los tokens\nColumna \\(j\\): cuánta atención recibe el token \\(j\\) en total\nLos valores en cada fila suman exactamente 1.0\nDiagonal alta: el token se atiende a sí mismo (común)\n\n¿Qué debería capturar?\nCon entrenamiento real sobre datos lingüísticos: - “gato” (sujeto) atiende fuertemente a “come” (verbo) - “fresco” (adjetivo) atiende a “pescado” (sustantivo) - “el” (artículo) atiende al sustantivo siguiente\n\n\n\n\n\n\n\nNota sobre los pesos “aleatorios”\n\n\nEn el experimento anterior, los pesos \\(\\mathbf{W}_Q, \\mathbf{W}_K, \\mathbf{W}_V\\) son aleatorios (sin entrenar). Los mapas muestran la estructura del mecanismo, no dependencias lingüísticas reales.\nCon un Transformer entrenado (como BERT), los mapas capturan: - Relaciones sintácticas (sujeto-verbo) - Correferencialidad (pronombre → antecedente) - Modificación (adjetivo → sustantivo)\n\n\n\nRef: Vig (2019), Clark et al. (2019) — interpretabilidad de BERT"
+  },
+  {
+    "objectID": "slides/semana09/s1_atencion_producto_escalar.html#comparación-formal",
+    "href": "slides/semana09/s1_atencion_producto_escalar.html#comparación-formal",
+    "title": "Auto-Atención & Transformers",
+    "section": "Comparación Formal",
+    "text": "Comparación Formal\n\n\n\n\n\n\n\n\n\nPropiedad\nRNN\nCNN\nAuto-Atención\n\n\n\n\nProcesamiento\nSecuencial\nParalelo\nParalelo\n\n\nComplejidad por capa\n\\(O(T \\cdot d^2)\\)\n\\(O(T \\cdot k \\cdot d^2)\\)\n\\(\\mathbf{O(T^2 \\cdot d)}\\)\n\n\nDistancia máxima entre tokens\n\\(O(T)\\)\n\\(O(T/k)\\)\n\\(\\mathbf{O(1)}\\)\n\n\nOperaciones secuenciales\n\\(O(T)\\)\n\\(O(1)\\)\n\\(\\mathbf{O(1)}\\)\n\n\nContexto\nLocal (LSTM mitiga)\nLocal (\\(k\\))\nGlobal\n\n\n\n\n\n\n\n\n\nTip\n\n\nDistancia \\(O(1)\\): el token 1 puede atender directamente al token 512 en una sola operación. En una RNN necesitaría 511 pasos de recurrencia."
+  },
+  {
+    "objectID": "slides/semana09/s1_atencion_producto_escalar.html#atención-causal-máscara-triangular",
+    "href": "slides/semana09/s1_atencion_producto_escalar.html#atención-causal-máscara-triangular",
+    "title": "Auto-Atención & Transformers",
+    "section": "Atención Causal (Máscara Triangular)",
+    "text": "Atención Causal (Máscara Triangular)\n\n\nProblema para generación de texto\nEn encoder (p.ej. BERT): un token puede atender a todos los demás (bidireccional).\nEn decoder (p.ej. GPT): al generar el token \\(t\\), solo puede atender a los tokens anteriores (\\(1, \\ldots, t-1\\)). No debe “ver el futuro”.\nSolución: máscara triangular inferior\n\\[M_{ij} = \\begin{cases} 0 & \\text{si } j &gt; i \\quad (\\text{futuro}) \\\\ 1 & \\text{si } j \\leq i \\quad (\\text{pasado/presente}) \\end{cases}\\]\nSe aplica como: scores[M == 0] = -∞ → después del softmax → peso ≈ 0\n\n\n\nCode\nT = 5\n# Máscara triangular inferior\nmask = torch.tril(torch.ones(T, T))\nprint(\"Máscara causal (1=visible, 0=enmascarado):\")\nprint(mask.int().numpy())\n\n# Aplicación sobre scores\nscores_ex = torch.randn(1, T, T)\nscores_masked = scores_ex.masked_fill(\n    mask.unsqueeze(0) == 0, float('-inf')\n)\nattn_causal = F.softmax(scores_masked, dim=-1)\n\nimport matplotlib.pyplot as plt\nfig, axes = plt.subplots(1, 2, figsize=(8, 3))\nfor ax, data, title in zip(\n        axes,\n        [mask.numpy(), attn_causal[0].detach().numpy()],\n        ['Máscara causal', 'Pesos de atención\\ncausal (softmax)']):\n    im = ax.imshow(data, cmap='Blues', aspect='auto')\n    ax.set_title(title, fontsize=10, fontweight='bold')\n    ax.set_xlabel(\"Key position $j$\", fontsize=9)\n    ax.set_ylabel(\"Query position $i$\", fontsize=9)\n    plt.colorbar(im, ax=ax, fraction=0.046)\nplt.tight_layout()\nplt.show()\n\n\nMáscara causal (1=visible, 0=enmascarado):\n[[1 0 0 0 0]\n [1 1 0 0 0]\n [1 1 1 0 0]\n [1 1 1 1 0]\n [1 1 1 1 1]]"
+  },
+  {
+    "objectID": "slides/semana09/s1_atencion_producto_escalar.html#experimento-atención-sobre-texto-real",
+    "href": "slides/semana09/s1_atencion_producto_escalar.html#experimento-atención-sobre-texto-real",
+    "title": "Auto-Atención & Transformers",
+    "section": "Experimento: Atención sobre Texto Real",
+    "text": "Experimento: Atención sobre Texto Real\n\n\nCode\n# Usando un vocabulario y tokenización simples\nwords = [\n    'el', 'gato', 'come', 'pescado', 'fresco',\n    'un', 'perro', 'corre', 'rápido', 'lento',\n    'la', 'niña', 'lee', 'libro', 'nuevo',\n]\nvocab = {w: i + 4 for i, w in enumerate(words)}\nvocab.update({'&lt;PAD&gt;': 0, '&lt;UNK&gt;': 1, '&lt;BOS&gt;': 2, '&lt;EOS&gt;': 3})\n\noraciones = [\n    ['el', 'gato', 'come', 'pescado', 'fresco'],\n    ['un', 'perro', 'corre', 'rápido'],\n    ['la', 'niña', 'lee', 'el', 'libro', 'nuevo'],\n]\n\nMAX_LEN = 8\ndef tokenize(sent):\n    ids = [vocab.get(w, 1) for w in sent]\n    ids = ids[:MAX_LEN] + [0] * max(0, MAX_LEN - len(ids))\n    return ids\n\ntokens_batch = torch.tensor([tokenize(s) for s in oraciones])  # (3, 8)\n\n# Capa de embedding + self-attention\ntorch.manual_seed(0)\nd_model = 32\nemb_layer = nn.Embedding(max(vocab.values()) + 10, d_model, padding_idx=0)\nattn_layer = SelfAttentionLayer(d_model=d_model, d_k=16)\n\nwith torch.no_grad():\n    embs = emb_layer(tokens_batch)             # (3, 8, 32)\n    out, weights = attn_layer(embs)            # (3, 8, 32), (3, 8, 8)\n\nprint(\"Tokens batch:\", tokens_batch.shape)\nprint(\"Embeddings:  \", embs.shape)\nprint(\"Salida:      \", out.shape)\nprint(\"Pesos:       \", weights.shape)\nprint(f\"\\nPesos de atención — oración 0 '{' '.join(oraciones[0])}':\")\nprint(weights[0, :5, :5].numpy().round(3))\n\n\nTokens batch: torch.Size([3, 8])\nEmbeddings:   torch.Size([3, 8, 32])\nSalida:       torch.Size([3, 8, 32])\nPesos:        torch.Size([3, 8, 8])\n\nPesos de atención — oración 0 'el gato come pescado fresco':\n[[0.149 0.098 0.16  0.092 0.125]\n [0.149 0.091 0.16  0.116 0.135]\n [0.144 0.161 0.108 0.141 0.092]\n [0.108 0.141 0.095 0.143 0.115]\n [0.131 0.095 0.137 0.151 0.137]]"
+  },
+  {
+    "objectID": "slides/semana09/s1_atencion_producto_escalar.html#lo-que-aprendimos-hoy",
+    "href": "slides/semana09/s1_atencion_producto_escalar.html#lo-que-aprendimos-hoy",
+    "title": "Auto-Atención & Transformers",
+    "section": "Lo Que Aprendimos Hoy",
+    "text": "Lo Que Aprendimos Hoy\n\n\nLa operación central\n\\[\\text{Attention}(\\mathbf{Q}, \\mathbf{K}, \\mathbf{V}) = \\text{softmax}\\!\\left(\\frac{\\mathbf{Q}\\mathbf{K}^\\top}{\\sqrt{d_k}}\\right)\\mathbf{V}\\]\nTres ingredientes: - \\(\\mathbf{Q}\\) — “¿qué estoy buscando?” - \\(\\mathbf{K}\\) — “¿qué puedo ofrecerte?” - \\(\\mathbf{V}\\) — “¿qué información te doy?”\nPor qué \\(\\sqrt{d_k}\\): estabiliza la varianza del producto punto, evita saturación del softmax.\nComplejidad: \\(O(T^2 \\cdot d)\\) — cuadrática en longitud, pero completamente paralela.\n\nLo que ganamos\n\n\n\n\nRNN\nCNN\nAtención\n\n\n\n\nContexto global\n⚠️\n❌\n✅\n\n\nParalelo\n❌\n✅\n✅\n\n\nDistancia O(1)\n❌\n❌\n✅\n\n\n\nAún falta…\n\nUn solo “cabezal” de atención ve el espacio desde una sola perspectiva\nNo hay información posicional (el orden de los tokens es irrelevante)\nUn solo bloque de atención no es profundo\n\n→ Próxima sesión: Multi-Head Attention + Codificación Posicional"
+  },
+  {
+    "objectID": "slides/semana09/s1_atencion_producto_escalar.html#para-la-próxima-sesión",
+    "href": "slides/semana09/s1_atencion_producto_escalar.html#para-la-próxima-sesión",
+    "title": "Auto-Atención & Transformers",
+    "section": "Para la Próxima Sesión",
+    "text": "Para la Próxima Sesión\n\n\nS2: Atención Multi-Cabeza y Codificación Posicional\n\n\n\n\n\n\nNote\n\n\nProblema a resolver: si aplicamos auto-atención una sola vez, el modelo ve el espacio semántico desde una única perspectiva. ¿Qué pasa si queremos capturar múltiples tipos de relaciones simultáneamente?\nEjemplo: “banco” puede significar: - Institución financiera (relación semántica) - Objeto para sentarse (relación visual) - Orilla de un río (relación espacial)\n\n\n\nMulti-Head Attention: \\[\\text{MultiHead}(Q,K,V) = \\text{Concat}(\\text{head}_1, \\ldots, \\text{head}_h)\\mathbf{W}^O\\]\ndonde cada cabeza aprende una proyección diferente.\n\nY también…\n¿Por qué necesitamos codificación posicional?\nLa auto-atención es invariante a permutaciones — shufflear los tokens no cambia la salida (solo los pesos):\n# Esto produce la misma salida (!)\nout1, _ = attn(Q, K, V)\n# Permutar tokens\nperm = [2, 0, 3, 1, 4]\nout2, _ = attn(Q[:, perm], K[:, perm], V[:, perm])\nLos Transformers necesitan ingresar el orden explícitamente.\nLectura recomendada\nVaswani et al. (2017) — Attention is All You Need, Secciones 3.2 y 3.3"
+  },
+  {
+    "objectID": "slides/semana09/s1_atencion_producto_escalar.html#referencias",
+    "href": "slides/semana09/s1_atencion_producto_escalar.html#referencias",
+    "title": "Auto-Atención & Transformers",
+    "section": "Referencias",
+    "text": "Referencias\n\nVaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., Kaiser, Ł., & Polosukhin, I. (2017). Attention Is All You Need. NeurIPS 2017.\nBahdanau, D., Cho, K., & Bengio, Y. (2015). Neural Machine Translation by Jointly Learning to Align and Translate. ICLR 2015.\nLuong, M.-T., Pham, H., & Manning, C. D. (2015). Effective Approaches to Attention-based Neural Machine Translation. EMNLP 2015.\nClark, K., Khandelwal, U., Levy, O., & Manning, C. D. (2019). What Does BERT Look at? An Analysis of BERT’s Attention. ACL 2019 Workshop.\nVig, J. (2019). A Multiscale Visualization of Attention in the Transformer Model. ACL 2019."
+  },
+  {
     "objectID": "slides/semana08/s2_pooling.html#agenda-de-hoy",
     "href": "slides/semana08/s2_pooling.html#agenda-de-hoy",
     "title": "Redes Neuronales Convolucionales para NLP",
@@ -2146,14 +2265,14 @@
     "href": "index.html",
     "title": "NLP y Análisis Semántico",
     "section": "",
-    "text": "Introducción a NLP\nExpresiones Regulares\nPreprocesamiento de Texto\n\n\n\n\n\nBolsa de Palabras (BoW) y One-hot Encoding\nTF-IDF: Encontrando lo Relevante\nInformación Mutua Puntual (PMI) y N-gramas\n\n\n\n\n\nModelos de Lenguaje N-gram y Regla de la Cadena\nEvaluación: Perplejidad y Técnicas de Suavizado\nModelos Ocultos de Markov (HMM) para Etiquetado POS\n\n\n\n\n\nWord2Vec: Skip-gram y CBOW\nGloVe y FastText: Embeddings de Subpalabras\nVisualización de Datos de Alta Dimensión: t-SNE y PCA\n\n\n\n\n\nRepaso de Perceptrones y Retropropagación\nPerceptrones Multicapa para Clasificación de Texto\nVariantes de Descenso de Gradiente y Regularización\n\n\n\n\n\nArquitectura RNN: Manejando Longitud Variable\nGradientes que Desaparecen y la Solución LSTM\nGRU y RNNs Bidireccionales\n\n\n\n\n\nArquitecturas Codificador-Decodificador (Seq2Seq)\nTraducción Automática Neuronal (NMT)\nEl Mecanismo de Atención\n\n\n\n\n\nConvoluciones 1D para Texto\nMax Pooling Global vs. Local"
+    "text": "Introducción a NLP\nExpresiones Regulares\nPreprocesamiento de Texto\n\n\n\n\n\nBolsa de Palabras (BoW) y One-hot Encoding\nTF-IDF: Encontrando lo Relevante\nInformación Mutua Puntual (PMI) y N-gramas\n\n\n\n\n\nModelos de Lenguaje N-gram y Regla de la Cadena\nEvaluación: Perplejidad y Técnicas de Suavizado\nModelos Ocultos de Markov (HMM) para Etiquetado POS\n\n\n\n\n\nWord2Vec: Skip-gram y CBOW\nGloVe y FastText: Embeddings de Subpalabras\nVisualización de Datos de Alta Dimensión: t-SNE y PCA\n\n\n\n\n\nRepaso de Perceptrones y Retropropagación\nPerceptrones Multicapa para Clasificación de Texto\nVariantes de Descenso de Gradiente y Regularización\n\n\n\n\n\nArquitectura RNN: Manejando Longitud Variable\nGradientes que Desaparecen y la Solución LSTM\nGRU y RNNs Bidireccionales\n\n\n\n\n\nArquitecturas Codificador-Decodificador (Seq2Seq)\nTraducción Automática Neuronal (NMT)\nEl Mecanismo de Atención\n\n\n\n\n\nConvoluciones 1D para Texto\nMax Pooling Global vs. Local\nComparación RNNs vs. CNNs para Clasificación\n\n\n\n\n\nAtención de Producto Escalar (Queries, Keys, Values)"
   },
   {
     "objectID": "index.html#diapositivas",
     "href": "index.html#diapositivas",
     "title": "NLP y Análisis Semántico",
     "section": "",
-    "text": "Introducción a NLP\nExpresiones Regulares\nPreprocesamiento de Texto\n\n\n\n\n\nBolsa de Palabras (BoW) y One-hot Encoding\nTF-IDF: Encontrando lo Relevante\nInformación Mutua Puntual (PMI) y N-gramas\n\n\n\n\n\nModelos de Lenguaje N-gram y Regla de la Cadena\nEvaluación: Perplejidad y Técnicas de Suavizado\nModelos Ocultos de Markov (HMM) para Etiquetado POS\n\n\n\n\n\nWord2Vec: Skip-gram y CBOW\nGloVe y FastText: Embeddings de Subpalabras\nVisualización de Datos de Alta Dimensión: t-SNE y PCA\n\n\n\n\n\nRepaso de Perceptrones y Retropropagación\nPerceptrones Multicapa para Clasificación de Texto\nVariantes de Descenso de Gradiente y Regularización\n\n\n\n\n\nArquitectura RNN: Manejando Longitud Variable\nGradientes que Desaparecen y la Solución LSTM\nGRU y RNNs Bidireccionales\n\n\n\n\n\nArquitecturas Codificador-Decodificador (Seq2Seq)\nTraducción Automática Neuronal (NMT)\nEl Mecanismo de Atención\n\n\n\n\n\nConvoluciones 1D para Texto\nMax Pooling Global vs. Local"
+    "text": "Introducción a NLP\nExpresiones Regulares\nPreprocesamiento de Texto\n\n\n\n\n\nBolsa de Palabras (BoW) y One-hot Encoding\nTF-IDF: Encontrando lo Relevante\nInformación Mutua Puntual (PMI) y N-gramas\n\n\n\n\n\nModelos de Lenguaje N-gram y Regla de la Cadena\nEvaluación: Perplejidad y Técnicas de Suavizado\nModelos Ocultos de Markov (HMM) para Etiquetado POS\n\n\n\n\n\nWord2Vec: Skip-gram y CBOW\nGloVe y FastText: Embeddings de Subpalabras\nVisualización de Datos de Alta Dimensión: t-SNE y PCA\n\n\n\n\n\nRepaso de Perceptrones y Retropropagación\nPerceptrones Multicapa para Clasificación de Texto\nVariantes de Descenso de Gradiente y Regularización\n\n\n\n\n\nArquitectura RNN: Manejando Longitud Variable\nGradientes que Desaparecen y la Solución LSTM\nGRU y RNNs Bidireccionales\n\n\n\n\n\nArquitecturas Codificador-Decodificador (Seq2Seq)\nTraducción Automática Neuronal (NMT)\nEl Mecanismo de Atención\n\n\n\n\n\nConvoluciones 1D para Texto\nMax Pooling Global vs. Local\nComparación RNNs vs. CNNs para Clasificación\n\n\n\n\n\nAtención de Producto Escalar (Queries, Keys, Values)"
   },
   {
     "objectID": "index.html#tareas",
@@ -4282,5 +4401,138 @@
     "title": "Redes Neuronales Convolucionales para NLP",
     "section": "Para la Próxima Sesión 📚",
     "text": "Para la Próxima Sesión 📚\n\n\n\n\n\n\nSemana 8, S2: Max Pooling Global vs. Local\n\n\n\nGlobal max pooling: captura “¿aparece el patrón en algún lugar?”\nAverage pooling: captura “¿cuánto aparece en promedio?”\nK-max pooling: retiene los \\(k\\) valores más altos\nImpacto de la estrategia de pooling en el rendimiento\n\n\n\n\nLectura:\n\nKim (2014): Convolutional Neural Networks for Sentence Classification (secciones 3-4)\nKalchbrenner et al. (2014): A Convolutional Neural Network for Modelling Sentences\nJohnson & Zhang (2015): Effective Use of Word Order for Text Categorization"
+  },
+  {
+    "objectID": "slides/semana08/s3_rnn_vs_cnn.html#agenda-de-hoy",
+    "href": "slides/semana08/s3_rnn_vs_cnn.html#agenda-de-hoy",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Agenda de Hoy",
+    "text": "Agenda de Hoy\n\n\n\n🔁 Repaso: los dos pipelines\n⚖️ Comparación teórica: paralelismo, contexto, memoria\n🧪 Benchmark experimental: GRU vs BiLSTM vs TextCNN\n⏱️ Eficiencia computacional: tiempos de entrenamiento\n🗺️ Cuándo usar cada uno: guía práctica\n🔗 Arquitecturas híbridas: CNN + RNN\n\n\n\n\n\n\n\n\nObjetivo\n\n\nComparar RNNs y CNNs de forma sistemática — teórica y empíricamente — para saber qué arquitectura elegir según la tarea y las restricciones del proyecto.\n\n\n\nPrerequisitos: RNNs/LSTM/GRU (Semana 6), Conv1D + Pooling (S1 y S2)"
+  },
+  {
+    "objectID": "slides/semana08/s3_rnn_vs_cnn.html#el-pipeline-rnn",
+    "href": "slides/semana08/s3_rnn_vs_cnn.html#el-pipeline-rnn",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "El Pipeline RNN",
+    "text": "El Pipeline RNN\n\n\nTexto → Embeddings → RNN → h_T → Clasificador\nPaso a paso: 1. Tokens → embeddings: \\(\\mathbf{e}_1, \\ldots, \\mathbf{e}_T \\in \\mathbb{R}^d\\) 2. GRU/LSTM procesa secuencialmente: \\[\\mathbf{h}_t = f(\\mathbf{h}_{t-1}, \\mathbf{e}_t)\\] 3. Toma \\(\\mathbf{h}_T\\) (o promedio de todos \\(\\mathbf{h}_t\\)) 4. \\(\\hat{y} = \\text{softmax}(\\mathbf{W}\\mathbf{h}_T + \\mathbf{b})\\)\n\n\n\n\n\n\nNote\n\n\nDependencia temporal: el estado \\(\\mathbf{h}_t\\) depende de \\(\\mathbf{h}_{t-1}\\), lo que hace el procesamiento inherentemente secuencial."
+  },
+  {
+    "objectID": "slides/semana08/s3_rnn_vs_cnn.html#el-pipeline-cnn",
+    "href": "slides/semana08/s3_rnn_vs_cnn.html#el-pipeline-cnn",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "El Pipeline CNN",
+    "text": "El Pipeline CNN\n\n\nTexto → Embeddings → Conv1D → Pooling → Clasificador\nPaso a paso: 1. Tokens → embeddings: matriz \\(\\mathbf{E} \\in \\mathbb{R}^{T \\times d}\\) 2. Filtros convolucionales en paralelo: \\[h_i = \\text{ReLU}(\\mathbf{W} \\cdot \\mathbf{e}_{i:i+k-1} + b)\\] 3. Global max pooling: \\(\\hat{h} = \\max_i h_i\\) 4. \\(\\hat{y} = \\text{softmax}(\\mathbf{W}\\hat{\\mathbf{h}} + \\mathbf{b})\\)\n\n\n\n\n\n\nNote\n\n\nSin dependencia temporal: todos los \\(h_i\\) se calculan simultáneamente — el procesamiento es completamente paralelo."
+  },
+  {
+    "objectID": "slides/semana08/s3_rnn_vs_cnn.html#eje-1-paralelismo",
+    "href": "slides/semana08/s3_rnn_vs_cnn.html#eje-1-paralelismo",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Eje 1: Paralelismo",
+    "text": "Eje 1: Paralelismo\n\n\nRNN — Secuencial por diseño\n\\[\\mathbf{h}_t = f(\\mathbf{h}_{t-1}, \\mathbf{e}_t)\\]\n\nCada paso depende del anterior\nNo se puede paralelizar a lo largo de \\(T\\)\nGPU infrautilizada para secuencias cortas\nTiempo \\(\\propto T\\) (longitud de la secuencia)\n\n\nCNN — Paralelo por diseño\n\\[h_i = \\text{ReLU}(\\mathbf{W} \\cdot \\mathbf{e}_{i:i+k-1} + b)\\]\n\nTodos los \\(h_i\\) son independientes entre sí\nSe calculan simultáneamente con nn.Conv1d\nGPU utilizada al máximo\nTiempo \\(\\propto \\log T\\) en la práctica"
+  },
+  {
+    "objectID": "slides/semana08/s3_rnn_vs_cnn.html#eje-2-ventana-de-contexto",
+    "href": "slides/semana08/s3_rnn_vs_cnn.html#eje-2-ventana-de-contexto",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Eje 2: Ventana de Contexto",
+    "text": "Eje 2: Ventana de Contexto\n\n\nRNN — Contexto global (en teoría)\n\nAccede a todo el pasado en \\(\\mathbf{h}_t\\)\nEn práctica: LSTM/GRU mitigan pero no eliminan el problema del gradiente\nDependencias muy largas siguen siendo difíciles\nBiLSTM captura contexto en ambas direcciones\n\n\nCNN — Contexto local (explícito)\n\nCada filtro de tamaño \\(k\\) ve exactamente \\(k\\) tokens contiguos\nCampo receptivo de la capa \\(l\\): \\(L(k-1)+1\\)\nPara capturar dependencias largas: apilar capas o agrandar \\(k\\)\nMulti-tamaño: \\(k \\in \\{3, 4, 5\\}\\) captura distintos n-gramas\n\n\n\n\n\n\n\n\n\n\n\nRNN/LSTM\nCNN\n\n\n\n\nContexto teórico\nGlobal (\\(T\\) tokens)\nLocal (\\(k\\) tokens por filtro)\n\n\nContexto práctico\n~100–200 tokens útiles\nExplícito, controlado por \\(k\\)\n\n\nDependencias largas\nCon LSTM/GRU\nCon capas apiladas\n\n\nCaptura de n-gramas\nImplícita\nExplícita y eficiente"
+  },
+  {
+    "objectID": "slides/semana08/s3_rnn_vs_cnn.html#eje-3-parámetros-y-memoria",
+    "href": "slides/semana08/s3_rnn_vs_cnn.html#eje-3-parámetros-y-memoria",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Eje 3: Parámetros y Memoria",
+    "text": "Eje 3: Parámetros y Memoria\n\n\nCode\nimport torch.nn as nn\n\ndef count_params(model):\n    return sum(p.numel() for p in model.parameters() if p.requires_grad)\n\nV, D = 20000, 128   # vocabulario, dimensión embedding\nH = 256             # tamaño oculto / canales\n\n# GRU\ngru_model = nn.Sequential(\n    nn.Embedding(V, D),\n    nn.GRU(D, H, batch_first=True)\n)\n\n# BiLSTM\nclass BiLSTM(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.emb = nn.Embedding(V, D)\n        self.lstm = nn.LSTM(D, H // 2, bidirectional=True, batch_first=True)\n        self.fc = nn.Linear(H, 2)\n    def forward(self, x):\n        o, _ = self.lstm(self.emb(x))\n        return self.fc(o[:, -1])\n\n# TextCNN (Kim 2014)\nclass TextCNN(nn.Module):\n    def __init__(self, filter_sizes=(3,4,5), num_filters=100):\n        super().__init__()\n        self.emb = nn.Embedding(V, D)\n        self.convs = nn.ModuleList([\n            nn.Conv1d(D, num_filters, fs) for fs in filter_sizes\n        ])\n        self.fc = nn.Linear(num_filters * len(filter_sizes), 2)\n    def forward(self, x):\n        e = self.emb(x).transpose(1, 2)\n        pooled = [f.relu(conv(e)).max(dim=2).values for conv in self.convs]\n        return self.fc(torch.cat(pooled, dim=1))\n\nimport torch.nn.functional as f\nimport torch\n\ngru = nn.GRU(D, H, batch_first=True)\nbilstm = BiLSTM()\ntextcnn = TextCNN()\n\nprint(f\"GRU  (enc + emb):   {count_params(gru) + V*D:&gt;10,} parámetros\")\nprint(f\"BiLSTM (full):      {count_params(bilstm):&gt;10,} parámetros\")\nprint(f\"TextCNN (Kim 2014): {count_params(textcnn):&gt;10,} parámetros\")\n\n\nGRU  (enc + emb):    2,856,448 parámetros\nBiLSTM (full):       2,824,706 parámetros\nTextCNN (Kim 2014):  2,714,502 parámetros\n\n\n\n\n\n\n\n\nTip\n\n\nTextCNN es el modelo más ligero de los tres — una ventaja significativa cuando los recursos son limitados o se necesita inferencia rápida."
+  },
+  {
+    "objectID": "slides/semana08/s3_rnn_vs_cnn.html#configuración-del-experimento",
+    "href": "slides/semana08/s3_rnn_vs_cnn.html#configuración-del-experimento",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Configuración del Experimento",
+    "text": "Configuración del Experimento\n\n\nDataset sintético de análisis de sentimiento\n\n2 clases: positivo / negativo\n4,000 ejemplos de entrenamiento, 1,000 de prueba\nVocabulario de 5,000 tokens\nLongitudes de oración: 15–50 tokens\nSeñal real basada en patrones de n-gramas\n\n\n\nCode\nimport torch\nimport torch.nn as nn\nimport numpy as np\nfrom torch.utils.data import DataLoader, TensorDataset\n\ntorch.manual_seed(0)\nnp.random.seed(0)\n\nVOCAB  = 5000\nD      = 64\nMAX_LEN = 40\nN_TRAIN = 4000\nN_TEST  = 1000\n\n# Tokens con señal semántica\nPOS_TOKENS = list(range(10, 60))    # palabras positivas\nNEG_TOKENS = list(range(60, 110))   # palabras negativas\n\ndef make_dataset(n, max_len=MAX_LEN):\n    seqs, labels = [], []\n    for _ in range(n):\n        label = np.random.randint(0, 2)\n        length = np.random.randint(15, max_len + 1)\n        seq = np.random.randint(200, VOCAB, size=length)\n        # insertar bigramas semánticos\n        signal = POS_TOKENS if label == 1 else NEG_TOKENS\n        for _ in range(np.random.randint(2, 5)):\n            pos = np.random.randint(0, max(1, length - 2))\n            seq[pos] = np.random.choice(signal)\n            seq[pos + 1] = np.random.choice(signal)\n        padded = np.zeros(max_len, dtype=np.int64)\n        padded[:length] = seq[:max_len]\n        seqs.append(padded)\n        labels.append(label)\n    return torch.tensor(seqs), torch.tensor(labels)\n\nX_tr, y_tr = make_dataset(N_TRAIN)\nX_te, y_te = make_dataset(N_TEST)\ntrain_dl = DataLoader(TensorDataset(X_tr, y_tr), batch_size=64, shuffle=True)\ntest_dl  = DataLoader(TensorDataset(X_te, y_te), batch_size=256)\nprint(f\"Train: {X_tr.shape}, Test: {X_te.shape}\")\n\n\nTrain: torch.Size([4000, 40]), Test: torch.Size([1000, 40])\n\n\n\n\n\n\n\n\n\n¿Por qué sintético?\n\n\n\nControl total sobre la señal\nResultados reproducibles\nPermite aislar las diferencias arquitectónicas\nDataset real → mismas tendencias, más ruido\n\n\n\n\nModelos a comparar:\n\n\n\nModelo\nTipo\nConfig\n\n\n\n\nGRU\nRNN\nH=128\n\n\nBiLSTM\nRNN\nH=64×2\n\n\nTextCNN\nCNN\nk=3,4,5"
+  },
+  {
+    "objectID": "slides/semana08/s3_rnn_vs_cnn.html#definición-de-los-tres-modelos",
+    "href": "slides/semana08/s3_rnn_vs_cnn.html#definición-de-los-tres-modelos",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Definición de los Tres Modelos",
+    "text": "Definición de los Tres Modelos\n\n\nCode\nclass GRUClassifier(nn.Module):\n    def __init__(self, vocab=VOCAB, d=D, h=128):\n        super().__init__()\n        self.emb  = nn.Embedding(vocab, d, padding_idx=0)\n        self.gru  = nn.GRU(d, h, batch_first=True)\n        self.drop = nn.Dropout(0.3)\n        self.fc   = nn.Linear(h, 2)\n\n    def forward(self, x):\n        e = self.drop(self.emb(x))\n        _, h = self.gru(e)\n        return self.fc(self.drop(h.squeeze(0)))\n\n\nclass BiLSTMClassifier(nn.Module):\n    def __init__(self, vocab=VOCAB, d=D, h=64):\n        super().__init__()\n        self.emb  = nn.Embedding(vocab, d, padding_idx=0)\n        self.lstm = nn.LSTM(d, h, bidirectional=True, batch_first=True)\n        self.drop = nn.Dropout(0.3)\n        self.fc   = nn.Linear(h * 2, 2)\n\n    def forward(self, x):\n        e = self.drop(self.emb(x))\n        out, _ = self.lstm(e)\n        # combinar últimos estados de ambas direcciones\n        return self.fc(self.drop(out[:, -1]))\n\n\nclass TextCNNClassifier(nn.Module):\n    def __init__(self, vocab=VOCAB, d=D, n_filters=64, filter_sizes=(3, 4, 5)):\n        super().__init__()\n        self.emb   = nn.Embedding(vocab, d, padding_idx=0)\n        self.convs = nn.ModuleList([\n            nn.Conv1d(d, n_filters, fs) for fs in filter_sizes\n        ])\n        self.drop  = nn.Dropout(0.3)\n        self.fc    = nn.Linear(n_filters * len(filter_sizes), 2)\n\n    def forward(self, x):\n        e = self.emb(x).transpose(1, 2)      # (B, D, T)\n        pooled = [\n            torch.relu(conv(e)).max(dim=2).values\n            for conv in self.convs\n        ]\n        return self.fc(self.drop(torch.cat(pooled, dim=1)))\n\n\nmodels = {\n    \"GRU\":     GRUClassifier(),\n    \"BiLSTM\":  BiLSTMClassifier(),\n    \"TextCNN\": TextCNNClassifier(),\n}\nfor name, m in models.items():\n    npar = sum(p.numel() for p in m.parameters() if p.requires_grad)\n    print(f\"{name:10s}: {npar:8,} parámetros\")\n\n\nGRU       :  394,754 parámetros\nBiLSTM    :  386,818 parámetros\nTextCNN   :  369,730 parámetros"
+  },
+  {
+    "objectID": "slides/semana08/s3_rnn_vs_cnn.html#entrenamiento-y-evaluación",
+    "href": "slides/semana08/s3_rnn_vs_cnn.html#entrenamiento-y-evaluación",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Entrenamiento y Evaluación",
+    "text": "Entrenamiento y Evaluación\n\n\nCode\nimport time\n\ndef train_model(model, train_dl, test_dl, epochs=10, lr=1e-3):\n    opt = torch.optim.Adam(model.parameters(), lr=lr)\n    criterion = nn.CrossEntropyLoss()\n    history = {'train_acc': [], 'test_acc': []}\n\n    t_start = time.perf_counter()\n    for epoch in range(epochs):\n        model.train()\n        correct = total = 0\n        for xb, yb in train_dl:\n            opt.zero_grad()\n            logits = model(xb)\n            loss = criterion(logits, yb)\n            loss.backward()\n            opt.step()\n            correct += (logits.argmax(1) == yb).sum().item()\n            total   += len(yb)\n        train_acc = correct / total\n\n        model.eval()\n        correct = total = 0\n        with torch.no_grad():\n            for xb, yb in test_dl:\n                logits = model(xb)\n                correct += (logits.argmax(1) == yb).sum().item()\n                total   += len(yb)\n        test_acc = correct / total\n        history['train_acc'].append(train_acc)\n        history['test_acc'].append(test_acc)\n\n    elapsed = time.perf_counter() - t_start\n    return history, elapsed\n\nresults = {}\nprint(f\"{'Modelo':&lt;12} {'Acc Train':&gt;10} {'Acc Test':&gt;10} {'Tiempo (s)':&gt;12}\")\nprint(\"-\" * 48)\nfor name, model in models.items():\n    hist, elapsed = train_model(model, train_dl, test_dl, epochs=10)\n    results[name] = {'history': hist, 'time': elapsed}\n    print(f\"{name:&lt;12} {hist['train_acc'][-1]:&gt;10.3f} {hist['test_acc'][-1]:&gt;10.3f} {elapsed:&gt;12.2f}\")\n\n\nModelo        Acc Train   Acc Test   Tiempo (s)\n------------------------------------------------\nGRU               0.992      0.997        12.78\nBiLSTM            0.974      0.969         8.88\nTextCNN           1.000      0.997         4.47"
+  },
+  {
+    "objectID": "slides/semana08/s3_rnn_vs_cnn.html#curvas-de-aprendizaje",
+    "href": "slides/semana08/s3_rnn_vs_cnn.html#curvas-de-aprendizaje",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Curvas de Aprendizaje",
+    "text": "Curvas de Aprendizaje"
+  },
+  {
+    "objectID": "slides/semana08/s3_rnn_vs_cnn.html#comparación-de-tiempos-de-entrenamiento",
+    "href": "slides/semana08/s3_rnn_vs_cnn.html#comparación-de-tiempos-de-entrenamiento",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Comparación de Tiempos de Entrenamiento",
+    "text": "Comparación de Tiempos de Entrenamiento\n\n\n\n\n\n\n\nImportant\n\n\nObservación clave: TextCNN alcanza accuracy competitivo en significativamente menos tiempo. La diferencia de velocidad se amplifica con GPUs y secuencias más largas."
+  },
+  {
+    "objectID": "slides/semana08/s3_rnn_vs_cnn.html#guía-de-decisión-práctica",
+    "href": "slides/semana08/s3_rnn_vs_cnn.html#guía-de-decisión-práctica",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Guía de Decisión Práctica",
+    "text": "Guía de Decisión Práctica"
+  },
+  {
+    "objectID": "slides/semana08/s3_rnn_vs_cnn.html#resumen-visual",
+    "href": "slides/semana08/s3_rnn_vs_cnn.html#resumen-visual",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Resumen Visual",
+    "text": "Resumen Visual"
+  },
+  {
+    "objectID": "slides/semana08/s3_rnn_vs_cnn.html#cnn-rnn-lo-mejor-de-ambos",
+    "href": "slides/semana08/s3_rnn_vs_cnn.html#cnn-rnn-lo-mejor-de-ambos",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "CNN + RNN: Lo Mejor de Ambos",
+    "text": "CNN + RNN: Lo Mejor de Ambos\n\n\nMotivación\n\nCNN: extrae características locales eficientemente\nRNN: modela relaciones entre esas características\n\nPipeline\nTexto → Embeddings\n          ↓\n       Conv1D  (captura n-gramas)\n          ↓\n       ReLU + pooling local\n          ↓\n       GRU/LSTM  (captura secuencia de patrones)\n          ↓\n       h_T → Clasificador\n\n\n\n\n\n\nTip\n\n\nLa CNN actúa como un extractor de características que reduce la longitud de secuencia antes de la RNN — reduciendo el problema del gradiente que desaparece.\n\n\n\n\n\n\nCode\nclass CNNRNNClassifier(nn.Module):\n    \"\"\"\n    CNN extrae características locales,\n    RNN captura su secuencia temporal.\n    \"\"\"\n    def __init__(self, vocab=VOCAB, d=D,\n                 n_filters=64, kernel=3, h=128):\n        super().__init__()\n        self.emb  = nn.Embedding(vocab, d, padding_idx=0)\n        self.conv = nn.Conv1d(d, n_filters, kernel,\n                              padding=kernel // 2)\n        self.gru  = nn.GRU(n_filters, h, batch_first=True)\n        self.drop = nn.Dropout(0.3)\n        self.fc   = nn.Linear(h, 2)\n\n    def forward(self, x):\n        # CNN: extraer patrones locales\n        e = self.emb(x).transpose(1, 2)    # (B,D,T)\n        c = torch.relu(self.conv(e))        # (B,F,T)\n        c = c.transpose(1, 2)              # (B,T,F)\n\n        # RNN: modelar secuencia de patrones\n        _, h = self.gru(self.drop(c))\n        return self.fc(self.drop(h.squeeze(0)))\n\n\nhybrid = CNNRNNClassifier()\nnpar = sum(p.numel() for p in hybrid.parameters() if p.requires_grad)\nprint(f\"CNN+RNN: {npar:,} parámetros\")\n\n\nCNN+RNN: 407,106 parámetros"
+  },
+  {
+    "objectID": "slides/semana08/s3_rnn_vs_cnn.html#benchmark-extendido-incluyendo-cnnrnn",
+    "href": "slides/semana08/s3_rnn_vs_cnn.html#benchmark-extendido-incluyendo-cnnrnn",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Benchmark Extendido: Incluyendo CNN+RNN",
+    "text": "Benchmark Extendido: Incluyendo CNN+RNN\n\n\n\n\nResumen final:\nModelo         Acc Test   Tiempo (s)\n------------------------------------\nGRU               0.997        12.78\nBiLSTM            0.969         8.88\nTextCNN           0.997         4.47\nCNN+RNN           0.986        13.25"
+  },
+  {
+    "objectID": "slides/semana08/s3_rnn_vs_cnn.html#reflexión-cuál-es-el-mejor-modelo",
+    "href": "slides/semana08/s3_rnn_vs_cnn.html#reflexión-cuál-es-el-mejor-modelo",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Reflexión: ¿Cuál Es el Mejor Modelo?",
+    "text": "Reflexión: ¿Cuál Es el Mejor Modelo?\n\n\nNo hay respuesta universal\n\n“All models are wrong, but some are useful.”\n— George Box\n\nLa elección depende de:\n\nTarea: clasificación vs. generación vs. etiquetado\nDatos: longitud de secuencias, tamaño del dataset\nRecursos: GPU disponible, latencia requerida\nBaseline razonable: TextCNN es a menudo el mejor punto de partida por su velocidad\n\n\nEl panorama hoy (2024)\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nImportant\n\n\nLos Transformers (próxima semana) superan a CNN y RNN, pero requieren más datos y recursos."
+  },
+  {
+    "objectID": "slides/semana08/s3_rnn_vs_cnn.html#lo-que-aprendimos-hoy",
+    "href": "slides/semana08/s3_rnn_vs_cnn.html#lo-que-aprendimos-hoy",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Lo Que Aprendimos Hoy",
+    "text": "Lo Que Aprendimos Hoy\n\n\nComparación teórica\n\n\n\nDimensión\nCNN\nRNN\n\n\n\n\nParalelismo\n✅ Total\n⚠️ Secuencial\n\n\nN-gramas\n✅ Explícito\n⚠️ Implícito\n\n\nContexto largo\n⚠️ Capas\n✅ LSTM/GRU\n\n\nVelocidad\n✅ Rápido\n⚠️ Lento\n\n\nParámetros\n✅ Pocos\n⚠️ Más\n\n\n\nResultado experimental\n\nEn clasificación de texto: TextCNN ≈ BiLSTM en accuracy\nTextCNN: 2–3x más rápido en entrenamiento\nCNN+RNN: balance interesante para datos complejos\n\n\nCuándo usar cada uno\nCNN: - Clasificación de texto / sentimiento - Detección de spam, tópicos - Recursos limitados - Baseline rápido\nRNN/LSTM: - Traducción / generación - NER, POS tagging - Dependencias de largo alcance\nCNN+RNN: - Documentos largos con estructura local - Cuando CNN sola no capta suficiente contexto"
+  },
+  {
+    "objectID": "slides/semana08/s3_rnn_vs_cnn.html#para-la-próxima-semana",
+    "href": "slides/semana08/s3_rnn_vs_cnn.html#para-la-próxima-semana",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Para la Próxima Semana",
+    "text": "Para la Próxima Semana\n\n\nSemana 9: Auto-Atención y Transformers\n\n\n\n\n\n\nNote\n\n\nPregunta motivadora: ¿Puede un modelo capturar contexto global sin procesar la secuencia paso a paso (RNN) ni limitarse a ventanas locales (CNN)?\n\n\n\nRespuesta: el mecanismo de auto-atención\n\\[\\text{Attention}(Q, K, V) = \\text{softmax}\\!\\left(\\frac{QK^\\top}{\\sqrt{d_k}}\\right)V\\]\n\nCada token puede “atender” a cualquier otro token directamente\nSin dependencias secuenciales → completamente paralelo\nComplejidad: \\(O(T^2)\\) pero con GPU modernas es muy eficiente\nBase de BERT, GPT, y todos los LLMs modernos\n\n\nLecturas recomendadas\n\nVaswani et al. (2017). Attention is All You Need\nYin et al. (2017). Comparative Study of CNNs and RNNs for NLP\nKim (2014). Convolutional Neural Networks for Sentence Classification\n\nPara reflexionar\n¿Por qué la atención supera tanto a CNN como a RNN en tareas de lenguaje si la primera se “ve” como más sencilla en su definición?"
+  },
+  {
+    "objectID": "slides/semana08/s3_rnn_vs_cnn.html#referencias",
+    "href": "slides/semana08/s3_rnn_vs_cnn.html#referencias",
+    "title": "Redes Neuronales Convolucionales para NLP",
+    "section": "Referencias",
+    "text": "Referencias\n\nKim, Y. (2014). Convolutional Neural Networks for Sentence Classification. EMNLP 2014.\nYin, W., Kann, K., Yu, M., & Schütze, H. (2017). Comparative Study of CNN and RNN for Natural Language Processing. arXiv:1702.01923.\nConneau, A., Schwenk, H., Barrault, L., & LeCun, Y. (2017). Very Deep Convolutional Networks for Text Classification. EACL 2017.\nVaswani, A. et al. (2017). Attention Is All You Need. NeurIPS 2017.\nZhou, C. et al. (2015). A C-LSTM Neural Network for Text Classification. arXiv:1511.08630."
   }
 ]

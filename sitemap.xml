@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>https://fjsuarez.me/slides/semana09/s1_atencion_producto_escalar.html</loc>
+    <lastmod>2026-04-11T15:02:41.471Z</lastmod>
+  </url>
+  <url>
     <loc>https://fjsuarez.me/slides/semana08/s2_pooling.html</loc>
     <lastmod>2026-04-08T18:02:04.767Z</lastmod>
   </url>
@@ -50,7 +54,7 @@
   </url>
   <url>
     <loc>https://fjsuarez.me/index.html</loc>
-    <lastmod>2026-04-08T18:02:41.858Z</lastmod>
+    <lastmod>2026-04-11T14:45:03.553Z</lastmod>
   </url>
   <url>
     <loc>https://fjsuarez.me/general.html</loc>
@@ -58,7 +62,7 @@
   </url>
   <url>
     <loc>https://fjsuarez.me/programa.html</loc>
-    <lastmod>2026-04-08T18:02:41.858Z</lastmod>
+    <lastmod>2026-04-11T14:45:03.553Z</lastmod>
   </url>
   <url>
     <loc>https://fjsuarez.me/slides/semana01/s2_regex.html</loc>
@@ -103,5 +107,9 @@
   <url>
     <loc>https://fjsuarez.me/slides/semana08/s1_conv1d_texto.html</loc>
     <lastmod>2026-04-08T17:59:38.311Z</lastmod>
+  </url>
+  <url>
+    <loc>https://fjsuarez.me/slides/semana08/s3_rnn_vs_cnn.html</loc>
+    <lastmod>2026-04-11T14:34:23.075Z</lastmod>
   </url>
 </urlset>
