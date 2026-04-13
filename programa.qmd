@@ -39,7 +39,7 @@
 | | [S3: Comparación RNNs vs. CNNs para clasificación](slides/semana08/s3_rnn_vs_cnn.qmd) | **📝 Tarea 2:** Generador de nombres a nivel de caracteres con LSTM |
 | **9** | **Auto-Atención & Transformers** | |
 | | [S1: Atención de Producto Escalar (Queries, Keys, Values)](slides/semana09/s1_atencion_producto_escalar.qmd) | |
-| | S2: Atención Multi-Cabeza y Codificación Posicional | |
+| | [S2: Atención Multi-Cabeza y Codificación Posicional](slides/semana09/s2_multihead_posicional.qmd) | |
 | | S3: El bloque Transformer completo (Residuales, Normalización) | |
 | **10** | **BERT y la Revolución del Codificador** | |
 | | S1: Modelado de Lenguaje Enmascarado (MLM) | |

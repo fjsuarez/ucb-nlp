@@ -874,3 +874,13 @@ Vaswani et al. (2017) — *Attention is All You Need*, Secciones 3.2 y 3.3
 - Luong, M.-T., Pham, H., & Manning, C. D. (2015). Effective Approaches to Attention-based Neural Machine Translation. *EMNLP 2015*.
 - Clark, K., Khandelwal, U., Levy, O., & Manning, C. D. (2019). What Does BERT Look at? An Analysis of BERT's Attention. *ACL 2019 Workshop*.
 - Vig, J. (2019). A Multiscale Visualization of Attention in the Transformer Model. *ACL 2019*.
+
+# ¿Preguntas? 🙋 {background-color="#03045e"}
+
+:::{.r-fit-text}
+**¡Gracias!**
+:::
+
+📧 fsuarez@ucb.edu.bo
+
+🔗 Materiales: [github.com/fjsuarez/ucb-nlp](https://github.com/fjsuarez/ucb-nlp)

@@ -1,0 +1,856 @@
+---
+title: "Auto-Atención & Transformers"
+subtitle: "S2: Atención Multi-Cabeza y Codificación Posicional"
+author: "Prof. Francisco Suárez"
+institute: "Universidad Católica Boliviana"
+date: "2026-04-15"
+format:
+  revealjs:
+    theme: sky
+    transition: slide
+    slide-number: true
+    chalkboard: true
+    code-fold: true
+    code-tools: true
+    highlight-style: github
+    footer: "NLP y Análisis Semántico | Semana 9"
+    logo: ""
+    incremental: false
+    scrollable: true
+execute:
+  echo: true
+  warning: false
+---
+
+## Agenda de Hoy {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+1. 🔁 Repaso: auto-atención de un solo cabezal
+2. 🎭 **Multi-Head Attention**: múltiples perspectivas
+3. 📐 Implementación de MHA desde cero
+4. 📍 **El problema del orden**: ¿por qué importa la posición?
+5. 🌊 **Codificación posicional sinusoidal**
+6. 🧪 Experimento: MHA + posicional encoding sobre texto
+
+:::
+::: {.column width="50%"}
+
+::: {.callout-tip}
+## Objetivo
+Entender por qué un solo cabezal de atención es insuficiente, cómo **Multi-Head Attention** captura múltiples tipos de relaciones simultáneamente, y por qué los Transformers necesitan **codificación posicional** explícita.
+:::
+
+**Prerequisitos:** Scaled Dot-Product Attention (S1)
+
+:::
+:::
+
+# Repaso: Un Solo Cabezal {background-color="#0077b6"}
+
+## Limitación del Cabezal Único {.smaller}
+
+::: {.columns}
+::: {.column width="55%"}
+
+### Lo que aprendimos en S1
+
+Un cabezal de atención aprende **una proyección** $\mathbf{W}_Q, \mathbf{W}_K, \mathbf{W}_V$ y calcula:
+
+$$\text{Attention}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) = \text{softmax}\!\left(\frac{\mathbf{Q}\mathbf{K}^\top}{\sqrt{d_k}}\right)\mathbf{V}$$
+
+### El problema
+
+Una sola proyección solo puede capturar **un tipo de relación** a la vez.
+
+En la oración *"El banco cerca del río se inundó"*:
+
+- ¿"banco" se refiere a institución financiera o a orilla?
+- Un solo cabezal debe elegir una perspectiva
+
+:::
+::: {.column width="45%"}
+
+```{python}
+#| echo: false
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+import numpy as np
+import torch
+
+fig, ax = plt.subplots(figsize=(5.5, 4))
+ax.set_xlim(0, 6); ax.set_ylim(0, 5); ax.axis('off')
+
+toks = ['El', 'banco', 'cerca', 'del', 'río']
+xs = [i * 1.15 + 0.5 for i in range(5)]
+
+# Input tokens
+for i, (tok, x) in enumerate(zip(toks, xs)):
+    ax.add_patch(mpatches.FancyBboxPatch(
+        (x - 0.45, 3.6), 0.9, 0.55,
+        boxstyle="round,pad=0.04", lw=1.5,
+        edgecolor='#023e8a', facecolor='#023e8a'))
+    ax.text(x, 3.87, tok, ha='center', va='center',
+            fontsize=9, fontweight='bold', color='white')
+
+# Single head attention - banco → río (strong), banco → banco (medium)
+pairs = [(1, 4, 0.8, '#e76f51'), (1, 1, 0.4, '#e76f51'), (1, 2, 0.2, '#e76f51')]
+for qi, ki, w, col in pairs:
+    ax.annotate('', xy=(xs[ki], 3.6), xytext=(xs[qi], 3.6),
+                arrowprops=dict(arrowstyle='->', color=col,
+                                lw=0.5 + 2.5 * w,
+                                connectionstyle='arc3,rad=-0.35'))
+
+# Output tokens
+for i, (tok, x) in enumerate(zip(toks, xs)):
+    col = '#e76f51' if i == 1 else '#2a9d8f'
+    ax.add_patch(mpatches.FancyBboxPatch(
+        (x - 0.45, 2.3), 0.9, 0.55,
+        boxstyle="round,pad=0.04", lw=1.5,
+        edgecolor=col, facecolor=col))
+    label = tok + "'" if i == 1 else tok
+    ax.text(x, 2.57, label, ha='center', va='center',
+            fontsize=8, fontweight='bold', color='white')
+
+ax.add_patch(mpatches.FancyBboxPatch((0.1, 1.4), 5.5, 0.6,
+    boxstyle="round,pad=0.08", facecolor='#ffddd2', edgecolor='#e76f51', lw=1.5))
+ax.text(2.85, 1.7,
+        '⚠️  Un solo cabezal: solo 1 perspectiva',
+        ha='center', va='center', fontsize=9, color='#e76f51', fontweight='bold')
+
+ax.text(2.85, 0.9, '"banco" ve solo la relación con "río"',
+        ha='center', va='center', fontsize=9, color='#555', style='italic')
+ax.text(2.85, 0.55, '¿Pero qué pasa con la ambigüedad semántica?',
+        ha='center', va='center', fontsize=8.5, color='#555')
+
+ax.set_title("Cabezal único: una sola perspectiva", fontsize=10,
+             fontweight='bold', color='#023e8a')
+plt.tight_layout()
+plt.show()
+```
+
+:::
+:::
+
+# Multi-Head Attention {background-color="#023e8a"}
+
+## La Idea: Múltiples Perspectivas Simultáneas {.smaller}
+
+::: {.columns}
+::: {.column width="55%"}
+
+### En lugar de una proyección, usar $h$ proyecciones
+
+Cada **cabezal** $i$ aprende sus propias matrices $\mathbf{W}_Q^{(i)}, \mathbf{W}_K^{(i)}, \mathbf{W}_V^{(i)}$ y puede especializarse en un tipo diferente de relación:
+
+$$\text{head}_i = \text{Attention}(\mathbf{Q}\mathbf{W}_Q^{(i)},\; \mathbf{K}\mathbf{W}_K^{(i)},\; \mathbf{V}\mathbf{W}_V^{(i)})$$
+
+Sus salidas se **concatenan** y se proyectan:
+
+$$\text{MultiHead}(\mathbf{Q},\mathbf{K},\mathbf{V}) = \text{Concat}(\text{head}_1, \ldots, \text{head}_h)\,\mathbf{W}^O$$
+
+### Dimensiones
+
+- $\mathbf{W}_Q^{(i)}, \mathbf{W}_K^{(i)} \in \mathbb{R}^{d_\text{model} \times d_k}$, con $d_k = d_\text{model}/h$
+- La concatenación produce $h \cdot d_k = d_\text{model}$ → proyección $\mathbf{W}^O \in \mathbb{R}^{d_\text{model} \times d_\text{model}}$
+
+::: {.callout-tip}
+En Vaswani et al. (2017): $d_\text{model}=512$, $h=8$, $d_k=d_v=64$.
+:::
+
+:::
+::: {.column width="45%"}
+
+```{python}
+#| echo: false
+fig, ax = plt.subplots(figsize=(5, 4.5))
+ax.set_xlim(0, 6); ax.set_ylim(0, 6); ax.axis('off')
+
+toks = ['El', 'banco', 'río']
+xs = [1.0, 3.0, 5.0]
+head_colors = ['#e76f51', '#2a9d8f', '#e9c46a']
+head_labels = ['Cabezal 1\n(sintaxis)', 'Cabezal 2\n(semántica)', 'Cabezal 3\n(localidad)']
+
+# Input row
+for i, (tok, x) in enumerate(zip(toks, xs)):
+    ax.add_patch(mpatches.FancyBboxPatch(
+        (x - 0.45, 5.0), 0.9, 0.55,
+        boxstyle="round,pad=0.04", lw=1.5,
+        edgecolor='#023e8a', facecolor='#023e8a'))
+    ax.text(x, 5.27, tok, ha='center', va='center',
+            fontsize=9, fontweight='bold', color='white')
+
+# Three parallel heads
+for hi, (col, hlabel) in enumerate(zip(head_colors, head_labels)):
+    y_box = 3.3 - hi * 0.0
+    x_box = 0.2 + hi * 1.9
+    ax.add_patch(mpatches.FancyBboxPatch(
+        (x_box, 3.2), 1.5, 0.6,
+        boxstyle="round,pad=0.06", lw=2,
+        edgecolor=col, facecolor=col, alpha=0.25))
+    ax.text(x_box + 0.75, 3.5, hlabel, ha='center', va='center',
+            fontsize=7.5, fontweight='bold', color=col)
+    for x in xs:
+        ax.annotate('', xy=(x_box + 0.75, 3.8),
+                    xytext=(x, 5.0),
+                    arrowprops=dict(arrowstyle='->', color=col, lw=0.8, alpha=0.5))
+
+# Concat arrow
+ax.annotate('', xy=(3.0, 2.1), xytext=(3.0, 3.2),
+            arrowprops=dict(arrowstyle='->', color='#555', lw=1.5))
+ax.add_patch(mpatches.FancyBboxPatch(
+    (0.8, 1.4), 4.2, 0.55,
+    boxstyle="round,pad=0.06", lw=2,
+    edgecolor='#023e8a', facecolor='#caf0f8'))
+ax.text(3.0 - 0.1, 1.67, 'Concat  →  W_O  →  salida', ha='center', va='center',
+        fontsize=9, fontweight='bold', color='#023e8a')
+
+ax.set_title("Multi-Head Attention:\n3 cabezales en paralelo", fontsize=10,
+             fontweight='bold', color='#023e8a')
+plt.tight_layout()
+plt.show()
+```
+
+:::
+:::
+
+## Implementación: MultiHeadAttention {.smaller}
+
+```{python}
+#| code-fold: show
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+class MultiHeadAttention(nn.Module):
+    """
+    Atención multi-cabeza (Vaswani et al., 2017).
+    d_model: dimensión del modelo
+    num_heads: número de cabezales h
+    d_k = d_v = d_model // num_heads
+    """
+    def __init__(self, d_model: int, num_heads: int, dropout: float = 0.0):
+        super().__init__()
+        assert d_model % num_heads == 0, "d_model debe ser divisible por num_heads"
+
+        self.d_model    = d_model
+        self.num_heads  = num_heads
+        self.d_k        = d_model // num_heads   # dimensión por cabezal
+
+        # Una proyección lineal grande equivale a h proyecciones pequeñas
+        self.W_Q = nn.Linear(d_model, d_model, bias=False)
+        self.W_K = nn.Linear(d_model, d_model, bias=False)
+        self.W_V = nn.Linear(d_model, d_model, bias=False)
+        self.W_O = nn.Linear(d_model, d_model, bias=False)
+
+        self.dropout = nn.Dropout(dropout)
+
+    def split_heads(self, x):
+        """(B, T, d_model) → (B, h, T, d_k)"""
+        B, T, _ = x.shape
+        x = x.view(B, T, self.num_heads, self.d_k)
+        return x.transpose(1, 2)   # (B, h, T, d_k)
+
+    def forward(self, x, mask=None):
+        """x: (B, T, d_model)"""
+        B, T, _ = x.shape
+
+        # Proyectar y dividir en cabezales
+        Q = self.split_heads(self.W_Q(x))   # (B, h, T, d_k)
+        K = self.split_heads(self.W_K(x))
+        V = self.split_heads(self.W_V(x))
+
+        # Atención escalada por cabezal
+        scores = torch.matmul(Q, K.transpose(-2, -1)) / (self.d_k ** 0.5)  # (B, h, T, T)
+        if mask is not None:
+            scores = scores.masked_fill(mask == 0, float('-inf'))
+        attn_weights = F.softmax(scores, dim=-1)
+        attn_weights = self.dropout(attn_weights)
+
+        # Contexto: (B, h, T, d_k)
+        context = torch.matmul(attn_weights, V)
+
+        # Reensamblar cabezales: (B, T, d_model)
+        context = context.transpose(1, 2).contiguous().view(B, T, self.d_model)
+        return self.W_O(context), attn_weights
+
+
+# Prueba
+torch.manual_seed(0)
+B, T, d_model, h = 2, 10, 64, 8
+mha = MultiHeadAttention(d_model=d_model, num_heads=h)
+x = torch.randn(B, T, d_model)
+out, w = mha(x)
+print(f"Entrada:      {x.shape}")
+print(f"Salida:       {out.shape}          ← misma forma")
+print(f"Pesos MHA:    {w.shape}  ← (batch, heads, T, T)")
+npar = sum(p.numel() for p in mha.parameters())
+print(f"Parámetros:   {npar:,}  (4 matrices de {d_model}x{d_model})")
+```
+
+## Visualización: Cada Cabezal Aprende Algo Diferente {.smaller}
+
+```{python}
+#| echo: false
+#| fig-align: center
+torch.manual_seed(42)
+
+sentence = ["The", "bank", "near", "the", "river", "flooded"]
+T_sent = len(sentence)
+d_m, n_h = 48, 6
+d_kk = d_m // n_h
+
+# Simulated structured attention patterns per head
+# head 0: syntactic (subject-verb)
+# head 1: semantic (bank-river disambiguation)
+# head 2: local (attend nearby tokens)
+# head 3: positional (attend to position 0)
+# head 4: coreference (the→bank, the→river)
+# head 5: uniform
+def make_pattern(T, pattern):
+    w = np.ones((T, T)) * 0.05
+    if pattern == 'subject_verb':
+        w[1, 5] = 0.7; w[5, 1] = 0.5
+        w[1, 1] = 0.15; w[5, 5] = 0.3
+    elif pattern == 'bank_river':
+        w[1, 4] = 0.75; w[4, 1] = 0.6
+        w[1, 1] = 0.1; w[4, 4] = 0.2
+    elif pattern == 'local':
+        for i in range(T):
+            for j in range(T):
+                w[i, j] = max(0, 0.5 - 0.15 * abs(i - j))
+        w = w / w.sum(axis=1, keepdims=True)
+    elif pattern == 'positional':
+        w[:, 0] = 0.6
+    elif pattern == 'coreference':
+        w[0, 1] = 0.65; w[3, 4] = 0.65
+    elif pattern == 'uniform':
+        w = np.ones((T, T)) / T
+    w = w / w.sum(axis=1, keepdims=True)
+    return w
+
+patterns = ['subject_verb', 'bank_river', 'local', 'positional', 'coreference', 'uniform']
+names    = ['H1: Sintaxis\n(sujeto-verbo)', 'H2: Semántica\n(banco-río)',
+            'H3: Localidad', 'H4: Posicional\n(token inicial)',
+            'H5: Correfer.\n(artículos)', 'H6: Uniforme']
+
+fig, axes = plt.subplots(1, 6, figsize=(15, 3.2))
+for ax, pat, name in zip(axes, patterns, names):
+    w = make_pattern(T_sent, pat)
+    im = ax.imshow(w, cmap='Blues', aspect='auto', vmin=0, vmax=0.85)
+    ax.set_title(name, fontsize=8.5, fontweight='bold', color='#023e8a')
+    ax.set_xticks(range(T_sent)); ax.set_xticklabels(sentence, rotation=45, ha='right', fontsize=7)
+    ax.set_yticks(range(T_sent)); ax.set_yticklabels(sentence, fontsize=7)
+
+plt.suptitle('"The bank near the river flooded" — 6 cabezales, 6 perspectivas distintas',
+             fontsize=10, fontweight='bold', color='#03045e')
+plt.tight_layout()
+plt.show()
+```
+
+::: {.callout-note}
+Estos patrones son ilustrativos. En modelos reales (BERT), Clark et al. (2019) identificaron cabezales especializados en: tokens directamente anteriores/siguientes, tokens relacionados sintácticamente, el token `[SEP]`, y más.
+:::
+
+# El Problema del Orden {background-color="#0077b6"}
+
+## La Auto-Atención es Invariante a Permutaciones {.smaller}
+
+::: {.columns}
+::: {.column width="55%"}
+
+### Demostración
+
+```{python}
+#| code-fold: show
+torch.manual_seed(1)
+B, T, d = 1, 5, 32
+mha_test = MultiHeadAttention(d_model=d, num_heads=4)
+mha_test.eval()
+
+x = torch.randn(B, T, d)
+
+# Salida original
+with torch.no_grad():
+    out_orig, _ = mha_test(x)
+
+# Permutar tokens
+perm = torch.tensor([2, 0, 4, 1, 3])
+x_perm = x[:, perm, :]
+
+with torch.no_grad():
+    out_perm, _ = mha_test(x_perm)
+
+# ¿La salida permutada coincide con permutar la salida original?
+diff = (out_perm - out_orig[:, perm, :]).abs().max().item()
+print(f"Diferencia máxima (out_perm vs out_orig[perm]): {diff:.2e}")
+print("→ La MHA no distingue el orden de tokens ⚠️")
+```
+
+:::
+::: {.column width="45%"}
+
+::: {.callout-important}
+### Por qué esto es un problema
+
+Para MHA, estas dos oraciones son **idénticas**:
+
+- *"El perro muerde al hombre"*
+- *"El hombre muerde al perro"*
+
+Tienen exactamente los mismos tokens — diferente **orden**.
+
+El modelo nunca verá la diferencia si no le decimos explícitamente qué posición ocupa cada token.
+:::
+
+**Solución:** añadir un vector de **posición** a cada embedding antes de la atención:
+
+$$\mathbf{x}_i' = \mathbf{e}_i + \text{PE}(i)$$
+
+:::
+:::
+
+# Codificación Posicional {background-color="#03045e"}
+
+## Codificación Posicional Sinusoidal {.smaller}
+
+::: {.columns}
+::: {.column width="55%"}
+
+### Definición (Vaswani et al., 2017)
+
+$$\text{PE}(pos, 2i) = \sin\!\left(\frac{pos}{10000^{2i/d_\text{model}}}\right)$$
+
+$$\text{PE}(pos, 2i+1) = \cos\!\left(\frac{pos}{10000^{2i/d_\text{model}}}\right)$$
+
+- $pos$: posición del token en la secuencia ($0, 1, \ldots, T-1$)
+- $i$: índice de la dimensión del embedding ($0, 1, \ldots, d/2-1$)
+- Dimensiones pares: seno, dimensiones impares: coseno
+
+### ¿Por qué funciona?
+
+- Cada posición tiene un vector **único**
+- El modelo puede inferir **distancia relativa** entre posiciones:
+  $\text{PE}(pos+k)$ es una transformación lineal de $\text{PE}(pos)$
+- **No requiere entrenamiento** — es determinista
+
+:::
+::: {.column width="45%"}
+
+```{python}
+#| echo: false
+import numpy as np
+import matplotlib.pyplot as plt
+
+def positional_encoding(max_len, d_model):
+    PE = np.zeros((max_len, d_model))
+    pos = np.arange(max_len)[:, np.newaxis]      # (T, 1)
+    div = np.exp(np.arange(0, d_model, 2) * (-np.log(10000.0) / d_model))
+    PE[:, 0::2] = np.sin(pos * div)
+    PE[:, 1::2] = np.cos(pos * div[:d_model//2])
+    return PE
+
+PE = positional_encoding(50, 64)
+
+fig, axes = plt.subplots(2, 1, figsize=(5.5, 5))
+
+# Heatmap
+im = axes[0].imshow(PE[:20, :32].T, aspect='auto', cmap='RdBu', vmin=-1, vmax=1)
+axes[0].set_xlabel("Posición (token)", fontsize=9)
+axes[0].set_ylabel("Dimensión", fontsize=9)
+axes[0].set_title("PE (primeras 20 posiciones × 32 dims)", fontsize=9, fontweight='bold')
+plt.colorbar(im, ax=axes[0], fraction=0.046)
+
+# Curvas sinusoidales para algunas dimensiones
+for i, col in zip([0, 2, 4, 8], ['#e76f51', '#2a9d8f', '#0077b6', '#e9c46a']):
+    axes[1].plot(PE[:50, i], color=col, lw=1.5, label=f'dim {i}')
+axes[1].set_xlabel("Posición", fontsize=9)
+axes[1].set_ylabel("Valor PE", fontsize=9)
+axes[1].set_title("Ondas sinusoidales por dimensión", fontsize=9, fontweight='bold')
+axes[1].legend(fontsize=8, ncol=2)
+axes[1].spines[['top', 'right']].set_visible(False)
+
+plt.tight_layout()
+plt.show()
+```
+
+:::
+:::
+
+## Implementación: PositionalEncoding {.smaller}
+
+```{python}
+#| code-fold: show
+import torch
+import torch.nn as nn
+import math
+
+class PositionalEncoding(nn.Module):
+    """
+    Codificación posicional sinusoidal (Vaswani et al., 2017).
+    Suma un vector posicional fijo al embedding de cada token.
+    """
+    def __init__(self, d_model: int, max_len: int = 5000, dropout: float = 0.1):
+        super().__init__()
+        self.dropout = nn.Dropout(dropout)
+
+        # Matriz PE: (max_len, d_model)
+        PE = torch.zeros(max_len, d_model)
+        pos = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)    # (T, 1)
+        div = torch.exp(
+            torch.arange(0, d_model, 2, dtype=torch.float) *
+            (-math.log(10000.0) / d_model)
+        )                                                                   # (d_model/2,)
+        PE[:, 0::2] = torch.sin(pos * div)
+        PE[:, 1::2] = torch.cos(pos * div)
+
+        # Registrar como buffer (no es parámetro aprendible)
+        self.register_buffer('PE', PE.unsqueeze(0))   # (1, max_len, d_model)
+
+    def forward(self, x):
+        """x: (B, T, d_model) → suma PE para las primeras T posiciones"""
+        return self.dropout(x + self.PE[:, :x.size(1)])
+
+
+# Prueba
+torch.manual_seed(0)
+d_model = 64
+pe = PositionalEncoding(d_model=d_model, dropout=0.0)
+
+x_emb = torch.randn(2, 10, d_model)      # (B=2, T=10, d=64)
+x_enc = pe(x_emb)
+
+print(f"Embedding sin PE:  {x_emb.shape}")
+print(f"Embedding con PE:  {x_enc.shape}  ← mismas dimensiones")
+print(f"\nPrimeras 5 dims del PE, posiciones 0-4:")
+print(pe.PE[0, :5, :5].numpy().round(3))
+print("\n→ Cada fila es única: el modelo puede distinguir posiciones ✅")
+```
+
+## ¿Por Qué Ondas de Diferentes Frecuencias? {.smaller}
+
+```{python}
+#| echo: false
+#| fig-align: center
+import numpy as np
+import matplotlib.pyplot as plt
+
+fig, axes = plt.subplots(1, 3, figsize=(14, 3.5))
+
+PE = np.zeros((100, 128))
+pos = np.arange(100)[:, np.newaxis]
+div = np.exp(np.arange(0, 128, 2) * (-np.log(10000.0) / 128))
+PE[:, 0::2] = np.sin(pos * div)
+PE[:, 1::2] = np.cos(pos * div[:64])
+
+# Low frequency dims (capture long-range position)
+for i, col in zip([120, 122, 124], ['#0077b6', '#2a9d8f', '#264653']):
+    axes[0].plot(PE[:, i], color=col, lw=1.8, label=f'dim {i} (baja frec.)')
+axes[0].set_title("Dimensiones de baja frecuencia\n(distinguen posiciones lejanas)", fontsize=9, fontweight='bold')
+axes[0].set_xlabel("Posición", fontsize=9)
+axes[0].legend(fontsize=8)
+axes[0].spines[['top', 'right']].set_visible(False)
+
+# High frequency dims (capture local position)
+for i, col in zip([0, 2, 4], ['#e76f51', '#e9c46a', '#023e8a']):
+    axes[1].plot(PE[:50, i], color=col, lw=1.8, label=f'dim {i} (alta frec.)')
+axes[1].set_title("Dimensiones de alta frecuencia\n(distinguen posiciones cercanas)", fontsize=9, fontweight='bold')
+axes[1].set_xlabel("Posición", fontsize=9)
+axes[1].legend(fontsize=8)
+axes[1].spines[['top', 'right']].set_visible(False)
+
+# Similarity between positions
+sims = []
+for offset in range(50):
+    cos_sim = np.dot(PE[0], PE[offset]) / (np.linalg.norm(PE[0]) * np.linalg.norm(PE[offset]) + 1e-9)
+    sims.append(cos_sim)
+axes[2].plot(sims, color='#0077b6', lw=2)
+axes[2].axhline(0, color='#aaa', lw=1, linestyle='--')
+axes[2].set_title("Similitud coseno entre PE(0) y PE(pos)\n(decae con la distancia)", fontsize=9, fontweight='bold')
+axes[2].set_xlabel("Posición", fontsize=9)
+axes[2].set_ylabel("Similitud coseno", fontsize=9)
+axes[2].spines[['top', 'right']].set_visible(False)
+
+plt.suptitle("Propiedades de la codificación posicional sinusoidal",
+             fontsize=10, fontweight='bold', color='#023e8a')
+plt.tight_layout()
+plt.show()
+```
+
+::: {.callout-tip}
+La similitud coseno **decae con la distancia** → el modelo puede inferir que posiciones cercanas son más similares que posiciones lejanas, sin haberlo sido entrenado explícitamente para ello.
+:::
+
+# Juntando Todo: MHA + Positional Encoding {background-color="#0077b6"}
+
+## El Bloque de Entrada de un Transformer {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Pipeline completo (input processing)
+
+```
+Tokens  →  Embedding  →  + PE  →  MHA  →  Salida contextualizada
+```
+
+Formalmente:
+
+$$\mathbf{X}' = \text{Embedding}(\mathbf{w}) + \text{PE}$$
+$$\mathbf{Z} = \text{MultiHead}(\mathbf{X}', \mathbf{X}', \mathbf{X}')$$
+
+::: {.callout-note}
+En el Transformer completo (S3), hay más componentes:
+- **Add & Norm** (conexiones residuales + Layer Norm)
+- **Feed-Forward** (MLP por token)
+- Múltiples capas apiladas
+
+Pero MHA + PE son el corazón.
+:::
+
+:::
+::: {.column width="50%"}
+
+```{python}
+#| code-fold: show
+class TransformerInputBlock(nn.Module):
+    """
+    Bloque de entrada: Embedding + PE + Multi-Head Attention.
+    (Versión simplificada — sin residual ni FFN)
+    """
+    def __init__(self, vocab_size, d_model, num_heads,
+                 max_len=512, dropout=0.1):
+        super().__init__()
+        self.embedding = nn.Embedding(vocab_size, d_model, padding_idx=0)
+        self.pe         = PositionalEncoding(d_model, max_len, dropout)
+        self.mha        = MultiHeadAttention(d_model, num_heads, dropout)
+
+    def forward(self, x, mask=None):
+        """x: (B, T) token ids"""
+        emb = self.embedding(x)      # (B, T, d_model)
+        emb = self.pe(emb)           # + posicional encoding
+        out, attn = self.mha(emb, mask)    # multi-head attention
+        return out, attn
+
+
+# Ejemplo
+torch.manual_seed(42)
+block = TransformerInputBlock(
+    vocab_size=10000, d_model=64, num_heads=8
+)
+tokens = torch.randint(1, 10000, (3, 20))   # batch=3, seq_len=20
+out, attn = block(tokens)
+print(f"Tokens entrada:     {tokens.shape}")
+print(f"Salida contextual:  {out.shape}")
+print(f"Pesos atención:     {attn.shape}   ← (B, heads, T, T)")
+npar = sum(p.numel() for p in block.parameters())
+print(f"Total parámetros:   {npar:,}")
+```
+
+:::
+:::
+
+## Experimento: ¿Importa el Orden Con PE? {.smaller}
+
+```{python}
+#| code-fold: show
+torch.manual_seed(7)
+
+d_model, n_heads = 32, 4
+vocab_sz = 500
+
+# Sin PE: solo embedding + MHA
+class BlockSinPE(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.emb = nn.Embedding(vocab_sz, d_model, padding_idx=0)
+        self.mha = MultiHeadAttention(d_model, n_heads)
+    def forward(self, x):
+        e = self.emb(x)
+        out, _ = self.mha(e)
+        return out
+
+# Con PE: embedding + PE + MHA
+class BlockConPE(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.emb = nn.Embedding(vocab_sz, d_model, padding_idx=0)
+        self.pe  = PositionalEncoding(d_model, dropout=0.0)
+        self.mha = MultiHeadAttention(d_model, n_heads)
+    def forward(self, x):
+        e = self.pe(self.emb(x))
+        out, _ = self.mha(e)
+        return out
+
+# Oración y su versión permutada
+frase    = torch.tensor([[10, 25, 87, 43, 62, 91, 15, 37]])   # (1, 8)
+perm_idx = torch.tensor([3, 0, 6, 1, 7, 4, 2, 5])
+frase_p  = frase[:, perm_idx]
+
+blk_sin = BlockSinPE(); blk_sin.eval()
+blk_con = BlockConPE(); blk_con.eval()
+
+with torch.no_grad():
+    out_sin_orig = blk_sin(frase)
+    out_sin_perm = blk_sin(frase_p)
+    out_con_orig = blk_con(frase)
+    out_con_perm = blk_con(frase_p)
+
+diff_sin = (out_sin_perm - out_sin_orig[:, perm_idx]).abs().mean().item()
+diff_con = (out_con_perm - out_con_orig[:, perm_idx]).abs().mean().item()
+
+print("Sin PE — diferencia media entre original y permutado:", f"{diff_sin:.2e}")
+print("Con PE — diferencia media entre original y permutado:", f"{diff_con:.2e}")
+print()
+print("→ Sin PE: permutación NO cambia la salida (invariante al orden)")
+print("→ Con PE: permutación SÍ cambia la salida (sensible al orden) ✅")
+```
+
+## Visualización: PE en el Espacio de Atención {.smaller}
+
+```{python}
+#| echo: false
+#| fig-align: center
+torch.manual_seed(42)
+
+sentence_vis = ["El", "perro", "muerde", "al", "hombre"]
+T_v = len(sentence_vis)
+d_v, h_v = 32, 4
+
+block_vis = TransformerInputBlock(vocab_size=1000, d_model=d_v, num_heads=h_v)
+block_vis.eval()
+
+# Same tokens, original and reversed order
+tok_orig = torch.tensor([[10, 25, 87, 43, 62]])
+tok_rev  = torch.tensor([[62, 43, 87, 25, 10]])
+
+with torch.no_grad():
+    _, attn_orig = block_vis(tok_orig)
+    _, attn_rev  = block_vis(tok_rev)
+
+fig, axes = plt.subplots(2, h_v, figsize=(14, 5))
+
+for hi in range(h_v):
+    for row_idx, (attn_data, title_suffix) in enumerate([
+        (attn_orig, 'orden original'),
+        (attn_rev,  'orden invertido')
+    ]):
+        ax = axes[row_idx][hi]
+        w = attn_data[0, hi].numpy()
+        im = ax.imshow(w, cmap='Blues', aspect='auto', vmin=0)
+        ax.set_title(f'H{hi+1} — {title_suffix}', fontsize=8, fontweight='bold')
+        ax.set_xticks(range(T_v)); ax.set_xticklabels(sentence_vis, rotation=45, ha='right', fontsize=7)
+        ax.set_yticks(range(T_v)); ax.set_yticklabels(sentence_vis, fontsize=7)
+
+plt.suptitle("Mapas de atención: mismo vocabulario, orden diferente → patrones distintos gracias a PE",
+             fontsize=10, fontweight='bold', color='#023e8a')
+plt.tight_layout()
+plt.show()
+```
+
+# Resumen y Cierre {background-color="#023e8a"}
+
+## Lo Que Aprendimos Hoy {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Multi-Head Attention
+
+$$\text{MultiHead}(Q,K,V) = \text{Concat}(\text{head}_1,\ldots,\text{head}_h)\mathbf{W}^O$$
+
+- Un cabezal = una perspectiva sobre las relaciones entre tokens
+- $h$ cabezales en paralelo → múltiples perspectivas
+- $d_k = d_\text{model}/h$ para mantener el coste computacional constante
+- Vaswani et al.: $h=8$, $d_k=64$, $d_\text{model}=512$
+
+### Codificación Posicional
+
+$$\text{PE}(pos, 2i) = \sin\!\left(\frac{pos}{10000^{2i/d}}\right)\!, \quad \text{PE}(pos, 2i+1) = \cos(\cdots)$$
+
+- La MHA sola es **invariante al orden** — sin PE, "perro muerde hombre" = "hombre muerde perro"
+- PE añade información posicional **sin parámetros** aprendibles
+- Similitud coseno decae con distancia → el modelo puede inferir proximidad
+
+:::
+::: {.column width="50%"}
+
+### Lo que queda por completar
+
+| Componente | Descripción | ¿Visto? |
+|:-----------|:------------|:-------:|
+| Scaled Dot-Product Attention | Q·K·V | ✅ S1 |
+| Multi-Head Attention | $h$ cabezales | ✅ Hoy |
+| Positional Encoding | PE sinusoidal | ✅ Hoy |
+| **Add & Norm** | Residual + LayerNorm | ❌ S3 |
+| **Feed-Forward** | MLP por token | ❌ S3 |
+| **Stacking** | $N$ bloques apilados | ❌ S3 |
+
+→ La próxima sesión **completa el Transformer**.
+
+:::
+:::
+
+## Para la Próxima Sesión {.smaller}
+
+::: {.columns}
+::: {.column width="60%"}
+
+### S3: El Bloque Transformer Completo
+
+::: {.callout-note}
+Ya tenemos todos los componentes de atención. La sesión S3 añade los elementos que hacen el entrenamiento estable y profundo:
+
+1. **Conexiones residuales** ($x + \text{sublayer}(x)$) — evitan el gradiente que desaparece en redes profundas
+2. **Layer Normalization** — estabiliza las activaciones
+3. **Feed-Forward Network** por token — capacidad no-lineal
+4. **Encoder completo** — $N$ bloques apilados
+5. **Decoder** — con cross-attention (Q del decoder, K/V del encoder)
+:::
+
+:::
+::: {.column width="40%"}
+
+### Arquitectura completa (preview)
+
+```
+Input Tokens
+    ↓
+Embedding + PE
+    ↓
+┌─────────────────┐ ×N
+│  Multi-Head SA  │
+│  Add & Norm     │
+│  Feed-Forward   │
+│  Add & Norm     │
+└─────────────────┘
+    ↓
+Output (encoder)
+```
+
+### Lecturas recomendadas
+- Vaswani et al. (2017) — Secciones 3.3–3.5
+- "The Illustrated Transformer" — Jay Alammar (blog)
+
+:::
+:::
+
+---
+
+## Referencias {.smaller}
+
+- Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., Kaiser, Ł., & Polosukhin, I. (2017). Attention Is All You Need. *NeurIPS 2017*.
+- Clark, K., Khandelwal, U., Levy, O., & Manning, C. D. (2019). What Does BERT Look at? An Analysis of BERT's Attention. *ACL 2019 Workshop BlackboxNLP*.
+- Vig, J. (2019). A Multiscale Visualization of Attention in the Transformer Model. *ACL 2019*.
+- Alammar, J. (2018). The Illustrated Transformer. https://jalammar.github.io/illustrated-transformer/
+
+# ¿Preguntas? 🙋 {background-color="#03045e"}
+
+:::{.r-fit-text}
+**¡Gracias!**
+:::
+
+📧 fsuarez@ucb.edu.bo
+
+🔗 Materiales: [github.com/fjsuarez/ucb-nlp](https://github.com/fjsuarez/ucb-nlp)

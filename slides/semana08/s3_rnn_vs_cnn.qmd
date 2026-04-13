@@ -976,3 +976,13 @@ $$\text{Attention}(Q, K, V) = \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d_k}}\r
 - Conneau, A., Schwenk, H., Barrault, L., & LeCun, Y. (2017). Very Deep Convolutional Networks for Text Classification. *EACL 2017*.
 - Vaswani, A. et al. (2017). Attention Is All You Need. *NeurIPS 2017*.
 - Zhou, C. et al. (2015). A C-LSTM Neural Network for Text Classification. *arXiv:1511.08630*.
+
+# ¿Preguntas? 🙋 {background-color="#03045e"}
+
+:::{.r-fit-text}
+**¡Gracias!**
+:::
+
+📧 fsuarez@ucb.edu.bo
+
+🔗 Materiales: [github.com/fjsuarez/ucb-nlp](https://github.com/fjsuarez/ucb-nlp)
