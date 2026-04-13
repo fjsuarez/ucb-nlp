@@ -397,7 +397,7 @@ e_{t,i} = \mathbf{v}^\top \tanh(\mathbf{W}_h \mathbf{h}_i + \mathbf{W}_s \mathbf
 <p><span class="math display">\[\text{softmax}([100, 101, 99]) \approx [0.27, 0.73, 0.00]\]</span></p>
 <p>→ Gradientes muy pequeños → entrenamiento lento o estancado.</p>
 </div><div class="column" style="width:45%;">
-<div id="74663fbd" class="cell" data-execution_count="2">
+<div id="f291ba74" class="cell" data-execution_count="2">
 <div class="cell-output cell-output-display">
 <div>
 <figure>
@@ -416,7 +416,7 @@ e_{t,i} = \mathbf{v}^\top \tanh(\mathbf{W}_h \mathbf{h}_i + \mathbf{W}_s \mathbf
 </section>
 <section id="auto-atención-con-numpy" class="slide level2 smaller">
 <h2>Auto-Atención con NumPy</h2>
-<div id="1c889d87" class="cell" data-execution_count="3">
+<div id="5777c721" class="cell" data-execution_count="3">
 <details open="" class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
@@ -473,7 +473,7 @@ Cada fila suma a: [1. 1. 1. 1. 1.]</code></pre>
 </section>
 <section id="auto-atención-con-pytorch" class="slide level2 smaller">
 <h2>Auto-Atención con PyTorch</h2>
-<div id="11e467c4" class="cell" data-execution_count="4">
+<div id="f3b46ded" class="cell" data-execution_count="4">
 <details open="" class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a></a><span class="im">import</span> torch</span>
@@ -547,7 +547,7 @@ Pesos para batch=0 (redondeados):
 </section>
 <section id="el-módulo-completo-self-attention-layer" class="slide level2 smaller">
 <h2>El Módulo Completo: Self-Attention Layer</h2>
-<div id="7961df64" class="cell" data-execution_count="5">
+<div id="a1f8cb7d" class="cell" data-execution_count="5">
 <details open="" class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a></a><span class="kw">class</span> SelfAttentionLayer(nn.Module):</span>
@@ -722,7 +722,7 @@ Parámetros: 8,192  (solo W_Q, W_K, W_V, W_O)</code></pre>
 <p><span class="math display">\[M_{ij} = \begin{cases} 0 &amp; \text{si } j &gt; i \quad (\text{futuro}) \\ 1 &amp; \text{si } j \leq i \quad (\text{pasado/presente}) \end{cases}\]</span></p>
 <p>Se aplica como: <code>scores[M == 0] = -∞</code> → después del softmax → peso ≈ 0</p>
 </div><div class="column" style="width:45%;">
-<div id="5fafce94" class="cell" data-execution_count="8">
+<div id="5ca65d4e" class="cell" data-execution_count="8">
 <details open="" class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a></a>T <span class="op">=</span> <span class="dv">5</span></span>
@@ -772,7 +772,7 @@ Parámetros: 8,192  (solo W_Q, W_K, W_V, W_O)</code></pre>
 </section>
 <section id="experimento-atención-sobre-texto-real" class="slide level2 smaller">
 <h2>Experimento: Atención sobre Texto Real</h2>
-<div id="e6e98303" class="cell" data-execution_count="9">
+<div id="597bf450" class="cell" data-execution_count="9">
 <details open="" class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a></a><span class="co"># Usando un vocabulario y tokenización simples</span></span>
@@ -929,9 +929,17 @@ Pesos de atención — oración 0 'el gato come pescado fresco':
 <li>Clark, K., Khandelwal, U., Levy, O., &amp; Manning, C. D. (2019). What Does BERT Look at? An Analysis of BERT’s Attention. <em>ACL 2019 Workshop</em>.</li>
 <li>Vig, J. (2019). A Multiscale Visualization of Attention in the Transformer Model. <em>ACL 2019</em>.</li>
 </ul>
-
-
 </section></section>
+<section id="preguntas" class="title-slide slide level1 center" data-background-color="#03045e">
+<h1>¿Preguntas? 🙋</h1>
+<div class="r-fit-text">
+<p><strong>¡Gracias!</strong></p>
+</div>
+<p>📧 fsuarez@ucb.edu.bo</p>
+<p>🔗 Materiales: <a href="https://github.com/fjsuarez/ucb-nlp">github.com/fjsuarez/ucb-nlp</a></p>
+
+
+</section>
     </div>
   <div class="quarto-auto-generated-content" style="display: none;">
 <div class="footer footer-default">

@@ -267,7 +267,7 @@ Prof.&nbsp;Francisco Suárez
 </div>
 </div>
 </div><div class="column" style="width:45%;">
-<div id="86ed1c04" class="cell" data-execution_count="1">
+<div id="43e8503d" class="cell" data-execution_count="1">
 <div class="cell-output cell-output-display">
 <div>
 <figure>
@@ -298,7 +298,7 @@ Prof.&nbsp;Francisco Suárez
 </div>
 </div>
 </div><div class="column" style="width:45%;">
-<div id="ba72639f" class="cell" data-execution_count="2">
+<div id="e0e21cdd" class="cell" data-execution_count="2">
 <div class="cell-output cell-output-display">
 <div>
 <figure>
@@ -397,7 +397,7 @@ Prof.&nbsp;Francisco Suárez
 </section>
 <section id="eje-3-parámetros-y-memoria" class="slide level2 smaller">
 <h2>Eje 3: Parámetros y Memoria</h2>
-<div id="ae7ef5c9" class="cell" data-execution_count="4">
+<div id="88016d2f" class="cell" data-execution_count="4">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a></a><span class="im">import</span> torch.nn <span class="im">as</span> nn</span>
@@ -487,7 +487,7 @@ TextCNN (Kim 2014):  2,714,502 parámetros</code></pre>
 <li>Longitudes de oración: 15–50 tokens</li>
 <li>Señal real basada en <strong>patrones de n-gramas</strong></li>
 </ul>
-<div id="dbc5a596" class="cell" data-execution_count="5">
+<div id="90920ac7" class="cell" data-execution_count="5">
 <details open="" class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a></a><span class="im">import</span> torch</span>
@@ -586,7 +586,7 @@ TextCNN (Kim 2014):  2,714,502 parámetros</code></pre>
 </section>
 <section id="definición-de-los-tres-modelos" class="slide level2 smaller">
 <h2>Definición de los Tres Modelos</h2>
-<div id="d08aae7e" class="cell" data-execution_count="6">
+<div id="416708e6" class="cell" data-execution_count="6">
 <details open="" class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a></a><span class="kw">class</span> GRUClassifier(nn.Module):</span>
@@ -655,7 +655,7 @@ TextCNN   :  369,730 parámetros</code></pre>
 </section>
 <section id="entrenamiento-y-evaluación" class="slide level2 smaller">
 <h2>Entrenamiento y Evaluación</h2>
-<div id="ec25b3d3" class="cell" data-execution_count="7">
+<div id="c7af47bb" class="cell" data-execution_count="7">
 <details open="" class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a></a><span class="im">import</span> time</span>
@@ -704,9 +704,9 @@ TextCNN   :  369,730 parámetros</code></pre>
 <div class="cell-output cell-output-stdout">
 <pre><code>Modelo        Acc Train   Acc Test   Tiempo (s)
 ------------------------------------------------
-GRU               0.992      0.997        12.78
-BiLSTM            0.974      0.969         8.88
-TextCNN           1.000      0.997         4.47</code></pre>
+GRU               0.992      0.997        21.81
+BiLSTM            0.974      0.969        13.56
+TextCNN           1.000      0.997         6.47</code></pre>
 </div>
 </div>
 </section>
@@ -782,7 +782,7 @@ TextCNN           1.000      0.997         4.47</code></pre>
 </div>
 </div>
 </div><div class="column" style="width:45%;">
-<div id="6974e683" class="cell" data-execution_count="12">
+<div id="7d17b85b" class="cell" data-execution_count="12">
 <details open="" class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a></a><span class="kw">class</span> CNNRNNClassifier(nn.Module):</span>
@@ -823,17 +823,17 @@ TextCNN           1.000      0.997         4.47</code></pre>
 </section>
 <section id="benchmark-extendido-incluyendo-cnnrnn" class="slide level2 smaller">
 <h2>Benchmark Extendido: Incluyendo CNN+RNN</h2>
-<div id="9b6e462a" class="cell" data-execution_count="13">
+<div id="e25f04b0" class="cell" data-execution_count="13">
 
 <div class="cell-output cell-output-stdout">
 <pre><code>
 Resumen final:
 Modelo         Acc Test   Tiempo (s)
 ------------------------------------
-GRU               0.997        12.78
-BiLSTM            0.969         8.88
-TextCNN           0.997         4.47
-CNN+RNN           0.986        13.25</code></pre>
+GRU               0.997        21.81
+BiLSTM            0.969        13.56
+TextCNN           0.997         6.47
+CNN+RNN           0.986        21.90</code></pre>
 </div>
 </div>
 <img data-src="s3_rnn_vs_cnn_files/figure-revealjs/cell-14-output-1.png" class="r-stretch"></section>
@@ -855,7 +855,7 @@ CNN+RNN           0.986        13.25</code></pre>
 </ul>
 </div><div class="column" style="width:50%;">
 <h3 id="el-panorama-hoy-2024">El panorama hoy (2024)</h3>
-<div id="baa459ca" class="cell" data-execution_count="14">
+<div id="b0fa09bd" class="cell" data-execution_count="14">
 <div class="cell-output cell-output-display">
 <div>
 <figure>
@@ -984,9 +984,17 @@ CNN+RNN           0.986        13.25</code></pre>
 <li>Vaswani, A. et al.&nbsp;(2017). Attention Is All You Need. <em>NeurIPS 2017</em>.</li>
 <li>Zhou, C. et al.&nbsp;(2015). A C-LSTM Neural Network for Text Classification. <em>arXiv:1511.08630</em>.</li>
 </ul>
-
-
 </section></section>
+<section id="preguntas" class="title-slide slide level1 center" data-background-color="#03045e">
+<h1>¿Preguntas? 🙋</h1>
+<div class="r-fit-text">
+<p><strong>¡Gracias!</strong></p>
+</div>
+<p>📧 fsuarez@ucb.edu.bo</p>
+<p>🔗 Materiales: <a href="https://github.com/fjsuarez/ucb-nlp">github.com/fjsuarez/ucb-nlp</a></p>
+
+
+</section>
     </div>
   <div class="quarto-auto-generated-content" style="display: none;">
 <div class="footer footer-default">
