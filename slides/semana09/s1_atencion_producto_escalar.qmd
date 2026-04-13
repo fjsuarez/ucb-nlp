@@ -1,0 +1,876 @@
+---
+title: "Auto-Atención & Transformers"
+subtitle: "S1: Atención de Producto Escalar (Queries, Keys, Values)"
+author: "Prof. Francisco Suárez"
+institute: "Universidad Católica Boliviana"
+date: "2026-04-14"
+format:
+  revealjs:
+    theme: sky
+    transition: slide
+    slide-number: true
+    chalkboard: true
+    code-fold: true
+    code-tools: true
+    highlight-style: github
+    footer: "NLP y Análisis Semántico | Semana 9"
+    logo: ""
+    incremental: false
+    scrollable: true
+execute:
+  echo: true
+  warning: false
+---
+
+## Agenda de Hoy {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+1. 🔁 De atención Bahdanau → **auto-atención**
+2. 🗝️ La abstracción **Query / Key / Value**
+3. 📐 **Producto escalar escalado**: la operación central
+4. 🎭 **Softmax como selector suave** de información
+5. 🧪 Implementación desde cero con NumPy y PyTorch
+6. 🗺️ Visualización de **mapas de atención**
+
+:::
+::: {.column width="50%"}
+
+::: {.callout-tip}
+## Objetivo
+Entender el mecanismo de **atención de producto escalar** — la operación fundamental que permite a cada token "consultar" a todos los demás sin procesamiento secuencial ni ventanas locales.
+:::
+
+**Prerequisitos:** Atención Bahdanau/Luong (Semana 7 S3), CNNs (Semana 8)
+
+:::
+:::
+
+# Del Cuello de Botella a la Auto-Atención {background-color="#0077b6"}
+
+## Tres Generaciones de Contexto {.smaller}
+
+```{python}
+#| echo: false
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+import numpy as np
+
+fig, axes = plt.subplots(1, 3, figsize=(14, 4))
+
+def draw_token_row(ax, tokens, y, color, y_label='', alpha=0.85):
+    for i, tok in enumerate(tokens):
+        ax.add_patch(mpatches.FancyBboxPatch(
+            (i * 1.6 + 0.1, y), 1.3, 0.6,
+            boxstyle="round,pad=0.05", linewidth=1.5,
+            edgecolor=color, facecolor=color, alpha=alpha))
+        ax.text(i * 1.6 + 0.75, y + 0.3, tok,
+                ha='center', va='center', fontsize=9,
+                fontweight='bold', color='white')
+    if y_label:
+        ax.text(-0.5, y + 0.3, y_label, ha='right', va='center',
+                fontsize=9, color='#333')
+
+# --- RNN ---
+ax = axes[0]
+ax.set_xlim(-1, 7); ax.set_ylim(0, 4.2); ax.axis('off')
+toks = ['el', 'gato', 'come', 'bien']
+draw_token_row(ax, toks, 3.2, '#023e8a', 'h_t')
+for i in range(len(toks)):
+    draw_token_row(ax, [f'h{i+1}'], 2.0 - i * 0.35, '#e76f51',
+                   alpha=0.5 + i * 0.15)
+for i in range(len(toks) - 1):
+    ax.annotate('', xy=((i+1)*1.6+0.1, 2.0 - (i+1)*0.35 + 0.3),
+                xytext=(i*1.6+1.3, 2.0 - i*0.35 + 0.3),
+                arrowprops=dict(arrowstyle='->', color='#e76f51', lw=1.5))
+ax.set_title("1ª Gen: RNN\nContexto secuencial\n(gradiente que desaparece)",
+             fontsize=9, fontweight='bold', color='#023e8a')
+ax.add_patch(mpatches.FancyBboxPatch((0.1, 0.3), 6.0, 0.7,
+    boxstyle="round,pad=0.1", facecolor='#ffddd2', edgecolor='#e76f51', lw=1.5))
+ax.text(3.1, 0.65, '⚠️  Solo el último estado importa',
+        ha='center', va='center', fontsize=9, color='#e76f51')
+
+# --- Bahdanau Attention ---
+ax = axes[1]
+ax.set_xlim(-1, 7); ax.set_ylim(0, 4.2); ax.axis('off')
+draw_token_row(ax, toks, 3.2, '#023e8a')
+weights = [0.05, 0.7, 0.15, 0.1]
+cmap = plt.cm.Blues
+for i, (tok, w) in enumerate(zip(toks, weights)):
+    col_val = 0.2 + 0.75 * w
+    color = cmap(col_val)
+    r, g, b, _ = color
+    hex_col = f'#{int(r*255):02x}{int(g*255):02x}{int(b*255):02x}'
+    ax.add_patch(mpatches.FancyBboxPatch(
+        (i * 1.6 + 0.1, 2.0), 1.3, 0.6,
+        boxstyle="round,pad=0.05", linewidth=1.5,
+        edgecolor='#023e8a', facecolor=hex_col))
+    ax.text(i * 1.6 + 0.75, 2.3, f'{w:.2f}',
+            ha='center', va='center', fontsize=9,
+            fontweight='bold', color='white' if w > 0.3 else '#333')
+ax.annotate('', xy=(3.1, 1.8), xytext=(3.1, 2.0),
+            arrowprops=dict(arrowstyle='->', color='#2a9d8f', lw=1.8))
+ax.add_patch(mpatches.FancyBboxPatch((0.8, 1.0), 4.5, 0.6,
+    boxstyle="round,pad=0.1", facecolor='#d8f3ee', edgecolor='#2a9d8f', lw=1.5))
+ax.text(3.05, 1.3, 'contexto = Σ αᵢ · hᵢ',
+        ha='center', va='center', fontsize=9, fontweight='bold', color='#2a9d8f')
+ax.set_title("2ª Gen: Atención Bahdanau\nContexto ponderado\n(encoder-decoder)",
+             fontsize=9, fontweight='bold', color='#023e8a')
+
+# --- Self-Attention ---
+ax = axes[2]
+ax.set_xlim(-1, 7); ax.set_ylim(0, 4.2); ax.axis('off')
+
+xs_sa = [i * 1.6 + 0.75 for i in range(4)]
+tok_colors_sa = ['#e76f51', '#2a9d8f', '#0077b6', '#e9c46a']
+Y_IN, Y_OUT = 3.45, 1.9
+
+# Simulated attention weights (row = query token, col = key token)
+attn_sa = np.array([
+    [0.50, 0.25, 0.15, 0.10],
+    [0.12, 0.44, 0.30, 0.14],
+    [0.10, 0.28, 0.38, 0.24],
+    [0.08, 0.14, 0.33, 0.45],
+])
+
+# Draw ALL attention lines first (behind tokens)
+for j in range(4):        # query = output token j
+    for i in range(4):    # key   = input  token i
+        ax.plot([xs_sa[j], xs_sa[i]], [Y_OUT + 0.3, Y_IN - 0.3],
+                color=tok_colors_sa[j],
+                alpha=max(0.07, attn_sa[j, i] * 1.1),
+                lw=0.4 + 3.2 * attn_sa[j, i], zorder=1)
+
+# Input tokens (top row)
+ax.text(3.1, Y_IN + 0.62, 'entrada', ha='center', va='center',
+        fontsize=8, color='#555', style='italic')
+for i, (tok, col) in enumerate(zip(toks, tok_colors_sa)):
+    ax.add_patch(mpatches.FancyBboxPatch(
+        (xs_sa[i] - 0.65, Y_IN - 0.3), 1.3, 0.6,
+        boxstyle="round,pad=0.05", lw=2,
+        edgecolor=col, facecolor='#023e8a', zorder=2))
+    ax.text(xs_sa[i], Y_IN, tok, ha='center', va='center',
+            fontsize=9, fontweight='bold', color='white', zorder=3)
+
+# Output tokens (bottom row — contextualised)
+ax.text(3.1, Y_OUT - 0.55, 'salida contextualizada', ha='center', va='center',
+        fontsize=8, color='#2a9d8f', style='italic')
+for i, (tok, col) in enumerate(zip(toks, tok_colors_sa)):
+    ax.add_patch(mpatches.FancyBboxPatch(
+        (xs_sa[i] - 0.65, Y_OUT - 0.3), 1.3, 0.6,
+        boxstyle="round,pad=0.05", lw=2,
+        edgecolor=col, facecolor='#2a9d8f', zorder=2))
+    ax.text(xs_sa[i], Y_OUT, tok + "'", ha='center', va='center',
+            fontsize=8, fontweight='bold', color='white', zorder=3)
+
+ax.set_title("3ª Gen: Auto-Atención\nCada token atiende a TODOS\n(paralelo, global)",
+             fontsize=9, fontweight='bold', color='#023e8a')
+ax.add_patch(mpatches.FancyBboxPatch((0.1, 0.08), 6.0, 0.62,
+    boxstyle="round,pad=0.1", facecolor='#caf0f8', edgecolor='#0077b6', lw=1.5))
+ax.text(3.1, 0.40, '✅  Contexto global + paralelo',
+        ha='center', va='center', fontsize=9, color='#023e8a', fontweight='bold')
+
+plt.suptitle("Evolución del mecanismo de contexto en NLP", fontsize=12,
+             fontweight='bold', color='#03045e')
+plt.tight_layout()
+plt.show()
+```
+
+## La Limitación Residual de la Atención Bahdanau {.smaller}
+
+::: {.columns}
+::: {.column width="55%"}
+
+### Atención en Seq2Seq (Semana 7 S3)
+
+$$\alpha_{t,i} = \frac{\exp(e_{t,i})}{\sum_j \exp(e_{t,j})}, \quad
+e_{t,i} = \mathbf{v}^\top \tanh(\mathbf{W}_h \mathbf{h}_i + \mathbf{W}_s \mathbf{s}_t)$$
+
+$$\mathbf{c}_t = \sum_i \alpha_{t,i} \mathbf{h}_i$$
+
+**¿Qué funciona bien?**
+- El decoder mira toda la secuencia encoder ✅
+- Resuelve el cuello de botella ✅
+
+**¿Qué sigue siendo un problema?**
+- El **encoder** sigue siendo una RNN → secuencial ⚠️
+- Un token encoder no puede "ver" a otros tokens encoder simultáneamente
+- El contexto de "gato" no sabe nada de "come" hasta que la RNN llega allí
+
+:::
+::: {.column width="45%"}
+
+::: {.callout-important}
+### La pregunta clave
+
+¿Y si eliminamos la RNN completamente?
+
+¿Podemos construir representaciones contextuales directamente, **sin** procesar token por token?
+
+$$\mathbf{h}_i = f(\mathbf{e}_1, \mathbf{e}_2, \ldots, \mathbf{e}_T)$$
+
+donde $\mathbf{h}_i$ depende de **todos** los tokens a la vez.
+:::
+
+**Respuesta**: **Auto-atención** (*self-attention*)
+
+- El mecanismo de atención se aplica sobre **la misma secuencia**
+- Como fuente y destino: la oración se atiende a sí misma
+- Sin recurrencia: completamente paralelo
+
+:::
+:::
+
+# La Metáfora Banco de Datos {background-color="#023e8a"}
+
+## Queries, Keys y Values {.smaller}
+
+::: {.columns}
+::: {.column width="55%"}
+
+### Analogía: motor de búsqueda
+
+Imagina un diccionario con **claves** y **valores**:
+
+| Clave (Key) | Valor (Value) |
+|:------------|:--------------|
+| "recetas de pasta" | `[enlace a receta]` |
+| "tempo de pasta" | `[enlace a música]` |
+| "precio de pasta" | `[enlace a mercado]` |
+
+Si tu **query** es "cómo preparar pasta":
+- Se compara con cada key
+- Claves similares → pesos altos
+- Resultado = combinación ponderada de los values
+
+:::
+::: {.column width="45%"}
+
+### En auto-atención
+
+Cada token genera **tres vectores**:
+
+$$\mathbf{q}_i = \mathbf{W}_Q \mathbf{e}_i \quad \text{(¿qué busco?)}$$
+$$\mathbf{k}_i = \mathbf{W}_K \mathbf{e}_i \quad \text{(¿qué ofrezco?)}$$
+$$\mathbf{v}_i = \mathbf{W}_V \mathbf{e}_i \quad \text{(¿qué comparto?)}$$
+
+::: {.callout-tip}
+**Q, K, V son proyecciones lineales** del mismo embedding. Las matrices $\mathbf{W}_Q, \mathbf{W}_K, \mathbf{W}_V$ se **aprenden** durante el entrenamiento.
+:::
+
+El token $i$ usa su $\mathbf{q}_i$ para "preguntar" a todos los demás tokens. Cada token $j$ responde con su $\mathbf{k}_j$. La información se transfiere a través de $\mathbf{v}_j$.
+
+:::
+:::
+
+## La Mecánica Completa {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Paso 1: Scores de similaridad
+
+Para el token $i$ preguntando sobre el token $j$:
+
+$$s_{ij} = \frac{\mathbf{q}_i \cdot \mathbf{k}_j}{\sqrt{d_k}}$$
+
+- Producto punto: ¿qué tan "compatible" es mi query con esa key?
+- $\sqrt{d_k}$: escala para evitar gradientes muy pequeños (ver siguiente slide)
+- Resultado: **matriz de scores** $S \in \mathbb{R}^{T \times T}$
+
+### Paso 2: Pesos de atención
+
+$$\alpha_{ij} = \text{softmax}_j(s_{ij}) = \frac{e^{s_{ij}}}{\sum_k e^{s_{ik}}}$$
+
+Cada fila de $\alpha$ suma a 1 → distribución de probabilidad sobre posiciones.
+
+:::
+::: {.column width="50%"}
+
+### Paso 3: Salida contextualizada
+
+$$\mathbf{z}_i = \sum_j \alpha_{ij} \mathbf{v}_j$$
+
+El nuevo vector del token $i$ es la **media ponderada de los values**, donde los pesos son los $\alpha_{ij}$.
+
+### Forma matricial completa
+
+$$\text{Attention}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) = \text{softmax}\!\left(\frac{\mathbf{Q}\mathbf{K}^\top}{\sqrt{d_k}}\right)\mathbf{V}$$
+
+Donde $\mathbf{Q}, \mathbf{K}, \mathbf{V} \in \mathbb{R}^{T \times d_k}$ son las matrices de todos los queries, keys y values.
+
+::: {.callout-note}
+**La operación es completamente matricial** → se puede ejecutar en paralelo para todos los tokens simultáneamente.
+:::
+
+:::
+:::
+
+# ¿Por Qué Escalar por $\sqrt{d_k}$? {background-color="#0077b6"}
+
+## El Problema con el Producto Punto Crudo {.smaller}
+
+::: {.columns}
+::: {.column width="55%"}
+
+### Intuición estadística
+
+Si $q_i, k_j \sim \mathcal{N}(0, 1)$ con dimensión $d_k$:
+
+$$q \cdot k = \sum_{l=1}^{d_k} q_l k_l$$
+
+**Media**: $\mathbb{E}[q \cdot k] = 0$
+
+**Varianza**: $\text{Var}[q \cdot k] = d_k$
+
+→ La desviación estándar del producto punto crece como $\sqrt{d_k}$
+
+### Efecto sobre softmax
+
+Con $d_k$ grande (e.g. 64), los scores pueden ser muy grandes. El softmax se "satura":
+
+$$\text{softmax}([100, 101, 99]) \approx [0.27, 0.73, 0.00]$$
+
+→ Gradientes muy pequeños → entrenamiento lento o estancado.
+
+:::
+::: {.column width="45%"}
+
+```{python}
+#| echo: false
+import torch
+import numpy as np
+import matplotlib.pyplot as plt
+
+torch.manual_seed(42)
+
+fig, axes = plt.subplots(1, 2, figsize=(8, 3.5))
+dims = [1, 4, 16, 64, 256]
+colors_d = plt.cm.Blues(np.linspace(0.4, 1.0, len(dims)))
+
+for dk, col in zip(dims, colors_d):
+    q = torch.randn(1000, dk)
+    k = torch.randn(1000, dk)
+    scores = (q * k).sum(dim=1)
+    axes[0].hist(scores.numpy(), bins=40, alpha=0.5,
+                 label=f'd={dk}', color=col, density=True)
+
+axes[0].set_title("Distribución del producto punto\nsin escalar", fontsize=10, fontweight='bold')
+axes[0].set_xlabel("Valor del score", fontsize=9)
+axes[0].legend(fontsize=8)
+axes[0].spines[['top', 'right']].set_visible(False)
+
+for dk, col in zip(dims, colors_d):
+    q = torch.randn(1000, dk)
+    k = torch.randn(1000, dk)
+    scores = (q * k).sum(dim=1) / (dk ** 0.5)
+    axes[1].hist(scores.numpy(), bins=40, alpha=0.5,
+                 label=f'd={dk}', color=col, density=True)
+
+axes[1].set_title("Distribución del producto punto\nescalado ÷ √d_k", fontsize=10, fontweight='bold')
+axes[1].set_xlabel("Valor del score escalado", fontsize=9)
+axes[1].legend(fontsize=8)
+axes[1].spines[['top', 'right']].set_visible(False)
+
+plt.tight_layout()
+plt.show()
+```
+
+Con escalado, la varianza es siempre 1 independientemente de $d_k$ ✅
+
+:::
+:::
+
+# Implementación Desde Cero {background-color="#0077b6"}
+
+## Auto-Atención con NumPy {.smaller}
+
+```{python}
+#| code-fold: show
+import numpy as np
+
+def scaled_dot_product_attention_np(Q, K, V):
+    """
+    Q, K, V: (T, d_k)
+    Retorna: (T, d_k), (T, T)  — salida y pesos de atención
+    """
+    d_k = Q.shape[-1]
+
+    # Paso 1: scores de similaridad
+    scores = Q @ K.T / np.sqrt(d_k)          # (T, T)
+
+    # Paso 2: softmax por fila
+    scores_max = scores.max(axis=-1, keepdims=True)   # estabilidad numérica
+    exp_scores = np.exp(scores - scores_max)
+    attn_weights = exp_scores / exp_scores.sum(axis=-1, keepdims=True)  # (T, T)
+
+    # Paso 3: salida ponderada
+    output = attn_weights @ V                 # (T, d_k)
+    return output, attn_weights
+
+
+# Ejemplo sencillo: 5 tokens, d_k=4
+np.random.seed(0)
+T, d_k = 5, 4
+Q = np.random.randn(T, d_k)
+K = np.random.randn(T, d_k)
+V = np.random.randn(T, d_k)
+
+output, weights = scaled_dot_product_attention_np(Q, K, V)
+
+print("Forma de salida:", output.shape)
+print("Forma de pesos:", weights.shape)
+print("\nMatriz de atención (redondeada a 2 dec.):")
+print(np.round(weights, 2))
+print("\nCada fila suma a:", np.round(weights.sum(axis=-1), 4))
+```
+
+## Auto-Atención con PyTorch {.smaller}
+
+```{python}
+#| code-fold: show
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+class ScaledDotProductAttention(nn.Module):
+    """
+    Mecanismo de atención de producto escalar escalado.
+    Implementa: Attention(Q, K, V) = softmax(QK^T / sqrt(d_k)) V
+    """
+    def __init__(self, dropout=0.0):
+        super().__init__()
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, Q, K, V, mask=None):
+        """
+        Q: (batch, T_q, d_k)
+        K: (batch, T_k, d_k)
+        V: (batch, T_k, d_v)
+        mask: (batch, T_q, T_k) — opcional, para causal masking
+        """
+        d_k = Q.size(-1)
+
+        # Scores: (batch, T_q, T_k)
+        scores = torch.bmm(Q, K.transpose(1, 2)) / (d_k ** 0.5)
+
+        # Máscara causal (para decodificador): -inf en posiciones futuras
+        if mask is not None:
+            scores = scores.masked_fill(mask == 0, float('-inf'))
+
+        # Pesos de atención
+        attn_weights = F.softmax(scores, dim=-1)
+        attn_weights = self.dropout(attn_weights)
+
+        # Salida contextualizada
+        output = torch.bmm(attn_weights, V)
+        return output, attn_weights
+
+
+# Prueba
+torch.manual_seed(42)
+B, T, d_k = 2, 6, 32
+
+Q = torch.randn(B, T, d_k)
+K = torch.randn(B, T, d_k)
+V = torch.randn(B, T, d_k)
+
+attn = ScaledDotProductAttention(dropout=0.0)
+out, weights = attn(Q, K, V)
+
+print(f"Entrada Q: {Q.shape}")
+print(f"Salida:    {out.shape}")
+print(f"Pesos:     {weights.shape}")
+print(f"\nPesos para batch=0 (redondeados):\n{weights[0].detach().numpy().round(3)}")
+```
+
+## El Módulo Completo: Self-Attention Layer {.smaller}
+
+```{python}
+#| code-fold: show
+class SelfAttentionLayer(nn.Module):
+    """
+    Auto-atención: proyecta embeddings a Q, K, V y aplica
+    atención de producto escalar.
+    """
+    def __init__(self, d_model, d_k=None):
+        super().__init__()
+        d_k = d_k or d_model
+
+        # Proyecciones lineales aprendibles
+        self.W_Q = nn.Linear(d_model, d_k, bias=False)
+        self.W_K = nn.Linear(d_model, d_k, bias=False)
+        self.W_V = nn.Linear(d_model, d_k, bias=False)
+        self.W_O = nn.Linear(d_k, d_model, bias=False)  # proyección de salida
+
+        self.attention = ScaledDotProductAttention()
+
+    def forward(self, x, mask=None):
+        """x: (batch, T, d_model)"""
+        Q = self.W_Q(x)   # (batch, T, d_k)
+        K = self.W_K(x)   # (batch, T, d_k)
+        V = self.W_V(x)   # (batch, T, d_k)
+
+        out, weights = self.attention(Q, K, V, mask)
+        return self.W_O(out), weights   # (batch, T, d_model)
+
+
+# Aplicado sobre embeddings de texto
+d_model = 64
+self_attn = SelfAttentionLayer(d_model=d_model, d_k=32)
+
+# Simular batch de textos tokenizados
+batch_size, seq_len = 4, 10
+x = torch.randn(batch_size, seq_len, d_model)    # (B, T, d_model)
+
+out, attn_weights = self_attn(x)
+print(f"Entrada:   {x.shape}")
+print(f"Salida:    {out.shape}   ← mismas dimensiones")
+print(f"Pesos:     {attn_weights.shape}  ← T×T por ejemplo del batch")
+
+npar = sum(p.numel() for p in self_attn.parameters())
+print(f"Parámetros: {npar:,}  (solo W_Q, W_K, W_V, W_O)")
+```
+
+# Visualización de Mapas de Atención {background-color="#023e8a"}
+
+## ¿Qué Atiende Cada Token? {.smaller}
+
+```{python}
+#| echo: false
+#| fig-align: center
+import torch
+import matplotlib.pyplot as plt
+import numpy as np
+
+torch.manual_seed(7)
+
+# Simular una oración
+sentence = ["El", "gato", "come", "el", "pescado", "fresco"]
+T = len(sentence)
+d_model = 32
+
+# Embedding simple (aleatorio pero con estructura)
+embeds = torch.randn(1, T, d_model)
+
+# Darle estructura: hacer "gato" similar a "come" para que se atiendan
+embeds[0, 1] = embeds[0, 1] + 0.5 * embeds[0, 2]    # gato → come
+embeds[0, 4] = embeds[0, 4] + 0.4 * embeds[0, 5]    # pescado → fresco
+embeds[0, 0] = embeds[0, 0] + 0.3 * embeds[0, 1]    # el → gato
+
+layer = SelfAttentionLayer(d_model=d_model, d_k=16)
+with torch.no_grad():
+    out, weights = layer(embeds)
+
+w = weights[0].numpy()
+
+fig, axes = plt.subplots(1, 2, figsize=(13, 4.5))
+
+# Mapa de calor completo
+im = axes[0].imshow(w, cmap='Blues', aspect='auto', vmin=0, vmax=w.max())
+axes[0].set_xticks(range(T)); axes[0].set_xticklabels(sentence, rotation=45, ha='right', fontsize=10)
+axes[0].set_yticks(range(T)); axes[0].set_yticklabels(sentence, fontsize=10)
+axes[0].set_xlabel("Keys (¿a quién atender?)", fontsize=10)
+axes[0].set_ylabel("Queries (¿quién pregunta?)", fontsize=10)
+axes[0].set_title("Mapa de Atención Completo\nα[i,j] = cuánto atiende i a j", fontsize=10, fontweight='bold')
+plt.colorbar(im, ax=axes[0], fraction=0.046, pad=0.04)
+for i in range(T):
+    for j in range(T):
+        axes[0].text(j, i, f'{w[i,j]:.2f}', ha='center', va='center',
+                     fontsize=7, color='white' if w[i,j] > 0.25 else '#333')
+
+# Barras por token
+colors_bar = ['#0077b6', '#2a9d8f', '#e76f51', '#e9c46a', '#264653', '#023e8a']
+ax = axes[1]
+x = np.arange(T)
+width = 0.13
+for i, (tok, col) in enumerate(zip(sentence, colors_bar)):
+    ax.bar(x + i * width, w[i], width, label=tok, color=col, alpha=0.85, edgecolor='white')
+ax.set_xticks(x + width * (T - 1) / 2)
+ax.set_xticklabels(sentence, rotation=45, ha='right', fontsize=9)
+ax.set_ylabel("Peso de atención α", fontsize=10)
+ax.set_title("Atención de cada token hacia los demás\n(lectura por colores = el query)", fontsize=10, fontweight='bold')
+ax.legend(title="Query", fontsize=8, title_fontsize=8, ncol=2)
+ax.spines[['top', 'right']].set_visible(False)
+
+plt.suptitle(f'"{" ".join(sentence)}"', fontsize=12, fontweight='bold', color='#023e8a')
+plt.tight_layout()
+plt.show()
+```
+
+## Interpretando el Mapa de Atención {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Lectura del mapa
+
+- **Fila $i$**: distribución de atención del token $i$ sobre todos los tokens
+- **Columna $j$**: cuánta atención recibe el token $j$ en total
+- Los valores en cada fila suman exactamente **1.0**
+- Diagonal alta: el token se atiende a sí mismo (común)
+
+### ¿Qué debería capturar?
+
+Con entrenamiento real sobre datos lingüísticos:
+- "**gato**" (sujeto) atiende fuertemente a "**come**" (verbo)
+- "**fresco**" (adjetivo) atiende a "**pescado**" (sustantivo)
+- "**el**" (artículo) atiende al sustantivo siguiente
+
+:::
+::: {.column width="50%"}
+
+::: {.callout-important}
+### Nota sobre los pesos "aleatorios"
+
+En el experimento anterior, los pesos $\mathbf{W}_Q, \mathbf{W}_K, \mathbf{W}_V$ son aleatorios (sin entrenar). Los mapas muestran la **estructura del mecanismo**, no dependencias lingüísticas reales.
+
+Con un Transformer entrenado (como BERT), los mapas capturan:
+- Relaciones sintácticas (sujeto-verbo)
+- Correferencialidad (pronombre → antecedente)
+- Modificación (adjetivo → sustantivo)
+:::
+
+Ref: Vig (2019), Clark et al. (2019) — interpretabilidad de BERT
+
+:::
+:::
+
+# Propiedades Clave de la Auto-Atención {background-color="#03045e"}
+
+## Comparación Formal {.smaller}
+
+| Propiedad | RNN | CNN | **Auto-Atención** |
+|:----------|:----|:----|:-----------------|
+| Procesamiento | Secuencial | Paralelo | **Paralelo** |
+| Complejidad por capa | $O(T \cdot d^2)$ | $O(T \cdot k \cdot d^2)$ | $\mathbf{O(T^2 \cdot d)}$ |
+| Distancia máxima entre tokens | $O(T)$ | $O(T/k)$ | $\mathbf{O(1)}$ |
+| Operaciones secuenciales | $O(T)$ | $O(1)$ | $\mathbf{O(1)}$ |
+| Contexto | Local (LSTM mitiga) | Local ($k$) | **Global** |
+
+::: {.callout-tip}
+**Distancia $O(1)$**: el token 1 puede atender directamente al token 512 en una sola operación. En una RNN necesitaría 511 pasos de recurrencia.
+:::
+
+```{python}
+#| echo: false
+#| fig-align: center
+import matplotlib.pyplot as plt
+import numpy as np
+
+T_vals = np.arange(10, 600, 20)
+d = 64
+
+rnn_ops  = T_vals * d**2
+cnn_ops  = T_vals * 3 * d**2   # kernel=3
+attn_ops = T_vals**2 * d
+
+fig, ax = plt.subplots(figsize=(9, 2.8))
+ax.semilogy(T_vals, rnn_ops,  color='#e76f51', lw=2, label='RNN $O(T \\cdot d^2)$')
+ax.semilogy(T_vals, cnn_ops,  color='#2a9d8f', lw=2, label='CNN $O(T \\cdot k \\cdot d^2)$')
+ax.semilogy(T_vals, attn_ops, color='#0077b6', lw=2, label='Atención $O(T^2 d)$')
+ax.set_xlabel("Longitud de secuencia $T$", fontsize=10)
+ax.set_ylabel("Operaciones (log)", fontsize=10)
+ax.set_title("Complejidad computacional", fontsize=10, fontweight='bold')
+ax.legend(fontsize=9, loc='upper left')
+ax.spines[['top', 'right']].set_visible(False)
+plt.tight_layout()
+plt.show()
+```
+
+## Atención Causal (Máscara Triangular) {.smaller}
+
+::: {.columns}
+::: {.column width="55%"}
+
+### Problema para generación de texto
+
+En **encoder** (p.ej. BERT): un token puede atender a **todos** los demás (bidireccional).
+
+En **decoder** (p.ej. GPT): al generar el token $t$, solo puede atender a los tokens **anteriores** ($1, \ldots, t-1$). No debe "ver el futuro".
+
+**Solución**: máscara triangular inferior
+
+$$M_{ij} = \begin{cases} 0 & \text{si } j > i \quad (\text{futuro}) \\ 1 & \text{si } j \leq i \quad (\text{pasado/presente}) \end{cases}$$
+
+Se aplica como: `scores[M == 0] = -∞`  → después del softmax → peso ≈ 0
+
+:::
+::: {.column width="45%"}
+
+```{python}
+#| code-fold: show
+T = 5
+# Máscara triangular inferior
+mask = torch.tril(torch.ones(T, T))
+print("Máscara causal (1=visible, 0=enmascarado):")
+print(mask.int().numpy())
+
+# Aplicación sobre scores
+scores_ex = torch.randn(1, T, T)
+scores_masked = scores_ex.masked_fill(
+    mask.unsqueeze(0) == 0, float('-inf')
+)
+attn_causal = F.softmax(scores_masked, dim=-1)
+
+import matplotlib.pyplot as plt
+fig, axes = plt.subplots(1, 2, figsize=(8, 3))
+for ax, data, title in zip(
+        axes,
+        [mask.numpy(), attn_causal[0].detach().numpy()],
+        ['Máscara causal', 'Pesos de atención\ncausal (softmax)']):
+    im = ax.imshow(data, cmap='Blues', aspect='auto')
+    ax.set_title(title, fontsize=10, fontweight='bold')
+    ax.set_xlabel("Key position $j$", fontsize=9)
+    ax.set_ylabel("Query position $i$", fontsize=9)
+    plt.colorbar(im, ax=ax, fraction=0.046)
+plt.tight_layout()
+plt.show()
+```
+
+:::
+:::
+
+## Experimento: Atención sobre Texto Real {.smaller}
+
+```{python}
+#| code-fold: show
+# Usando un vocabulario y tokenización simples
+words = [
+    'el', 'gato', 'come', 'pescado', 'fresco',
+    'un', 'perro', 'corre', 'rápido', 'lento',
+    'la', 'niña', 'lee', 'libro', 'nuevo',
+]
+vocab = {w: i + 4 for i, w in enumerate(words)}
+vocab.update({'<PAD>': 0, '<UNK>': 1, '<BOS>': 2, '<EOS>': 3})
+
+oraciones = [
+    ['el', 'gato', 'come', 'pescado', 'fresco'],
+    ['un', 'perro', 'corre', 'rápido'],
+    ['la', 'niña', 'lee', 'el', 'libro', 'nuevo'],
+]
+
+MAX_LEN = 8
+def tokenize(sent):
+    ids = [vocab.get(w, 1) for w in sent]
+    ids = ids[:MAX_LEN] + [0] * max(0, MAX_LEN - len(ids))
+    return ids
+
+tokens_batch = torch.tensor([tokenize(s) for s in oraciones])  # (3, 8)
+
+# Capa de embedding + self-attention
+torch.manual_seed(0)
+d_model = 32
+emb_layer = nn.Embedding(max(vocab.values()) + 10, d_model, padding_idx=0)
+attn_layer = SelfAttentionLayer(d_model=d_model, d_k=16)
+
+with torch.no_grad():
+    embs = emb_layer(tokens_batch)             # (3, 8, 32)
+    out, weights = attn_layer(embs)            # (3, 8, 32), (3, 8, 8)
+
+print("Tokens batch:", tokens_batch.shape)
+print("Embeddings:  ", embs.shape)
+print("Salida:      ", out.shape)
+print("Pesos:       ", weights.shape)
+print(f"\nPesos de atención — oración 0 '{' '.join(oraciones[0])}':")
+print(weights[0, :5, :5].numpy().round(3))
+```
+
+# Resumen y Cierre {background-color="#0077b6"}
+
+## Lo Que Aprendimos Hoy {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### La operación central
+
+$$\text{Attention}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) = \text{softmax}\!\left(\frac{\mathbf{Q}\mathbf{K}^\top}{\sqrt{d_k}}\right)\mathbf{V}$$
+
+**Tres ingredientes:**
+- $\mathbf{Q}$ — "¿qué estoy buscando?"
+- $\mathbf{K}$ — "¿qué puedo ofrecerte?"
+- $\mathbf{V}$ — "¿qué información te doy?"
+
+**Por qué $\sqrt{d_k}$:** estabiliza la varianza del producto punto, evita saturación del softmax.
+
+**Complejidad**: $O(T^2 \cdot d)$ — cuadrática en longitud, pero completamente paralela.
+
+:::
+::: {.column width="50%"}
+
+### Lo que ganamos
+
+| | RNN | CNN | Atención |
+|:--|:--:|:--:|:--:|
+| Contexto global | ⚠️ | ❌ | ✅ |
+| Paralelo | ❌ | ✅ | ✅ |
+| Distancia O(1) | ❌ | ❌ | ✅ |
+
+### Aún falta...
+
+- **Un solo "cabezal"** de atención ve el espacio desde una sola perspectiva
+- No hay información posicional (el orden de los tokens es irrelevante)
+- Un solo bloque de atención no es profundo
+
+→ **Próxima sesión**: Multi-Head Attention + Codificación Posicional
+
+:::
+:::
+
+## Para la Próxima Sesión {.smaller}
+
+::: {.columns}
+::: {.column width="60%"}
+
+### S2: Atención Multi-Cabeza y Codificación Posicional
+
+::: {.callout-note}
+**Problema a resolver**: si aplicamos auto-atención una sola vez, el modelo ve el espacio semántico desde una única perspectiva. ¿Qué pasa si queremos capturar **múltiples tipos de relaciones** simultáneamente?
+
+Ejemplo: "banco" puede significar:
+- Institución financiera (relación semántica)
+- Objeto para sentarse (relación visual)
+- Orilla de un río (relación espacial)
+:::
+
+**Multi-Head Attention:**
+$$\text{MultiHead}(Q,K,V) = \text{Concat}(\text{head}_1, \ldots, \text{head}_h)\mathbf{W}^O$$
+
+donde cada cabeza aprende una proyección diferente.
+
+:::
+::: {.column width="40%"}
+
+### Y también...
+
+**¿Por qué necesitamos codificación posicional?**
+
+La auto-atención es **invariante a permutaciones** — shufflear los tokens no cambia la salida (solo los pesos):
+
+```python
+# Esto produce la misma salida (!)
+out1, _ = attn(Q, K, V)
+# Permutar tokens
+perm = [2, 0, 3, 1, 4]
+out2, _ = attn(Q[:, perm], K[:, perm], V[:, perm])
+```
+
+Los Transformers necesitan ingresar el orden explícitamente.
+
+### Lectura recomendada
+Vaswani et al. (2017) — *Attention is All You Need*, Secciones 3.2 y 3.3
+
+:::
+:::
+
+---
+
+## Referencias {.smaller}
+
+- Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., Kaiser, Ł., & Polosukhin, I. (2017). Attention Is All You Need. *NeurIPS 2017*.
+- Bahdanau, D., Cho, K., & Bengio, Y. (2015). Neural Machine Translation by Jointly Learning to Align and Translate. *ICLR 2015*.
+- Luong, M.-T., Pham, H., & Manning, C. D. (2015). Effective Approaches to Attention-based Neural Machine Translation. *EMNLP 2015*.
+- Clark, K., Khandelwal, U., Levy, O., & Manning, C. D. (2019). What Does BERT Look at? An Analysis of BERT's Attention. *ACL 2019 Workshop*.
+- Vig, J. (2019). A Multiscale Visualization of Attention in the Transformer Model. *ACL 2019*.

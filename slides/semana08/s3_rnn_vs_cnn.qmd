@@ -1,0 +1,978 @@
+---
+title: "Redes Neuronales Convolucionales para NLP"
+subtitle: "S3: Comparación RNNs vs. CNNs para Clasificación"
+author: "Prof. Francisco Suárez"
+institute: "Universidad Católica Boliviana"
+date: "2026-04-11"
+format:
+  revealjs:
+    theme: sky
+    transition: slide
+    slide-number: true
+    chalkboard: true
+    code-fold: true
+    code-tools: true
+    highlight-style: github
+    footer: "NLP y Análisis Semántico | Semana 8"
+    logo: ""
+    incremental: false
+    scrollable: true
+execute:
+  echo: true
+  warning: false
+---
+
+## Agenda de Hoy {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+1. 🔁 Repaso: los dos pipelines
+2. ⚖️ **Comparación teórica**: paralelismo, contexto, memoria
+3. 🧪 **Benchmark experimental**: GRU vs BiLSTM vs TextCNN
+4. ⏱️ Eficiencia computacional: tiempos de entrenamiento
+5. 🗺️ **Cuándo usar cada uno**: guía práctica
+6. 🔗 **Arquitecturas híbridas**: CNN + RNN
+
+:::
+::: {.column width="50%"}
+
+::: {.callout-tip}
+## Objetivo
+Comparar RNNs y CNNs de forma sistemática — teórica y empíricamente — para saber qué arquitectura elegir según la tarea y las restricciones del proyecto.
+:::
+
+**Prerequisitos:** RNNs/LSTM/GRU (Semana 6), Conv1D + Pooling (S1 y S2)
+
+:::
+:::
+
+# Repaso: Dos Pipelines {background-color="#0077b6"}
+
+## El Pipeline RNN {.smaller}
+
+::: {.columns}
+::: {.column width="55%"}
+
+```
+Texto → Embeddings → RNN → h_T → Clasificador
+```
+
+**Paso a paso:**
+1. Tokens → embeddings: $\mathbf{e}_1, \ldots, \mathbf{e}_T \in \mathbb{R}^d$
+2. GRU/LSTM procesa **secuencialmente**:
+$$\mathbf{h}_t = f(\mathbf{h}_{t-1}, \mathbf{e}_t)$$
+3. Toma $\mathbf{h}_T$ (o promedio de todos $\mathbf{h}_t$)
+4. $\hat{y} = \text{softmax}(\mathbf{W}\mathbf{h}_T + \mathbf{b})$
+
+::: {.callout-note}
+**Dependencia temporal**: el estado $\mathbf{h}_t$ depende de $\mathbf{h}_{t-1}$, lo que hace el procesamiento inherentemente **secuencial**.
+:::
+
+:::
+::: {.column width="45%"}
+
+```{python}
+#| echo: false
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+import numpy as np
+
+fig, ax = plt.subplots(figsize=(5, 3.5))
+ax.set_xlim(0, 10)
+ax.set_ylim(0, 4)
+ax.axis('off')
+
+tokens = ['e₁', 'e₂', 'e₃', 'e₄']
+colors_h = ['#0077b6', '#0096c7', '#00b4d8', '#48cae4']
+
+for i, (tok, col) in enumerate(zip(tokens, colors_h)):
+    # embedding box
+    ax.add_patch(mpatches.FancyBboxPatch(
+        (i*2.2 + 0.1, 2.4), 1.8, 0.8,
+        boxstyle="round,pad=0.05", linewidth=1.5,
+        edgecolor='#023e8a', facecolor='#caf0f8'))
+    ax.text(i*2.2 + 1, 2.8, tok, ha='center', va='center',
+            fontsize=11, fontweight='bold', color='#023e8a')
+
+    # h_t box
+    ax.add_patch(mpatches.FancyBboxPatch(
+        (i*2.2 + 0.1, 0.9), 1.8, 0.8,
+        boxstyle="round,pad=0.05", linewidth=1.5,
+        edgecolor=col, facecolor=col + '33' if len(col)==7 else '#caf0f8'))
+    label = f'h_{i+1}'
+    ax.text(i*2.2 + 1, 1.3, label, ha='center', va='center',
+            fontsize=11, fontweight='bold', color='#03045e')
+
+    # arrow embed→h
+    ax.annotate('', xy=(i*2.2+1, 0.9+0.8), xytext=(i*2.2+1, 2.4),
+                arrowprops=dict(arrowstyle='->', color='#555', lw=1.2))
+
+    # arrow h→h+1
+    if i < 3:
+        ax.annotate('', xy=((i+1)*2.2+0.1, 1.3), xytext=(i*2.2+1.9, 1.3),
+                    arrowprops=dict(arrowstyle='->', color='#e76f51', lw=1.8))
+
+ax.text(8.8, 1.3, '→ ŷ', ha='center', va='center',
+        fontsize=12, fontweight='bold', color='#e76f51')
+ax.set_title('Pipeline RNN: procesamiento secuencial', fontsize=10,
+             fontweight='bold', color='#023e8a')
+plt.tight_layout()
+plt.show()
+```
+
+:::
+:::
+
+## El Pipeline CNN {.smaller}
+
+::: {.columns}
+::: {.column width="55%"}
+
+```
+Texto → Embeddings → Conv1D → Pooling → Clasificador
+```
+
+**Paso a paso:**
+1. Tokens → embeddings: matriz $\mathbf{E} \in \mathbb{R}^{T \times d}$
+2. Filtros convolucionales **en paralelo**:
+$$h_i = \text{ReLU}(\mathbf{W} \cdot \mathbf{e}_{i:i+k-1} + b)$$
+3. Global max pooling: $\hat{h} = \max_i h_i$
+4. $\hat{y} = \text{softmax}(\mathbf{W}\hat{\mathbf{h}} + \mathbf{b})$
+
+::: {.callout-note}
+**Sin dependencia temporal**: todos los $h_i$ se calculan **simultáneamente** — el procesamiento es completamente **paralelo**.
+:::
+
+:::
+::: {.column width="45%"}
+
+```{python}
+#| echo: false
+fig, ax = plt.subplots(figsize=(5, 3.5))
+ax.set_xlim(0, 10)
+ax.set_ylim(0, 4)
+ax.axis('off')
+
+tokens = ['e₁', 'e₂', 'e₃', 'e₄']
+for i, tok in enumerate(tokens):
+    ax.add_patch(mpatches.FancyBboxPatch(
+        (i*2.2 + 0.1, 2.6), 1.8, 0.8,
+        boxstyle="round,pad=0.05", linewidth=1.5,
+        edgecolor='#023e8a', facecolor='#caf0f8'))
+    ax.text(i*2.2 + 1, 3.0, tok, ha='center', va='center',
+            fontsize=11, fontweight='bold', color='#023e8a')
+
+# convolution windows
+win_colors = ['#2a9d8f', '#e76f51', '#e9c46a']
+for j, col in enumerate(win_colors):
+    for i in range(3):
+        x0 = i*2.2 + 0.1
+        ax.add_patch(mpatches.FancyBboxPatch(
+            (x0 + j*0.15, 1.3 - j*0.1), 4.2 - j*0.3, 0.55,
+            boxstyle="round,pad=0.03", linewidth=1.2,
+            edgecolor=col, facecolor=col, alpha=0.15))
+
+ax.add_patch(mpatches.FancyBboxPatch(
+    (8.0, 1.5), 1.5, 0.8,
+    boxstyle="round,pad=0.05", linewidth=2,
+    edgecolor='#e76f51', facecolor='#ffddd2'))
+ax.text(8.75, 1.9, 'max', ha='center', va='center',
+        fontsize=10, fontweight='bold', color='#e76f51')
+
+ax.annotate('', xy=(8.0, 1.9), xytext=(6.5, 1.6),
+            arrowprops=dict(arrowstyle='->', color='#555', lw=1.2))
+ax.text(9.75, 1.9, '→ ŷ', ha='center', va='center',
+        fontsize=12, fontweight='bold', color='#e76f51')
+
+for i in range(4):
+    ax.annotate('', xy=(i*2.2+1, 2.6), xytext=(i*2.2+1, 1.9),
+                arrowprops=dict(arrowstyle='->', color='#999', lw=1.0))
+
+ax.set_title('Pipeline CNN: procesamiento paralelo', fontsize=10,
+             fontweight='bold', color='#023e8a')
+plt.tight_layout()
+plt.show()
+```
+
+:::
+:::
+
+# Comparación Teórica {background-color="#023e8a"}
+
+## Eje 1: Paralelismo {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### RNN — Secuencial por diseño
+
+$$\mathbf{h}_t = f(\mathbf{h}_{t-1}, \mathbf{e}_t)$$
+
+- Cada paso **depende del anterior**
+- No se puede paralelizar a lo largo de $T$
+- GPU infrautilizada para secuencias cortas
+- Tiempo $\propto T$ (longitud de la secuencia)
+
+:::
+::: {.column width="50%"}
+
+### CNN — Paralelo por diseño
+
+$$h_i = \text{ReLU}(\mathbf{W} \cdot \mathbf{e}_{i:i+k-1} + b)$$
+
+- Todos los $h_i$ son **independientes entre sí**
+- Se calculan simultáneamente con `nn.Conv1d`
+- GPU utilizada al máximo
+- Tiempo $\propto \log T$ en la práctica
+
+:::
+:::
+
+```{python}
+#| echo: false
+#| fig-align: center
+import torch
+import torch.nn as nn
+import time
+import matplotlib.pyplot as plt
+
+torch.manual_seed(42)
+
+lengths = [50, 100, 200, 400, 600, 800]
+rnn_times, cnn_times = [], []
+
+rnn = nn.GRU(128, 256, batch_first=True)
+cnn = nn.Sequential(
+    nn.Conv1d(128, 256, kernel_size=3, padding=1),
+    nn.ReLU(),
+    nn.AdaptiveMaxPool1d(1)
+)
+
+rnn.eval(); cnn.eval()
+batch = 64
+
+with torch.no_grad():
+    for L in lengths:
+        x = torch.randn(batch, L, 128)
+
+        # warm up
+        _ = rnn(x)
+        _ = cnn(x.transpose(1, 2))
+
+        t0 = time.perf_counter()
+        for _ in range(30):
+            _ = rnn(x)
+        rnn_times.append((time.perf_counter() - t0) / 30 * 1000)
+
+        t0 = time.perf_counter()
+        for _ in range(30):
+            _ = cnn(x.transpose(1, 2))
+        cnn_times.append((time.perf_counter() - t0) / 30 * 1000)
+
+fig, ax = plt.subplots(figsize=(8, 3))
+ax.plot(lengths, rnn_times, 'o-', color='#e76f51', lw=2, ms=6, label='GRU')
+ax.plot(lengths, cnn_times, 's-', color='#2a9d8f', lw=2, ms=6, label='CNN (Conv1d)')
+ax.set_xlabel("Longitud de secuencia (tokens)", fontsize=11)
+ax.set_ylabel("Tiempo por batch (ms)", fontsize=11)
+ax.set_title("Tiempo de inferencia: GRU vs CNN (batch=64, CPU)", fontsize=11, fontweight='bold')
+ax.legend(fontsize=11)
+ax.spines[['top', 'right']].set_visible(False)
+plt.tight_layout()
+plt.show()
+```
+
+## Eje 2: Ventana de Contexto {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### RNN — Contexto global (en teoría)
+
+- Accede a **todo el pasado** en $\mathbf{h}_t$
+- En práctica: LSTM/GRU mitigan pero no eliminan el problema del gradiente
+- Dependencias muy largas siguen siendo difíciles
+- **BiLSTM** captura contexto en ambas direcciones
+
+:::
+::: {.column width="50%"}
+
+### CNN — Contexto local (explícito)
+
+- Cada filtro de tamaño $k$ ve exactamente **$k$ tokens** contiguos
+- Campo receptivo de la capa $l$: $L(k-1)+1$
+- Para capturar dependencias largas: apilar capas o agrandar $k$
+- **Multi-tamaño**: $k \in \{3, 4, 5\}$ captura distintos n-gramas
+
+:::
+:::
+
+| | **RNN/LSTM** | **CNN** |
+|:--|:--|:--|
+| Contexto teórico | Global ($T$ tokens) | Local ($k$ tokens por filtro) |
+| Contexto práctico | ~100–200 tokens útiles | Explícito, controlado por $k$ |
+| Dependencias largas | Con LSTM/GRU | Con capas apiladas |
+| Captura de n-gramas | Implícita | **Explícita y eficiente** |
+
+## Eje 3: Parámetros y Memoria {.smaller}
+
+```{python}
+import torch.nn as nn
+
+def count_params(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+V, D = 20000, 128   # vocabulario, dimensión embedding
+H = 256             # tamaño oculto / canales
+
+# GRU
+gru_model = nn.Sequential(
+    nn.Embedding(V, D),
+    nn.GRU(D, H, batch_first=True)
+)
+
+# BiLSTM
+class BiLSTM(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.emb = nn.Embedding(V, D)
+        self.lstm = nn.LSTM(D, H // 2, bidirectional=True, batch_first=True)
+        self.fc = nn.Linear(H, 2)
+    def forward(self, x):
+        o, _ = self.lstm(self.emb(x))
+        return self.fc(o[:, -1])
+
+# TextCNN (Kim 2014)
+class TextCNN(nn.Module):
+    def __init__(self, filter_sizes=(3,4,5), num_filters=100):
+        super().__init__()
+        self.emb = nn.Embedding(V, D)
+        self.convs = nn.ModuleList([
+            nn.Conv1d(D, num_filters, fs) for fs in filter_sizes
+        ])
+        self.fc = nn.Linear(num_filters * len(filter_sizes), 2)
+    def forward(self, x):
+        e = self.emb(x).transpose(1, 2)
+        pooled = [f.relu(conv(e)).max(dim=2).values for conv in self.convs]
+        return self.fc(torch.cat(pooled, dim=1))
+
+import torch.nn.functional as f
+import torch
+
+gru = nn.GRU(D, H, batch_first=True)
+bilstm = BiLSTM()
+textcnn = TextCNN()
+
+print(f"GRU  (enc + emb):   {count_params(gru) + V*D:>10,} parámetros")
+print(f"BiLSTM (full):      {count_params(bilstm):>10,} parámetros")
+print(f"TextCNN (Kim 2014): {count_params(textcnn):>10,} parámetros")
+```
+
+::: {.callout-tip}
+TextCNN es el modelo **más ligero** de los tres — una ventaja significativa cuando los recursos son limitados o se necesita inferencia rápida.
+:::
+
+# Benchmark Experimental {background-color="#0077b6"}
+
+## Configuración del Experimento {.smaller}
+
+::: {.columns}
+::: {.column width="60%"}
+
+### Dataset sintético de análisis de sentimiento
+
+- **2 clases**: positivo / negativo
+- **4,000 ejemplos** de entrenamiento, 1,000 de prueba
+- Vocabulario de 5,000 tokens
+- Longitudes de oración: 15–50 tokens
+- Señal real basada en **patrones de n-gramas**
+
+```{python}
+#| code-fold: show
+import torch
+import torch.nn as nn
+import numpy as np
+from torch.utils.data import DataLoader, TensorDataset
+
+torch.manual_seed(0)
+np.random.seed(0)
+
+VOCAB  = 5000
+D      = 64
+MAX_LEN = 40
+N_TRAIN = 4000
+N_TEST  = 1000
+
+# Tokens con señal semántica
+POS_TOKENS = list(range(10, 60))    # palabras positivas
+NEG_TOKENS = list(range(60, 110))   # palabras negativas
+
+def make_dataset(n, max_len=MAX_LEN):
+    seqs, labels = [], []
+    for _ in range(n):
+        label = np.random.randint(0, 2)
+        length = np.random.randint(15, max_len + 1)
+        seq = np.random.randint(200, VOCAB, size=length)
+        # insertar bigramas semánticos
+        signal = POS_TOKENS if label == 1 else NEG_TOKENS
+        for _ in range(np.random.randint(2, 5)):
+            pos = np.random.randint(0, max(1, length - 2))
+            seq[pos] = np.random.choice(signal)
+            seq[pos + 1] = np.random.choice(signal)
+        padded = np.zeros(max_len, dtype=np.int64)
+        padded[:length] = seq[:max_len]
+        seqs.append(padded)
+        labels.append(label)
+    return torch.tensor(seqs), torch.tensor(labels)
+
+X_tr, y_tr = make_dataset(N_TRAIN)
+X_te, y_te = make_dataset(N_TEST)
+train_dl = DataLoader(TensorDataset(X_tr, y_tr), batch_size=64, shuffle=True)
+test_dl  = DataLoader(TensorDataset(X_te, y_te), batch_size=256)
+print(f"Train: {X_tr.shape}, Test: {X_te.shape}")
+```
+
+:::
+::: {.column width="40%"}
+
+::: {.callout-note}
+### ¿Por qué sintético?
+- Control total sobre la señal
+- Resultados reproducibles
+- Permite aislar las diferencias arquitectónicas
+- Dataset real → mismas tendencias, más ruido
+:::
+
+**Modelos a comparar:**
+
+| Modelo | Tipo | Config |
+|:-------|:-----|:-------|
+| GRU | RNN | H=128 |
+| BiLSTM | RNN | H=64×2 |
+| TextCNN | CNN | k=3,4,5 |
+
+:::
+:::
+
+## Definición de los Tres Modelos {.smaller}
+
+```{python}
+#| code-fold: show
+class GRUClassifier(nn.Module):
+    def __init__(self, vocab=VOCAB, d=D, h=128):
+        super().__init__()
+        self.emb  = nn.Embedding(vocab, d, padding_idx=0)
+        self.gru  = nn.GRU(d, h, batch_first=True)
+        self.drop = nn.Dropout(0.3)
+        self.fc   = nn.Linear(h, 2)
+
+    def forward(self, x):
+        e = self.drop(self.emb(x))
+        _, h = self.gru(e)
+        return self.fc(self.drop(h.squeeze(0)))
+
+
+class BiLSTMClassifier(nn.Module):
+    def __init__(self, vocab=VOCAB, d=D, h=64):
+        super().__init__()
+        self.emb  = nn.Embedding(vocab, d, padding_idx=0)
+        self.lstm = nn.LSTM(d, h, bidirectional=True, batch_first=True)
+        self.drop = nn.Dropout(0.3)
+        self.fc   = nn.Linear(h * 2, 2)
+
+    def forward(self, x):
+        e = self.drop(self.emb(x))
+        out, _ = self.lstm(e)
+        # combinar últimos estados de ambas direcciones
+        return self.fc(self.drop(out[:, -1]))
+
+
+class TextCNNClassifier(nn.Module):
+    def __init__(self, vocab=VOCAB, d=D, n_filters=64, filter_sizes=(3, 4, 5)):
+        super().__init__()
+        self.emb   = nn.Embedding(vocab, d, padding_idx=0)
+        self.convs = nn.ModuleList([
+            nn.Conv1d(d, n_filters, fs) for fs in filter_sizes
+        ])
+        self.drop  = nn.Dropout(0.3)
+        self.fc    = nn.Linear(n_filters * len(filter_sizes), 2)
+
+    def forward(self, x):
+        e = self.emb(x).transpose(1, 2)      # (B, D, T)
+        pooled = [
+            torch.relu(conv(e)).max(dim=2).values
+            for conv in self.convs
+        ]
+        return self.fc(self.drop(torch.cat(pooled, dim=1)))
+
+
+models = {
+    "GRU":     GRUClassifier(),
+    "BiLSTM":  BiLSTMClassifier(),
+    "TextCNN": TextCNNClassifier(),
+}
+for name, m in models.items():
+    npar = sum(p.numel() for p in m.parameters() if p.requires_grad)
+    print(f"{name:10s}: {npar:8,} parámetros")
+```
+
+## Entrenamiento y Evaluación {.smaller}
+
+```{python}
+#| code-fold: show
+import time
+
+def train_model(model, train_dl, test_dl, epochs=10, lr=1e-3):
+    opt = torch.optim.Adam(model.parameters(), lr=lr)
+    criterion = nn.CrossEntropyLoss()
+    history = {'train_acc': [], 'test_acc': []}
+
+    t_start = time.perf_counter()
+    for epoch in range(epochs):
+        model.train()
+        correct = total = 0
+        for xb, yb in train_dl:
+            opt.zero_grad()
+            logits = model(xb)
+            loss = criterion(logits, yb)
+            loss.backward()
+            opt.step()
+            correct += (logits.argmax(1) == yb).sum().item()
+            total   += len(yb)
+        train_acc = correct / total
+
+        model.eval()
+        correct = total = 0
+        with torch.no_grad():
+            for xb, yb in test_dl:
+                logits = model(xb)
+                correct += (logits.argmax(1) == yb).sum().item()
+                total   += len(yb)
+        test_acc = correct / total
+        history['train_acc'].append(train_acc)
+        history['test_acc'].append(test_acc)
+
+    elapsed = time.perf_counter() - t_start
+    return history, elapsed
+
+results = {}
+print(f"{'Modelo':<12} {'Acc Train':>10} {'Acc Test':>10} {'Tiempo (s)':>12}")
+print("-" * 48)
+for name, model in models.items():
+    hist, elapsed = train_model(model, train_dl, test_dl, epochs=10)
+    results[name] = {'history': hist, 'time': elapsed}
+    print(f"{name:<12} {hist['train_acc'][-1]:>10.3f} {hist['test_acc'][-1]:>10.3f} {elapsed:>12.2f}")
+```
+
+## Curvas de Aprendizaje {.smaller}
+
+```{python}
+#| echo: false
+#| fig-align: center
+fig, axes = plt.subplots(1, 2, figsize=(13, 4))
+
+palette = {'GRU': '#e76f51', 'BiLSTM': '#2a9d8f', 'TextCNN': '#0077b6'}
+epochs = range(1, 11)
+
+for name, res in results.items():
+    axes[0].plot(epochs, res['history']['train_acc'], 'o-',
+                 color=palette[name], lw=2, ms=5, label=name)
+    axes[1].plot(epochs, res['history']['test_acc'], 's-',
+                 color=palette[name], lw=2, ms=5, label=name)
+
+for ax, title in zip(axes, ['Accuracy en Entrenamiento', 'Accuracy en Prueba']):
+    ax.set_title(title, fontsize=11, fontweight='bold')
+    ax.set_xlabel("Época", fontsize=10)
+    ax.set_ylabel("Accuracy", fontsize=10)
+    ax.set_ylim(0.45, 1.02)
+    ax.legend(fontsize=10)
+    ax.spines[['top', 'right']].set_visible(False)
+    ax.axhline(0.5, color='#aaa', linestyle='--', lw=1, label='baseline')
+
+plt.suptitle("GRU vs BiLSTM vs TextCNN — Análisis de Sentimiento",
+             fontsize=12, fontweight='bold', color='#023e8a')
+plt.tight_layout()
+plt.show()
+```
+
+## Comparación de Tiempos de Entrenamiento {.smaller}
+
+```{python}
+#| echo: false
+#| fig-align: center
+fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+
+names  = list(results.keys())
+times  = [results[n]['time'] for n in names]
+colors = [palette[n] for n in names]
+
+# Tiempo total
+axes[0].bar(names, times, color=colors, edgecolor='white', width=0.5)
+for i, (n, t) in enumerate(zip(names, times)):
+    axes[0].text(i, t + 0.3, f"{t:.1f}s", ha='center', fontsize=12, fontweight='bold')
+axes[0].set_title("Tiempo total de entrenamiento\n(10 épocas, CPU)", fontweight='bold')
+axes[0].set_ylabel("Segundos", fontsize=10)
+axes[0].spines[['top', 'right']].set_visible(False)
+
+# Accuracy final vs tiempo
+test_accs = [results[n]['history']['test_acc'][-1] for n in names]
+for name, acc, t, col in zip(names, test_accs, times, colors):
+    axes[1].scatter(t, acc, color=col, s=200, zorder=5)
+    axes[1].annotate(name, (t, acc), textcoords="offset points",
+                     xytext=(8, 4), fontsize=11, fontweight='bold', color=col)
+
+axes[1].set_title("Trade-off: Tiempo vs Accuracy", fontweight='bold')
+axes[1].set_xlabel("Tiempo de entrenamiento (s)", fontsize=10)
+axes[1].set_ylabel("Accuracy en prueba", fontsize=10)
+axes[1].spines[['top', 'right']].set_visible(False)
+
+plt.tight_layout()
+plt.show()
+```
+
+::: {.callout-important}
+**Observación clave**: TextCNN alcanza accuracy competitivo en **significativamente menos tiempo**. La diferencia de velocidad se amplifica con GPUs y secuencias más largas.
+:::
+
+# Cuándo Usar Cada Uno {background-color="#03045e"}
+
+## Guía de Decisión Práctica {.smaller}
+
+```{python}
+#| echo: false
+#| fig-align: center
+fig, ax = plt.subplots(figsize=(12, 5))
+ax.axis('off')
+
+criteria = [
+    ("Criterio", "CNN ✓", "RNN/LSTM ✓"),
+    ("Velocidad de entrenamiento", "✅ Muy rápido", "⚠️ Más lento"),
+    ("Orden de las palabras importa", "⚠️ Parcial (local)", "✅ Global"),
+    ("Patrones locales (n-gramas)", "✅ Excelente", "⚠️ Implícito"),
+    ("Dependencias de largo alcance", "⚠️ Necesita capas", "✅ LSTM/GRU"),
+    ("Secuencias cortas (< 100 tokens)", "✅ Ideal", "✅ Bien"),
+    ("Secuencias muy largas (> 500 tokens)", "✅ O(1) pool", "⚠️ Gradiente"),
+    ("Recursos limitados (móvil/edge)", "✅ Ligero", "⚠️ Más pesado"),
+    ("Clasificación de texto / sentimiento", "✅ Estado del arte", "✅ Muy bueno"),
+    ("Tareas generativas (traducción)", "⚠️ No natural", "✅ Seq2Seq"),
+    ("NER / etiquetado por token", "⚠️ Posible, no ideal", "✅ Ideal"),
+]
+
+col_widths = [0.38, 0.31, 0.31]
+col_starts = [0.01, 0.40, 0.70]
+row_h = 0.085
+y_start = 0.95
+
+for i, row in enumerate(criteria):
+    y = y_start - i * row_h
+    bg = '#f0f8ff' if i % 2 == 0 else 'white'
+    if i == 0:
+        bg = '#023e8a'
+    ax.add_patch(mpatches.FancyBboxPatch(
+        (0, y - row_h + 0.005), 1.0, row_h - 0.005,
+        boxstyle="square,pad=0", linewidth=0,
+        facecolor=bg))
+
+    colors_row = ['white', 'white', 'white'] if i == 0 else ['#333', '#2a9d8f', '#e76f51']
+    fweights = ['bold', 'bold', 'bold'] if i == 0 else ['normal', 'bold', 'bold']
+    sizes = [10, 10, 10]
+    for j, (cell, c_start, fw, fs, tc) in enumerate(
+            zip(row, col_starts, fweights, sizes, colors_row)):
+        ax.text(c_start + col_widths[j]/2, y - row_h/2, cell,
+                ha='center', va='center', fontsize=fs,
+                fontweight=fw, color=tc)
+
+ax.set_xlim(0, 1)
+ax.set_ylim(0, 1)
+plt.tight_layout()
+plt.show()
+```
+
+## Resumen Visual {.smaller}
+
+```{python}
+#| echo: false
+#| fig-align: center
+fig, ax = plt.subplots(figsize=(10, 5))
+
+# spider/radar chart
+categories = ['Velocidad', 'Contexto\nGlobal', 'N-gramas\nLocales',
+              'Memoria\n(tokens)', 'Recursos\nLimitados', 'Seq.\nLargas']
+N = len(categories)
+angles = np.linspace(0, 2*np.pi, N, endpoint=False).tolist()
+angles += angles[:1]
+
+cnn_scores  = [5, 2, 5, 4, 5, 4]
+rnn_scores  = [2, 5, 3, 2, 3, 2]
+
+for scores, label, color in [(cnn_scores, 'TextCNN', '#0077b6'), (rnn_scores, 'BiLSTM', '#e76f51')]:
+    vals = scores + scores[:1]
+    ax = plt.subplot(111, polar=True)
+    ax.plot(angles, vals, 'o-', linewidth=2, color=color, label=label)
+    ax.fill(angles, vals, alpha=0.15, color=color)
+
+ax.set_xticks(angles[:-1])
+ax.set_xticklabels(categories, fontsize=10)
+ax.set_ylim(0, 5)
+ax.set_yticks([1, 2, 3, 4, 5])
+ax.set_yticklabels(['1','2','3','4','5'], fontsize=8)
+ax.grid(color='gray', alpha=0.4)
+ax.set_title("Perfil de fortalezas: TextCNN vs BiLSTM", fontsize=12,
+             fontweight='bold', color='#023e8a', pad=15)
+ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1.1), fontsize=11)
+
+plt.tight_layout()
+plt.show()
+```
+
+# Arquitecturas Híbridas {background-color="#001219"}
+
+## CNN + RNN: Lo Mejor de Ambos {.smaller}
+
+::: {.columns}
+::: {.column width="55%"}
+
+### Motivación
+
+- **CNN**: extrae características locales eficientemente
+- **RNN**: modela relaciones entre esas características
+
+### Pipeline
+
+```
+Texto → Embeddings
+          ↓
+       Conv1D  (captura n-gramas)
+          ↓
+       ReLU + pooling local
+          ↓
+       GRU/LSTM  (captura secuencia de patrones)
+          ↓
+       h_T → Clasificador
+```
+
+::: {.callout-tip}
+La CNN actúa como un **extractor de características** que reduce la longitud de secuencia antes de la RNN — reduciendo el problema del gradiente que desaparece.
+:::
+
+:::
+::: {.column width="45%"}
+
+```{python}
+#| code-fold: show
+class CNNRNNClassifier(nn.Module):
+    """
+    CNN extrae características locales,
+    RNN captura su secuencia temporal.
+    """
+    def __init__(self, vocab=VOCAB, d=D,
+                 n_filters=64, kernel=3, h=128):
+        super().__init__()
+        self.emb  = nn.Embedding(vocab, d, padding_idx=0)
+        self.conv = nn.Conv1d(d, n_filters, kernel,
+                              padding=kernel // 2)
+        self.gru  = nn.GRU(n_filters, h, batch_first=True)
+        self.drop = nn.Dropout(0.3)
+        self.fc   = nn.Linear(h, 2)
+
+    def forward(self, x):
+        # CNN: extraer patrones locales
+        e = self.emb(x).transpose(1, 2)    # (B,D,T)
+        c = torch.relu(self.conv(e))        # (B,F,T)
+        c = c.transpose(1, 2)              # (B,T,F)
+
+        # RNN: modelar secuencia de patrones
+        _, h = self.gru(self.drop(c))
+        return self.fc(self.drop(h.squeeze(0)))
+
+
+hybrid = CNNRNNClassifier()
+npar = sum(p.numel() for p in hybrid.parameters() if p.requires_grad)
+print(f"CNN+RNN: {npar:,} parámetros")
+```
+
+:::
+:::
+
+## Benchmark Extendido: Incluyendo CNN+RNN {.smaller}
+
+```{python}
+#| echo: false
+hybrid_hist, hybrid_time = train_model(
+    CNNRNNClassifier(), train_dl, test_dl, epochs=10
+)
+
+all_results = dict(results)
+all_results['CNN+RNN'] = {'history': hybrid_hist, 'time': hybrid_time}
+
+fig, axes = plt.subplots(1, 2, figsize=(13, 4))
+
+palette4 = {'GRU': '#e76f51', 'BiLSTM': '#2a9d8f',
+            'TextCNN': '#0077b6', 'CNN+RNN': '#e9c46a'}
+
+for name, res in all_results.items():
+    axes[0].plot(range(1, 11), res['history']['train_acc'], 'o-',
+                 color=palette4[name], lw=2, ms=5, label=name)
+    axes[1].plot(range(1, 11), res['history']['test_acc'], 's-',
+                 color=palette4[name], lw=2, ms=5, label=name)
+
+for ax, title in zip(axes, ['Train Accuracy', 'Test Accuracy']):
+    ax.set_title(title, fontsize=11, fontweight='bold')
+    ax.set_xlabel("Época", fontsize=10)
+    ax.set_ylabel("Accuracy", fontsize=10)
+    ax.set_ylim(0.45, 1.02)
+    ax.legend(fontsize=10)
+    ax.spines[['top', 'right']].set_visible(False)
+
+plt.suptitle("Comparación completa: cuatro arquitecturas",
+             fontsize=12, fontweight='bold', color='#023e8a')
+plt.tight_layout()
+plt.show()
+
+print("\nResumen final:")
+print(f"{'Modelo':<12} {'Acc Test':>10} {'Tiempo (s)':>12}")
+print("-" * 36)
+for name, res in all_results.items():
+    print(f"{name:<12} {res['history']['test_acc'][-1]:>10.3f} {res['time']:>12.2f}")
+```
+
+## Reflexión: ¿Cuál Es el Mejor Modelo? {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### No hay respuesta universal
+
+> "All models are wrong, but some are useful."  
+> — George Box
+
+**La elección depende de:**
+
+- **Tarea**: clasificación vs. generación vs. etiquetado
+- **Datos**: longitud de secuencias, tamaño del dataset
+- **Recursos**: GPU disponible, latencia requerida
+- **Baseline razonable**: TextCNN es a menudo el mejor punto de partida por su velocidad
+
+:::
+::: {.column width="50%"}
+
+### El panorama hoy (2024)
+
+```{python}
+#| echo: false
+labels = ['TextCNN\n(clasificación)', 'BiLSTM\n(NER/tagging)',
+          'CNN+RNN\n(híbrido)', 'Transformer\n(todo)']
+perf   = [0.87, 0.84, 0.86, 0.94]
+colors = ['#0077b6', '#2a9d8f', '#e9c46a', '#e76f51']
+
+fig, ax = plt.subplots(figsize=(6, 3.5))
+bars = ax.barh(labels, perf, color=colors, edgecolor='white', height=0.5)
+ax.set_xlim(0.75, 1.0)
+ax.set_xlabel("Accuracy relativa (benchmark SST-2)", fontsize=10)
+for bar, p in zip(bars, perf):
+    ax.text(p + 0.001, bar.get_y() + bar.get_height()/2,
+            f"{p:.2f}", va='center', fontsize=10, fontweight='bold')
+ax.spines[['top', 'right']].set_visible(False)
+ax.set_title("Rendimiento en clasificación de sentimiento", fontsize=10, fontweight='bold')
+plt.tight_layout()
+plt.show()
+```
+
+::: {.callout-important}
+Los **Transformers** (próxima semana) superan a CNN y RNN, pero requieren más datos y recursos.
+:::
+
+:::
+:::
+
+# Resumen y Cierre {background-color="#0077b6"}
+
+## Lo Que Aprendimos Hoy {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+### Comparación teórica
+
+| Dimensión | CNN | RNN |
+|:----------|:-----|:----|
+| **Paralelismo** | ✅ Total | ⚠️ Secuencial |
+| **N-gramas** | ✅ Explícito | ⚠️ Implícito |
+| **Contexto largo** | ⚠️ Capas | ✅ LSTM/GRU |
+| **Velocidad** | ✅ Rápido | ⚠️ Lento |
+| **Parámetros** | ✅ Pocos | ⚠️ Más |
+
+### Resultado experimental
+
+- En clasificación de texto: **TextCNN ≈ BiLSTM** en accuracy
+- TextCNN: **2–3x más rápido** en entrenamiento
+- CNN+RNN: balance interesante para datos complejos
+
+:::
+::: {.column width="50%"}
+
+### Cuándo usar cada uno
+
+**CNN:**
+- Clasificación de texto / sentimiento
+- Detección de spam, tópicos
+- Recursos limitados
+- Baseline rápido
+
+**RNN/LSTM:**
+- Traducción / generación
+- NER, POS tagging
+- Dependencias de largo alcance
+
+**CNN+RNN:**
+- Documentos largos con estructura local
+- Cuando CNN sola no capta suficiente contexto
+
+:::
+:::
+
+## Para la Próxima Semana {.smaller}
+
+::: {.columns}
+::: {.column width="60%"}
+
+### Semana 9: Auto-Atención y Transformers
+
+::: {.callout-note}
+**Pregunta motivadora**: ¿Puede un modelo capturar **contexto global** sin procesar la secuencia paso a paso (RNN) ni limitarse a ventanas locales (CNN)?
+:::
+
+**Respuesta**: el mecanismo de **auto-atención**
+
+$$\text{Attention}(Q, K, V) = \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d_k}}\right)V$$
+
+- Cada token puede "atender" a cualquier otro token directamente
+- Sin dependencias secuenciales → completamente paralelo
+- **Complejidad**: $O(T^2)$ pero con GPU modernas es muy eficiente
+- Base de **BERT**, **GPT**, y todos los LLMs modernos
+
+:::
+::: {.column width="40%"}
+
+### Lecturas recomendadas
+
+- Vaswani et al. (2017). *Attention is All You Need*
+- Yin et al. (2017). *Comparative Study of CNNs and RNNs for NLP*
+- Kim (2014). *Convolutional Neural Networks for Sentence Classification*
+
+### Para reflexionar
+
+¿Por qué la atención supera tanto a CNN como a RNN en tareas de lenguaje si la primera se "ve" como más sencilla en su definición?
+
+:::
+:::
+
+---
+
+## Referencias {.smaller}
+
+- Kim, Y. (2014). Convolutional Neural Networks for Sentence Classification. *EMNLP 2014*.
+- Yin, W., Kann, K., Yu, M., & Schütze, H. (2017). Comparative Study of CNN and RNN for Natural Language Processing. *arXiv:1702.01923*.
+- Conneau, A., Schwenk, H., Barrault, L., & LeCun, Y. (2017). Very Deep Convolutional Networks for Text Classification. *EACL 2017*.
+- Vaswani, A. et al. (2017). Attention Is All You Need. *NeurIPS 2017*.
+- Zhou, C. et al. (2015). A C-LSTM Neural Network for Text Classification. *arXiv:1511.08630*.

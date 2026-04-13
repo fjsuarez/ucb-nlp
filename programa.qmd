@@ -36,9 +36,9 @@
 | **8** | **Redes Neuronales Convolucionales para NLP** | |
 | | [S1: Convoluciones 1D para texto](slides/semana08/s1_conv1d_texto.qmd) | |
 | | [S2: Max Pooling Global vs. Local](slides/semana08/s2_pooling.qmd) | Quiz 6 |
-| | S3: Comparación RNNs vs. CNNs para clasificación | **📝 Tarea 2:** Generador de nombres a nivel de caracteres con LSTM |
+| | [S3: Comparación RNNs vs. CNNs para clasificación](slides/semana08/s3_rnn_vs_cnn.qmd) | **📝 Tarea 2:** Generador de nombres a nivel de caracteres con LSTM |
 | **9** | **Auto-Atención & Transformers** | |
-| | S1: Atención de Producto Escalar (Queries, Keys, Values) | |
+| | [S1: Atención de Producto Escalar (Queries, Keys, Values)](slides/semana09/s1_atencion_producto_escalar.qmd) | |
 | | S2: Atención Multi-Cabeza y Codificación Posicional | |
 | | S3: El bloque Transformer completo (Residuales, Normalización) | |
 | **10** | **BERT y la Revolución del Codificador** | |
