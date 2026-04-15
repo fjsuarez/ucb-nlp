@@ -49,6 +49,7 @@ format: html
 ### Semana 9
 - [Atención de Producto Escalar (Queries, Keys, Values)](slides/semana09/s1_atencion_producto_escalar.qmd)
 - [Atención Multi-Cabeza y Codificación Posicional](slides/semana09/s2_multihead_posicional.qmd)
+- [El Bloque Transformer Completo (Residuales, Normalización)](slides/semana09/s3_transformer_completo.qmd)
 
 ## Tareas
 

@@ -1,0 +1,1008 @@
+---
+title: "Auto-Atención & Transformers"
+subtitle: "S3: El Bloque Transformer Completo (Residuales, Normalización, FFN)"
+author: "Prof. Francisco Suárez"
+institute: "Universidad Católica Boliviana"
+date: "2026-04-17"
+format:
+  revealjs:
+    theme: sky
+    transition: slide
+    slide-number: true
+    chalkboard: true
+    code-fold: true
+    code-tools: true
+    highlight-style: github
+    footer: "NLP y Análisis Semántico | Semana 9"
+    logo: ""
+    incremental: false
+    scrollable: true
+execute:
+  echo: true
+  warning: false
+---
+
+## Agenda de Hoy {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+1. 🔁 ¿Qué tenemos hasta ahora?
+2. ➕ **Conexiones residuales** (Add)
+3. 📏 **Normalización de capa** (LayerNorm)
+4. 🧮 **Red Feed-Forward** posición a posición
+5. 🧱 **Bloque Encoder completo**
+
+:::
+::: {.column width="50%"}
+
+6. 📚 **Apilando N bloques**
+7. 🔓 **Bloque Decoder** (cross-attention)
+8. 🏗️ Arquitectura completa
+9. 🆚 Pre-norm vs Post-norm
+10. 👀 Preview: BERT
+
+:::
+:::
+
+---
+
+## Revisión: Componentes que ya tenemos {.smaller}
+
+::: {.columns}
+::: {.column width="55%"}
+
+**De S1 y S2:**
+
+| Componente | Función |
+|------------|---------|
+| `ScaledDotProductAttention` | $\text{softmax}\!\left(\frac{QK^\top}{\sqrt{d_k}}\right)V$ |
+| `MultiHeadAttention` | $h$ cabezas en paralelo |
+| `PositionalEncoding` | Inyecta información de posición |
+
+**Lo que falta para un bloque Transformer:**
+
+- ❌ Sin "memoria profunda" por posición
+- ❌ Sin estabilidad de gradientes en stacks profundos
+- ❌ Sin no-linealidad por token (MHA es lineal en V)
+
+:::
+::: {.column width="45%"}
+
+```
+x → [Embedding + PE]
+        ↓
+┌───────────────────┐
+│  Multi-Head SA    │ ← tenemos ✅
+│  ???              │ ← falta: Add & Norm
+│  Feed-Forward     │ ← falta
+│  ???              │ ← falta: Add & Norm
+└───────────────────┘
+        ↓
+   [repetir N veces]
+```
+
+:::
+:::
+
+---
+
+## El Problema de los Stacks Profundos {.smaller}
+
+```{python}
+#| fig-align: center
+import numpy as np
+import matplotlib.pyplot as plt
+
+np.random.seed(42)
+layers = np.arange(1, 13)
+
+# gradiente sin residuales: se desvanece exponencialmente
+grad_no_res = 1.0 * (0.7 ** layers)
+# gradiente con residuales: se mantiene
+grad_res = 1.0 / (1 + 0.05 * layers)
+
+fig, ax = plt.subplots(figsize=(8, 3.5))
+ax.plot(layers, grad_no_res, 'o-', color='#e76f51', lw=2.5, label='Sin residuales')
+ax.plot(layers, grad_res, 's-', color='#2a9d8f', lw=2.5, label='Con residuales')
+ax.fill_between(layers, grad_no_res, grad_res, alpha=0.15, color='#0077b6')
+ax.set_xlabel('Profundidad (capa)', fontsize=12)
+ax.set_ylabel('Magnitud del gradiente', fontsize=12)
+ax.set_title('Problema del gradiente desvaneciente en stacks profundos', fontsize=13)
+ax.legend(fontsize=11)
+ax.set_xticks(layers)
+ax.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
+```
+
+> **Solución clásica de ResNets (He et al., 2016):** añadir la entrada directamente a la salida del sub-bloque.
+
+---
+
+## Conexiones Residuales (Add) {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+**Idea:** en lugar de aprender $F(x)$, aprender el **residuo** $F(x) - x$
+
+$$\text{output} = x + \text{Sublayer}(x)$$
+
+**¿Por qué funciona?**
+
+- Gradientes fluyen directamente hacia atrás por la **identidad**
+- Si $F(x) \approx 0$, el bloque se puede ignorar (inicialización segura)
+- Permite entrenar redes de **decenas de bloques** sin saturación
+
+:::
+::: {.column width="50%"}
+
+```{python}
+#| echo: false
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+from matplotlib.patches import FancyArrowPatch
+
+fig, ax = plt.subplots(figsize=(4.2, 4.8))
+ax.set_xlim(0, 4); ax.set_ylim(0, 5)
+ax.axis('off')
+
+# cajas
+ax.add_patch(plt.Rectangle((1.2, 3.2), 1.6, 0.8, fc='#90e0ef', ec='#0077b6', lw=2))
+ax.text(2.0, 3.6, 'Sub-Layer\n(MHA o FFN)', ha='center', va='center', fontsize=10, fontweight='bold')
+
+# flechas verticales
+ax.annotate('', xy=(2.0, 3.2), xytext=(2.0, 2.5), arrowprops=dict(arrowstyle='->', color='#264653', lw=2))
+ax.annotate('', xy=(2.0, 2.0), xytext=(2.0, 2.5), arrowprops=dict(arrowstyle='<-', color='#264653', lw=2))
+ax.add_patch(plt.Circle((2.0, 2.0), 0.25, fc='#e9c46a', ec='#264653', lw=2))
+ax.text(2.0, 2.0, '+', ha='center', va='center', fontsize=16, fontweight='bold')
+
+# entrada x
+ax.annotate('', xy=(2.0, 1.5), xytext=(2.0, 1.75), arrowprops=dict(arrowstyle='<-', color='#264653', lw=2))
+ax.text(2.0, 1.3, 'x  (entrada)', ha='center', va='center', fontsize=11)
+
+# bypass residual
+ax.annotate('', xy=(2.0, 4.1), xytext=(2.0, 4.5), arrowprops=dict(arrowstyle='<-', color='#264653', lw=2))
+ax.text(2.0, 4.7, 'x + Sub(x)', ha='center', va='center', fontsize=11)
+
+# conexión skip
+ax.plot([0.9, 0.9, 2.0], [1.3, 2.0, 2.0], color='#e76f51', lw=2.5, ls='--')
+ax.annotate('', xy=(1.5, 2.0), xytext=(0.9, 2.0), arrowprops=dict(arrowstyle='->', color='#e76f51', lw=2))
+ax.text(0.4, 1.6, 'skip\n(x)', ha='center', va='center', fontsize=10, color='#e76f51', fontweight='bold')
+
+plt.tight_layout()
+plt.show()
+```
+
+:::
+:::
+
+---
+
+## Layer Normalization {.smaller}
+
+::: {.columns}
+::: {.column width="52%"}
+
+**BatchNorm** normaliza a través de **ejemplos** en el batch:
+
+$$\hat{x}_i = \frac{x_i - \mu_B}{\sigma_B}$$
+
+Problema: depende del tamaño del batch; difícil en secuencias variables.
+
+**LayerNorm** normaliza a través de las **features** de un ejemplo:
+
+$$\text{LayerNorm}(x) = \gamma \odot \frac{x - \mu}{\sigma + \epsilon} + \beta$$
+
+donde $\mu, \sigma$ son la media y std de las $d_\text{model}$ dimensiones de ese token.
+
+- $\gamma, \beta$: parámetros aprendidos (escala y sesgo)
+- Independiente del batch → **ideal para secuencias**
+
+:::
+::: {.column width="48%"}
+
+```{python}
+import torch
+import torch.nn as nn
+
+# --- LayerNorm en acción ---
+d_model = 8
+ln = nn.LayerNorm(d_model)
+
+# tensor (batch=2, seq=3, d_model=8)
+x = torch.randn(2, 3, d_model) * 5 + 2
+x_norm = ln(x)
+
+print("Antes — media / std por token:")
+print(x[0, 0].mean().item(),
+      x[0, 0].std().item())
+
+print("\nDespués — media / std por token:")
+print(x_norm[0, 0].mean().item(),
+      x_norm[0, 0].std().item())
+```
+
+> `gamma` y `beta` se **aprenden** durante el entrenamiento, permitiendo deshacer la normalización si es necesario.
+
+:::
+:::
+
+---
+
+## Red Feed-Forward Posición a Posición (FFN) {.smaller}
+
+::: {.columns}
+::: {.column width="55%"}
+
+Después de MHA, cada token pasa **independientemente** por una red de 2 capas:
+
+$$\text{FFN}(x) = \text{ReLU}(x W_1 + b_1)\, W_2 + b_2$$
+
+- $W_1 \in \mathbb{R}^{d_\text{model} \times d_\text{ff}}$,  $W_2 \in \mathbb{R}^{d_\text{ff} \times d_\text{model}}$
+- Típicamente $d_\text{ff} = 4 \times d_\text{model}$ (ej. 2048 si $d_\text{model}=512$)
+- Mismos pesos para **todas las posiciones**, distinto batch
+
+**¿Por qué necesitamos FFN si ya tenemos MHA?**
+
+- MHA mezcla información entre tokens (contexto)
+- FFN procesa **cada token individualmente** (no-linealidad por posición)
+- Analogía: MHA = comunicación, FFN = computación
+
+:::
+::: {.column width="45%"}
+
+```{python}
+class PositionwiseFFN(nn.Module):
+    def __init__(self, d_model, d_ff,
+                 dropout=0.1):
+        super().__init__()
+        self.w1 = nn.Linear(d_model, d_ff)
+        self.w2 = nn.Linear(d_ff, d_model)
+        self.drop = nn.Dropout(dropout)
+        self.act  = nn.ReLU()
+
+    def forward(self, x):
+        # x: (B, T, d_model)
+        return self.w2(
+            self.drop(self.act(self.w1(x)))
+        )
+
+# Verificar dimensiones
+ffn = PositionwiseFFN(d_model=64, d_ff=256)
+x   = torch.randn(2, 10, 64)
+out = ffn(x)
+print("entrada:", x.shape)
+print("salida: ", out.shape)
+```
+
+:::
+:::
+
+---
+
+## El Bloque Encoder Completo {.smaller}
+
+Cada bloque aplica **4 operaciones** en orden:
+
+$$\begin{aligned}
+x_1 &= \text{LayerNorm}(x + \text{MHA}(x, x, x)) \\
+x_2 &= \text{LayerNorm}(x_1 + \text{FFN}(x_1))
+\end{aligned}$$
+
+::: {.columns}
+::: {.column width="55%"}
+
+```{python}
+class TransformerEncoderBlock(nn.Module):
+    def __init__(self, d_model, num_heads,
+                 d_ff, dropout=0.1):
+        super().__init__()
+        self.mha   = nn.MultiheadAttention(
+            d_model, num_heads,
+            dropout=dropout,
+            batch_first=True
+        )
+        self.ffn   = PositionwiseFFN(
+            d_model, d_ff, dropout)
+        self.norm1 = nn.LayerNorm(d_model)
+        self.norm2 = nn.LayerNorm(d_model)
+        self.drop1 = nn.Dropout(dropout)
+        self.drop2 = nn.Dropout(dropout)
+
+    def forward(self, x,
+                key_padding_mask=None):
+        # Sub-bloque 1: MHA + Add & Norm
+        attn_out, _ = self.mha(
+            x, x, x,
+            key_padding_mask=key_padding_mask
+        )
+        x = self.norm1(x + self.drop1(attn_out))
+        # Sub-bloque 2: FFN + Add & Norm
+        x = self.norm2(x + self.drop2(self.ffn(x)))
+        return x
+```
+
+:::
+::: {.column width="45%"}
+
+```{python}
+# Probar el bloque
+block = TransformerEncoderBlock(
+    d_model=64, num_heads=4, d_ff=256
+)
+x   = torch.randn(2, 10, 64)
+out = block(x)
+
+print("entrada:", x.shape)
+print("salida: ", out.shape)
+
+total = sum(p.numel() for p in block.parameters())
+print(f"parámetros: {total:,}")
+```
+
+:::
+:::
+
+---
+
+## Diagrama del Bloque Encoder {.smaller}
+
+```{python}
+#| echo: false
+#| fig-align: center
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+
+fig, ax = plt.subplots(figsize=(4.5, 7.5))
+ax.set_xlim(0, 5); ax.set_ylim(0, 10)
+ax.axis('off')
+
+def box(ax, x, y, w, h, label, color, fs=10):
+    ax.add_patch(plt.Rectangle((x, y), w, h,
+                 fc=color, ec='#264653', lw=1.8, zorder=3))
+    ax.text(x + w/2, y + h/2, label,
+            ha='center', va='center',
+            fontsize=fs, fontweight='bold', zorder=4)
+
+def arrow(ax, x, y1, y2):
+    ax.annotate('', xy=(x, y2), xytext=(x, y1),
+                arrowprops=dict(arrowstyle='->', color='#264653', lw=1.8))
+
+def plus_node(ax, x, y):
+    ax.add_patch(plt.Circle((x, y), 0.22,
+                 fc='#e9c46a', ec='#264653', lw=1.8, zorder=3))
+    ax.text(x, y, '+', ha='center', va='center',
+            fontsize=14, fontweight='bold', zorder=4)
+
+cx = 2.5
+
+# entrada
+arrow(ax, cx, 0.2, 0.7)
+ax.text(cx, 0.05, 'x  (entrada)', ha='center', fontsize=10)
+
+# skip 1
+ax.plot([1.0, 1.0], [0.5, 3.7], color='#e76f51', lw=2, ls='--', zorder=2)
+ax.plot([1.0, cx - 0.22], [3.7, 3.7], color='#e76f51', lw=2, ls='--', zorder=2)
+ax.annotate('', xy=(cx - 0.22, 3.7), xytext=(cx - 0.5, 3.7),
+            arrowprops=dict(arrowstyle='->', color='#e76f51', lw=1.8))
+
+# MHA box
+box(ax, 1.3, 0.7, 2.4, 1.0, 'Multi-Head\nAttention', '#90e0ef', fs=10)
+arrow(ax, cx, 1.7, 2.4)
+
+# dropout 1
+box(ax, 1.7, 2.4, 1.6, 0.55, 'Dropout', '#f1faee', fs=9)
+arrow(ax, cx, 2.95, 3.48)
+
+# add + norm 1
+plus_node(ax, cx, 3.7)
+arrow(ax, cx, 3.92, 4.35)
+box(ax, 1.3, 4.35, 2.4, 0.75, 'Layer Norm  (Add & Norm)', '#caf0f8', fs=9)
+
+# skip 2
+ax.plot([1.0, 1.0], [4.6, 7.35], color='#e76f51', lw=2, ls='--', zorder=2)
+ax.plot([1.0, cx - 0.22], [7.35, 7.35], color='#e76f51', lw=2, ls='--', zorder=2)
+ax.annotate('', xy=(cx - 0.22, 7.35), xytext=(cx - 0.5, 7.35),
+            arrowprops=dict(arrowstyle='->', color='#e76f51', lw=1.8))
+
+arrow(ax, cx, 5.1, 5.55)
+
+# FFN box
+box(ax, 1.3, 5.55, 2.4, 1.0, 'Feed-Forward\nNetwork (FFN)', '#a8dadc', fs=10)
+arrow(ax, cx, 6.55, 7.1)
+
+# dropout 2
+box(ax, 1.7, 7.1, 1.6, 0.5, 'Dropout', '#f1faee', fs=9)
+arrow(ax, cx, 7.6, 7.9 - 0.25)
+
+# add + norm 2
+plus_node(ax, cx, 7.35)
+arrow(ax, cx, 7.57, 8.3)
+box(ax, 1.3, 8.3, 2.4, 0.75, 'Layer Norm  (Add & Norm)', '#caf0f8', fs=9)
+
+# salida
+arrow(ax, cx, 9.05, 9.6)
+ax.text(cx, 9.75, 'x_out (salida)', ha='center', fontsize=10)
+
+# leyenda
+ax.text(0.2, 9.7, '— skip', color='#e76f51', fontsize=9)
+
+plt.tight_layout()
+plt.show()
+```
+
+---
+
+## Apilando N Bloques Encoder {.smaller}
+
+::: {.columns}
+::: {.column width="55%"}
+
+```{python}
+class TransformerEncoder(nn.Module):
+    def __init__(self, vocab_size, d_model,
+                 num_heads, d_ff, N,
+                 max_len=512, dropout=0.1):
+        super().__init__()
+        self.embed = nn.Embedding(
+            vocab_size, d_model,
+            padding_idx=0)
+        from torch import Tensor
+        # PE sinusoidal (registrado como buffer)
+        pe = torch.zeros(max_len, d_model)
+        pos = torch.arange(max_len).unsqueeze(1)
+        div = torch.exp(
+            torch.arange(0, d_model, 2) *
+            (-torch.log(torch.tensor(10000.0)) / d_model)
+        )
+        pe[:, 0::2] = torch.sin(pos * div)
+        pe[:, 1::2] = torch.cos(pos * div)
+        self.register_buffer('pe', pe.unsqueeze(0))
+        self.drop   = nn.Dropout(dropout)
+        self.blocks = nn.ModuleList([
+            TransformerEncoderBlock(
+                d_model, num_heads, d_ff, dropout
+            ) for _ in range(N)
+        ])
+        self.norm   = nn.LayerNorm(d_model)
+
+    def forward(self, x, pad_mask=None):
+        # x: (B, T)  token ids
+        T = x.size(1)
+        x = self.drop(
+            self.embed(x) + self.pe[:, :T]
+        )
+        for block in self.blocks:
+            x = block(x, key_padding_mask=pad_mask)
+        return self.norm(x)   # (B, T, d_model)
+```
+
+:::
+::: {.column width="45%"}
+
+```{python}
+enc = TransformerEncoder(
+    vocab_size=1000,
+    d_model=64,
+    num_heads=4,
+    d_ff=256,
+    N=4,          # 4 bloques apilados
+    max_len=64
+)
+tokens = torch.randint(1, 1000, (2, 20))
+out    = enc(tokens)
+print("tokens:  ", tokens.shape)
+print("encoder: ", out.shape)
+params = sum(p.numel()
+             for p in enc.parameters())
+print(f"params:  {params:,}")
+```
+
+**¿Qué aprende cada bloque?**
+
+| Bloque | Tendencia observada |
+|--------|---------------------|
+| 1–2 | Sintaxis local, co-referencia adyacente |
+| 3–4 | Semántica, relaciones de largo alcance |
+| 5–6 | Representaciones de tareas específicas |
+
+*(Clark et al., 2019 — BERT)*
+
+:::
+:::
+
+---
+
+## El Bloque Decoder {.smaller}
+
+El decoder tiene **3 sub-capas** por bloque, no 2:
+
+::: {.columns}
+::: {.column width="55%"}
+
+```{python}
+class TransformerDecoderBlock(nn.Module):
+    def __init__(self, d_model, num_heads,
+                 d_ff, dropout=0.1):
+        super().__init__()
+        # 1) Self-attention ENMASCARADA
+        self.self_attn  = nn.MultiheadAttention(
+            d_model, num_heads,
+            dropout=dropout, batch_first=True)
+        # 2) Cross-attention con encoder
+        self.cross_attn = nn.MultiheadAttention(
+            d_model, num_heads,
+            dropout=dropout, batch_first=True)
+        # 3) FFN
+        self.ffn   = PositionwiseFFN(
+            d_model, d_ff, dropout)
+        self.norm1 = nn.LayerNorm(d_model)
+        self.norm2 = nn.LayerNorm(d_model)
+        self.norm3 = nn.LayerNorm(d_model)
+        self.drop  = nn.Dropout(dropout)
+
+    def forward(self, tgt, memory,
+                tgt_mask=None,
+                tgt_key_padding_mask=None):
+        # 1) Self-atención causal
+        sa, _ = self.self_attn(
+            tgt, tgt, tgt,
+            attn_mask=tgt_mask,
+            key_padding_mask=tgt_key_padding_mask)
+        tgt = self.norm1(tgt + self.drop(sa))
+        # 2) Cross-atención (Q=decoder, K=V=encoder)
+        ca, _ = self.cross_attn(
+            tgt, memory, memory)
+        tgt = self.norm2(tgt + self.drop(ca))
+        # 3) FFN
+        tgt = self.norm3(
+            tgt + self.drop(self.ffn(tgt)))
+        return tgt
+```
+
+:::
+::: {.column width="45%"}
+
+**Diferencias clave:**
+
+| | Encoder | Decoder |
+|--|---------|---------|
+| Self-attn | Bidireccional | **Causal** (máscara) |
+| Cross-attn | — | Q=dec, K/V=enc |
+| FFN | ✓ | ✓ |
+
+**¿Por qué máscara causal?**
+
+En generación, el token $t$ **no puede ver** el token $t+1$:
+
+```{python}
+T = 5
+causal = torch.triu(
+    torch.ones(T, T) * float('-inf'),
+    diagonal=1
+)
+print(causal)
+```
+
+:::
+:::
+
+---
+
+## Arquitectura Completa del Transformer {.smaller}
+
+```{python}
+#| echo: false
+#| fig-align: center
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+
+fig, axes = plt.subplots(1, 2, figsize=(10, 7))
+
+def draw_stack(ax, title, blocks, x_off=0):
+    ax.set_xlim(-0.2, 3.2)
+    ax.set_ylim(-0.5, 9.5)
+    ax.axis('off')
+    ax.set_title(title, fontsize=13, fontweight='bold',
+                 color='#023e8a', pad=10)
+    y = 0.2
+    for label, color in blocks:
+        ax.add_patch(plt.Rectangle(
+            (0.2, y), 2.6, 0.82,
+            fc=color, ec='#264653', lw=1.5))
+        ax.text(1.5, y + 0.41, label,
+                ha='center', va='center',
+                fontsize=9.5, fontweight='bold')
+        ax.annotate('', xy=(1.5, y + 0.82),
+                    xytext=(1.5, y + 0.82 + 0.18),
+                    arrowprops=dict(arrowstyle='<-',
+                                   color='#264653', lw=1.5))
+        y += 1.0
+
+encoder_blocks = [
+    ('Input Embedding + PE',      '#e9c46a'),
+    ('× N : Multi-Head\nSelf-Attention',  '#90e0ef'),
+    ('× N : Add & Norm',          '#caf0f8'),
+    ('× N : Feed-Forward',        '#a8dadc'),
+    ('× N : Add & Norm',          '#caf0f8'),
+    ('Output\n(Representaciones)', '#2a9d8f'),
+]
+
+decoder_blocks = [
+    ('Output Embedding + PE',     '#e9c46a'),
+    ('× N : Masked\nSelf-Attention',      '#ffb4a2'),
+    ('× N : Add & Norm',          '#caf0f8'),
+    ('× N : Cross-Attention\n(Q=dec, K/V=enc)', '#f4a261'),
+    ('× N : Add & Norm + FFN\n+ Add & Norm',    '#a8dadc'),
+    ('Softmax → token',           '#e76f51'),
+]
+
+draw_stack(axes[0], 'ENCODER', encoder_blocks)
+draw_stack(axes[1], 'DECODER', decoder_blocks)
+
+# flecha cruzada encoder → decoder
+fig.patches.append(mpatches.FancyArrowPatch(
+    (0.54, 0.53), (0.46, 0.53),
+    arrowstyle='->', color='#023e8a', lw=2.5,
+    mutation_scale=18,
+    transform=fig.transFigure, figure=fig
+))
+fig.text(0.5, 0.51, 'memory\n(K, V)',
+         ha='center', va='top', fontsize=9,
+         color='#023e8a', fontweight='bold')
+
+plt.tight_layout()
+plt.show()
+```
+
+---
+
+## Pre-Norm vs Post-Norm {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+**Post-Norm** (Vaswani et al., 2017 — original):
+$$x_{l+1} = \text{LN}(\,x_l + F_l(x_l)\,)$$
+
+- Estable en profundidades moderadas (≤ 6)
+- Gradientes menos uniformes al escalar
+
+**Pre-Norm** (GPT-2, GPT-3, LLaMA — estándar moderno):
+$$x_{l+1} = x_l + F_l(\,\text{LN}(x_l)\,)$$
+
+- Gradientes más uniformes → **más fácil de escalar**
+- Permite entrenar sin warm-up agresivo
+- Adoptado por casi todos los modelos grandes
+
+:::
+::: {.column width="50%"}
+
+```{python}
+class PreNormBlock(nn.Module):
+    """Pre-Norm Encoder Block (estilo moderno)"""
+    def __init__(self, d_model, num_heads,
+                 d_ff, dropout=0.1):
+        super().__init__()
+        self.mha   = nn.MultiheadAttention(
+            d_model, num_heads,
+            dropout=dropout, batch_first=True)
+        self.ffn   = PositionwiseFFN(
+            d_model, d_ff, dropout)
+        self.norm1 = nn.LayerNorm(d_model)
+        self.norm2 = nn.LayerNorm(d_model)
+        self.drop  = nn.Dropout(dropout)
+
+    def forward(self, x):
+        # Norm ANTES del sub-bloque
+        a, _ = self.mha(
+            self.norm1(x),
+            self.norm1(x),
+            self.norm1(x))
+        x = x + self.drop(a)
+        x = x + self.drop(self.ffn(self.norm2(x)))
+        return x
+```
+
+> Práctica: BERT usa **Post-Norm**; GPT-2, LLaMA usan **Pre-Norm**.
+
+:::
+:::
+
+---
+
+## Experimento: Clasificación con Encoder {.smaller}
+
+```{python}
+#| fig-align: center
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import matplotlib.pyplot as plt
+import numpy as np
+
+torch.manual_seed(0)
+
+# --- Dataset sintético de clasificación binaria ---
+def make_data(n=400, T=20, V=200):
+    """Clase 0: tokens 1–99; Clase 1: tokens 100–199"""
+    X0 = torch.randint(1,   100, (n // 2, T))
+    X1 = torch.randint(100, 200, (n // 2, T))
+    X  = torch.cat([X0, X1])
+    y  = torch.cat([torch.zeros(n//2, dtype=torch.long),
+                    torch.ones(n//2,  dtype=torch.long)])
+    perm = torch.randperm(n)
+    return X[perm], y[perm]
+
+class TransformerClassifier(nn.Module):
+    def __init__(self, vocab_size, d_model,
+                 num_heads, d_ff, N, max_len):
+        super().__init__()
+        self.encoder = TransformerEncoder(
+            vocab_size, d_model, num_heads,
+            d_ff, N, max_len)
+        self.cls = nn.Linear(d_model, 2)
+
+    def forward(self, x):
+        enc = self.encoder(x)          # (B, T, d)
+        pooled = enc.mean(dim=1)       # (B, d)
+        return self.cls(pooled)
+
+X, y = make_data(n=600)
+X_tr, y_tr = X[:500], y[:500]
+X_te, y_te = X[500:], y[500:]
+
+def train_model(N_blocks, epochs=30, lr=3e-4):
+    model = TransformerClassifier(
+        vocab_size=200, d_model=32,
+        num_heads=4, d_ff=128,
+        N=N_blocks, max_len=20
+    )
+    opt  = optim.Adam(model.parameters(), lr=lr)
+    loss_fn = nn.CrossEntropyLoss()
+    accs = []
+    for ep in range(epochs):
+        model.train()
+        opt.zero_grad()
+        loss = loss_fn(model(X_tr), y_tr)
+        loss.backward(); opt.step()
+        model.eval()
+        with torch.no_grad():
+            pred = model(X_te).argmax(1)
+            accs.append((pred == y_te).float().mean().item())
+    return accs
+
+fig, ax = plt.subplots(figsize=(8, 3.8))
+colors = ['#e76f51', '#2a9d8f', '#0077b6']
+for N, col in zip([1, 2, 4], colors):
+    accs = train_model(N)
+    ax.plot(accs, color=col, lw=2, label=f'N={N} bloques')
+ax.set_xlabel('Época', fontsize=12)
+ax.set_ylabel('Acc en test', fontsize=12)
+ax.set_title('Clasificación con Transformer Encoder (N bloques)', fontsize=13)
+ax.legend(fontsize=11); ax.grid(True, alpha=0.3)
+ax.set_ylim(0, 1.05)
+plt.tight_layout(); plt.show()
+```
+
+---
+
+## Tamaño y Costo Computacional {.smaller}
+
+::: {.columns}
+::: {.column width="55%"}
+
+**Parámetros por bloque encoder** ($d_\text{model}=512$, $h=8$, $d_\text{ff}=2048$):
+
+| Componente | Parámetros |
+|------------|------------|
+| MHA ($W_Q, W_K, W_V, W_O$) | $4 \times d^2 = 1{,}048{,}576$ |
+| FFN ($W_1, W_2$) | $2 \times d \times d_{ff} = 2{,}097{,}152$ |
+| LayerNorm × 2 | $4 \times d = 4{,}096$ |
+| **Total por bloque** | **≈ 3.1M** |
+
+Con $N=6$ bloques: ≈ **18.7M params** (encoder only)
+
+**Complejidad temporal:**
+
+| Operación | Costo |
+|-----------|-------|
+| MHA | $O(T^2 \cdot d)$ |
+| FFN | $O(T \cdot d^2)$ |
+| LayerNorm | $O(T \cdot d)$ |
+
+MHA domina para secuencias largas → motivación para variantes eficientes.
+
+:::
+::: {.column width="45%"}
+
+```{python}
+def count_enc_params(d, h, d_ff, N):
+    mha = 4 * d * d          # Q,K,V,O
+    ffn = 2 * d * d_ff       # W1, W2
+    # biases + layernorm: pequeños
+    per_block = mha + ffn
+    return per_block * N
+
+configs = {
+    'BERT-base':  (768, 12, 3072, 12),
+    'BERT-large': (1024, 16, 4096, 24),
+    'Vaswani enc':(512,  8, 2048, 6),
+    'Mini (demo)': (64,  4,  256, 4),
+}
+
+for name, (d, h, dff, N) in configs.items():
+    p = count_enc_params(d, h, dff, N)
+    print(f"{name:<16} {p/1e6:>6.1f}M params")
+```
+
+:::
+:::
+
+---
+
+## Dropout en Transformers {.smaller}
+
+::: {.columns}
+::: {.column width="55%"}
+
+El paper original de Vaswani aplica dropout en **3 lugares**:
+
+```
+x → Embedding + PE
+      ↓
+   Dropout ← aquí (entrada)
+      ↓
+  [por cada bloque]
+  MHA output → Dropout ← aquí
+  Add & Norm
+  FFN output → Dropout ← aquí
+  Add & Norm
+```
+
+**Tasas típicas:**
+
+| Modelo | Dropout |
+|--------|---------|
+| Vaswani (2017) | 0.1 |
+| BERT-base | 0.1 |
+| GPT-2 small | 0.1 |
+| Modelos grandes (≥1B) | 0.0 (ninguno) |
+
+> Modelos muy grandes **no necesitan dropout** — el dataset enorme actúa como regularizador.
+
+:::
+::: {.column width="45%"}
+
+```{python}
+# Verificar que dropout está activo
+# solo en modo train
+block = TransformerEncoderBlock(
+    d_model=32, num_heads=4, d_ff=128,
+    dropout=0.5  # exagerado para demo
+)
+x = torch.ones(1, 5, 32)
+
+block.train()
+out_train = block(x)
+block.eval()
+out_eval  = block(x)
+
+diff = (out_train - out_eval).abs().mean().item()
+print(f"train vs eval diff: {diff:.4f}")
+# En eval: dropout desactivado → salida determinista
+block.eval()
+o1 = block(x)
+o2 = block(x)
+print(f"eval determinista: {(o1-o2).abs().max().item():.6f}")
+```
+
+:::
+:::
+
+---
+
+## De Encoder a BERT {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+**BERT** = **B**idirectional **E**ncoder **R**epresentations from **T**ransformers
+
+Es exactamente un **stack de bloques encoder** con:
+
+- $N = 12$ bloques (BERT-base) / $24$ (large)
+- $d_\text{model} = 768$ / $1024$
+- $h = 12$ / $16$ cabezas
+- Pre-entrenado con **Masked Language Modeling** (MLM)
+
+**Lo que cambia respecto a hoy:**
+
+| Hoy | BERT |
+|-----|------|
+| Embedding simple | WordPiece + positional + segment |
+| No pre-entrenado | Pre-entrenado en 3.3B palabras |
+| Random init | Pesos transferibles |
+| Clasificación ad-hoc | Fine-tuning con cabezas específicas |
+
+:::
+::: {.column width="50%"}
+
+```
+Paso 1 — Pre-entrenamiento (MLM):
+  "El [MASK] come maíz"
+         ↓ Transformer Encoder
+  [cls] [ E ] [ L ] [gato] [ C ] [M] [sep]
+                              ↑
+                    predice: "gato"
+
+Paso 2 — Fine-tuning (downstream):
+  [CLS] token → cabeza lineal → clase
+  o bien
+  Tokens → NER / SQuAD / etc.
+```
+
+> **Semana 10:** MLM en detalle, fine-tuning con Hugging Face 🤗
+
+:::
+:::
+
+---
+
+## Resumen: El Bloque Transformer Completo {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+
+**Lo que construimos hoy:**
+
+| Componente | Qué hace |
+|------------|----------|
+| **Conexión residual** | Gradientes fluyen sin obstrucción |
+| **LayerNorm** | Estabiliza activaciones por token |
+| **FFN posición a posición** | No-linealidad + "computación" por token |
+| **Encoder block** | MHA → Add&Norm → FFN → Add&Norm |
+| **Stack de N bloques** | Representaciones jerárquicas |
+| **Decoder block** | + Masked SA + Cross-attention |
+
+:::
+::: {.column width="50%"}
+
+**La fórmula completa del Encoder:**
+
+$$\begin{aligned}
+h^{(0)} &= \text{Dropout}(E(x) + \text{PE}) \\\\
+h^{(l)} &= \text{LN}\bigl(h^{(l-1)} + \text{MHA}(h^{(l-1)})\bigr) \\\\
+h^{(l)} &= \text{LN}\bigl(h^{(l)} + \text{FFN}(h^{(l)})\bigr) \\\\
+\text{out} &= \text{LN}_{\text{final}}(h^{(N)})
+\end{aligned}$$
+
+**Próxima sesión:**
+
+🔜 **Semana 10 — BERT**: MLM, NSP, fine-tuning, Hugging Face
+
+:::
+:::
+
+---
+
+## Referencias {.smaller}
+
+- Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., Kaiser, Ł., & Polosukhin, I. (2017). Attention Is All You Need. *NeurIPS 2017*.
+- He, K., Zhang, X., Ren, S., & Sun, J. (2016). Deep Residual Learning for Image Recognition. *CVPR 2016*.
+- Ba, J. L., Kiros, J. R., & Hinton, G. E. (2016). Layer Normalization. *arXiv:1607.06450*.
+- Devlin, J., Chang, M.-W., Lee, K., & Toutanova, K. (2019). BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding. *NAACL 2019*.
+- Xiong, R. et al. (2020). On Layer Normalization in the Transformer Architecture. *ICML 2020*.
+- Clark, K., Khandelwal, U., Levy, O., & Manning, C. D. (2019). What Does BERT Look at? An Analysis of BERT's Attention. *ACL 2019 Workshop*.
+
+# ¿Preguntas? 🙋 {background-color="#03045e"}
+
+:::{.r-fit-text}
+**¡Gracias!**
+:::
+
+📧 fsuarez@ucb.edu.bo
+
+🔗 Materiales: [github.com/fjsuarez/ucb-nlp](https://github.com/fjsuarez/ucb-nlp)
